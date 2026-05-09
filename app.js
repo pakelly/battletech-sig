@@ -94,8 +94,19 @@ function parseQuery(queryStr) {
         }
         dir = (tokens[2] || 'desc').toLowerCase();
       } else {
-        field = tokens[0].toLowerCase().replace('-', '');
-        if (field === 'avgpref') field = 'avg-pref';
+        field = tokens[0].toLowerCase();
+        // Handle faction-prefixed fields: fs-sig, dc-pref, dc-preference
+        const prefixMatch = field.match(/^([a-z]+)-(sig|signature|pref|preference)$/);
+        if (prefixMatch) {
+          const fCode = resolveFaction(prefixMatch[1]);
+          const metric = prefixMatch[2].startsWith('pref') ? 'preference' : 'sig';
+          if (fCode) {
+            field = fCode + '-' + metric;
+          }
+        } else {
+          field = field.replace('-', '');
+          if (field === 'avgpref') field = 'avg-pref';
+        }
         dir = (tokens[1] || 'desc').toLowerCase();
       }
       
