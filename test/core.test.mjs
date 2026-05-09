@@ -53,7 +53,8 @@ before(() => {
         computeSpread,
         computeSpan,
         computeAvgPref,
-        computeGlobalSignature,
+        computeSignature,
+        assignTier,
         compareOp,
         sortRowsInPlace,
         resolveFaction,
@@ -257,45 +258,77 @@ describe('Derived Values', () => {
 // 4. GLOBAL SIGNATURE
 // ════════════════════════════════════════════════════════
 
-describe('Global Signature', () => {
-  it('exclusive + high weight = 10.0', () => {
-    // Dragon: DC has 8, only DC has MUL confirmation
-    const weights = { DC: 8, FS: 0 };
+describe('Global Signature (weight × share)', () => {
+  it('exclusive mech: share = 100%, sig = weight', () => {
+    // Only DC has it at weight 6
+    const weights = { DC: 6 };
     const mulData = { DC: 1 };
-    const allFactions = ['DC', 'FS', 'FWL', 'LA', 'CC'];
-    const fwr = { DC: { min: 1, max: 8 } };
-    const result = F.computeGlobalSignature(weights, mulData, allFactions, fwr, ['DC']);
-    assert.ok(Math.abs(result.DC - 10.0) < 0.01, `Expected 10.0, got ${result.DC}`);
+    const result = F.computeSignature(weights, mulData, ['DC']);
+    assert.ok(Math.abs(result.DC - 6.0) < 0.01, `Expected 6.0, got ${result.DC}`);
   });
 
-  it('shared mech scores lower than exclusive mech', () => {
-    // Shared mech: everyone has it
-    const sharedWeights = { DC: 6, FS: 6, FWL: 5, LA: 8, CC: 4 };
-    const sharedMul = { DC: 1, FS: 1, FWL: 1, LA: 1, CC: 1 };
-    // Exclusive mech: only DC
-    const exclWeights = { DC: 6 };
+  it('shared mech: sig = weight × share', () => {
+    // DC:8, FS:5, MERC:4 → total 17, DC share = 8/17
+    const weights = { DC: 8, FS: 5, MERC: 4 };
+    const mulData = { DC: 1, FS: 1, MERC: 1 };
+    const result = F.computeSignature(weights, mulData, ['DC']);
+    const expected = 8 * (8 / 17);
+    assert.ok(Math.abs(result.DC - expected) < 0.01, `Expected ${expected.toFixed(2)}, got ${result.DC}`);
+  });
+
+  it('exclusive mech scores higher than shared mech at same weight', () => {
+    const exclW = { DC: 6 };
     const exclMul = { DC: 1 };
+    const sharedW = { DC: 6, FS: 6, FWL: 5, LA: 8, CC: 4 };
+    const sharedMul = { DC: 1, FS: 1, FWL: 1, LA: 1, CC: 1 };
 
-    const allFactions = ['DC', 'FS', 'FWL', 'LA', 'CC'];
-    const fwr = { DC: { min: 1, max: 8 } };
-
-    const shared = F.computeGlobalSignature(sharedWeights, sharedMul, allFactions, fwr, ['DC']);
-    const excl = F.computeGlobalSignature(exclWeights, exclMul, allFactions, fwr, ['DC']);
+    const excl = F.computeSignature(exclW, exclMul, ['DC']);
+    const shared = F.computeSignature(sharedW, sharedMul, ['DC']);
     assert.ok(excl.DC > shared.DC, `Exclusive (${excl.DC}) should be > shared (${shared.DC})`);
   });
 
-  it('low weight exclusive scores lower than high weight exclusive', () => {
-    const allFactions = ['DC', 'FS', 'FWL', 'LA', 'CC'];
-    const fwr = { DC: { min: 1, max: 8 } };
-
-    const highW = F.computeGlobalSignature({ DC: 8 }, { DC: 1 }, allFactions, fwr, ['DC']);
-    const lowW = F.computeGlobalSignature({ DC: 3 }, { DC: 1 }, allFactions, fwr, ['DC']);
-    assert.ok(highW.DC > lowW.DC, `High weight (${highW.DC}) should be > low weight (${lowW.DC})`);
+  it('higher weight exclusive beats lower weight exclusive', () => {
+    const high = F.computeSignature({ DC: 8 }, { DC: 1 }, ['DC']);
+    const low = F.computeSignature({ DC: 3 }, { DC: 1 }, ['DC']);
+    assert.ok(high.DC > low.DC, `Weight 8 (${high.DC}) should be > weight 3 (${low.DC})`);
   });
 
   it('returns 0 for factions without MUL confirmation', () => {
-    const result = F.computeGlobalSignature({ DC: 6, FS: 6 }, { DC: 1 }, ['DC', 'FS'], { DC: { min: 1, max: 8 } }, ['DC', 'FS']);
+    const result = F.computeSignature({ DC: 6, FS: 6 }, { DC: 1 }, ['DC', 'FS']);
     assert.strictEqual(result.FS, 0);
+  });
+
+  it('high weight + low share can beat low weight + high share', () => {
+    // Dragon: DC:8 out of 17 total = 3.76
+    // Hatamoto-Ku: DC:2 out of 2 total = 2.00
+    const dragon = F.computeSignature({ DC: 8, FRR: 5, MERC: 4 }, { DC: 1, FRR: 1, MERC: 1 }, ['DC']);
+    const hatKu = F.computeSignature({ DC: 2 }, { DC: 1 }, ['DC']);
+    assert.ok(dragon.DC > hatKu.DC, `Dragon (${dragon.DC}) should be > Hatamoto-Ku (${hatKu.DC})`);
+  });
+});
+
+describe('Signature Tiers', () => {
+  it('assigns tier 5 to top 20%', () => {
+    // 10 items, sorted desc. Top 2 should be tier 5.
+    const values = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+    assert.strictEqual(F.assignTier(0, values.length), 5);
+    assert.strictEqual(F.assignTier(1, values.length), 5);
+  });
+
+  it('assigns tier 1 to bottom 20%', () => {
+    const values = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+    assert.strictEqual(F.assignTier(8, values.length), 1);
+    assert.strictEqual(F.assignTier(9, values.length), 1);
+  });
+
+  it('assigns tier 3 to middle', () => {
+    const values = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+    assert.strictEqual(F.assignTier(4, values.length), 3);
+    assert.strictEqual(F.assignTier(5, values.length), 3);
+  });
+
+  it('handles single item', () => {
+    assert.strictEqual(F.assignTier(0, 1), 5);
   });
 });
 
@@ -304,51 +337,32 @@ describe('Global Signature', () => {
 // ════════════════════════════════════════════════════════
 
 describe('Global Signature — Real Data (DC 3039)', () => {
-  let dcSigs; // { chassisName: sigScore }
+  let dcSigs; // { chassisName: rawSigScore }
 
   before(() => {
     const era = APP_DATA.eraData['3039'];
-    const allFactions = [];
-    const seen = new Set();
-    for (const [, d] of Object.entries(era)) {
-      for (const f of Object.keys(d.mul || {})) {
-        if (!seen.has(f)) { seen.add(f); allFactions.push(f); }
-      }
-    }
-
-    const fwr = {};
-    for (const [, d] of Object.entries(era)) {
-      const mul = d.mul || {};
-      for (const f of Object.keys(mul)) {
-        const w = d.w[f] || 0;
-        if (w > 0) {
-          if (!fwr[f]) fwr[f] = { min: w, max: w };
-          else { fwr[f].min = Math.min(fwr[f].min, w); fwr[f].max = Math.max(fwr[f].max, w); }
-        }
-      }
-    }
-
     dcSigs = {};
     for (const [name, d] of Object.entries(era)) {
       if (!d.mul?.DC) continue;
       const dcW = d.w.DC || 0;
       if (dcW === 0) continue;
-      const result = F.computeGlobalSignature(d.w, d.mul, allFactions, fwr, ['DC']);
+      const result = F.computeSignature(d.w, d.mul, ['DC']);
       dcSigs[name] = result.DC;
     }
   });
 
-  it('Dragon scores 10.0', () => {
-    assert.ok(Math.abs(dcSigs['Dragon'] - 10.0) < 0.01, `Dragon: ${dcSigs['Dragon']}`);
+  it('Hatamoto-Chi is DC-exclusive (sig = weight)', () => {
+    assert.ok(Math.abs(dcSigs['Hatamoto-Chi'] - 6.0) < 0.01, `Hatamoto-Chi: ${dcSigs['Hatamoto-Chi']}`);
   });
 
-  it('Panther scores 10.0', () => {
-    assert.ok(Math.abs(dcSigs['Panther'] - 10.0) < 0.01, `Panther: ${dcSigs['Panther']}`);
+  it('Hatamoto-Chi scores higher than Dragon (exclusive vs shared)', () => {
+    assert.ok(dcSigs['Hatamoto-Chi'] > dcSigs['Dragon'],
+      `Hatamoto-Chi (${dcSigs['Hatamoto-Chi']}) should be > Dragon (${dcSigs['Dragon']})`);
   });
 
-  it('Hatamoto-Chi scores higher than Griffin', () => {
-    assert.ok(dcSigs['Hatamoto-Chi'] > dcSigs['Griffin'],
-      `Hatamoto-Chi (${dcSigs['Hatamoto-Chi']}) should be > Griffin (${dcSigs['Griffin']})`);
+  it('Dragon scores higher than Griffin (semi-exclusive vs ubiquitous)', () => {
+    assert.ok(dcSigs['Dragon'] > dcSigs['Griffin'],
+      `Dragon (${dcSigs['Dragon']}) should be > Griffin (${dcSigs['Griffin']})`);
   });
 
   it('Dragon scores higher than Locust', () => {
@@ -356,9 +370,15 @@ describe('Global Signature — Real Data (DC 3039)', () => {
       `Dragon (${dcSigs['Dragon']}) should be > Locust (${dcSigs['Locust']})`);
   });
 
-  it('Dragon scores higher than Exterminator', () => {
+  it('Dragon scores higher than Exterminator (weight matters)', () => {
     assert.ok(dcSigs['Dragon'] > dcSigs['Exterminator'],
       `Dragon (${dcSigs['Dragon']}) should be > Exterminator (${dcSigs['Exterminator']})`);
+  });
+
+  it('Grand Dragon scores higher than Panther (higher share)', () => {
+    // Grand Dragon: DC:6, mostly DC. Panther: DC:8, widely shared.
+    assert.ok(dcSigs['Grand Dragon'] > dcSigs['Panther'],
+      `Grand Dragon (${dcSigs['Grand Dragon']}) should be > Panther (${dcSigs['Panther']})`);
   });
 });
 
@@ -495,81 +515,68 @@ describe('Filter/Sort Parity', () => {
 // ════════════════════════════════════════════════════════
 
 describe('End-to-End Sort — sig desc produces correct order', () => {
-  it('Victor is #1 for FS 3039 sorted by sig', () => {
-    const era = APP_DATA.eraData['3039'];
-    const factions = ['FS'];
-
-    // Build all era factions
-    const allFactions = [];
-    const seen = new Set();
-    for (const [, d] of Object.entries(era)) {
-      for (const f of Object.keys(d.mul || {})) {
-        if (!seen.has(f)) { seen.add(f); allFactions.push(f); }
-      }
-    }
-
-    // Build weight ranges
-    const fwr = {};
-    for (const [, d] of Object.entries(era)) {
-      const mul = d.mul || {};
-      for (const f of Object.keys(mul)) {
-        const w = d.w[f] || 0;
-        if (w > 0) {
-          if (!fwr[f]) fwr[f] = { min: w, max: w };
-          else { fwr[f].min = Math.min(fwr[f].min, w); fwr[f].max = Math.max(fwr[f].max, w); }
-        }
-      }
-    }
-
-    // Build rows with sig
+  function buildSigRows(era, faction) {
     const rows = [];
     for (const [name, d] of Object.entries(era)) {
-      if (!d.mul?.FS) continue;
-      const w = d.w.FS || 0;
+      if (!d.mul?.[faction]) continue;
+      const w = d.w[faction] || 0;
       if (w === 0) continue;
-      const sig = F.computeGlobalSignature(d.w, d.mul, allFactions, fwr, factions);
+      const sig = F.computeSignature(d.w, d.mul, [faction]);
       rows.push({ name, sig, weights: d.w, prefs: {}, spread: 0, span: 0, avgPref: 0, meta: {} });
     }
+    return rows;
+  }
 
-    // Sort by sig desc
+  it('Hatamoto-Chi is #1 for DC 3039 sorted by sig', () => {
+    const era = APP_DATA.eraData['3039'];
+    const rows = buildSigRows(era, 'DC');
     F.sortRowsInPlace(rows, [{ field: 'sig', dir: 'desc' }]);
 
-    assert.strictEqual(rows[0].name, 'Victor', `Expected Victor first, got ${rows[0].name} (sig: ${rows[0].sig?.FS})`);
-    assert.ok(rows[0].sig.FS > rows[1].sig.FS, 'Victor sig should be highest');
+    assert.strictEqual(rows[0].name, 'Hatamoto-Chi',
+      `Expected Hatamoto-Chi first, got ${rows[0].name} (sig: ${rows[0].sig?.DC})`);
   });
 
-  it('Dragon is #1 for DC 3039 sorted by sig', () => {
+  it('Dragon is top 5 for DC 3039 sorted by sig', () => {
     const era = APP_DATA.eraData['3039'];
-    const factions = ['DC'];
-
-    const allFactions = [...new Set(Object.values(era).flatMap(d => Object.keys(d.mul || {})))];
-    const fwr = {};
-    for (const [, d] of Object.entries(era)) {
-      for (const f of Object.keys(d.mul || {})) {
-        const w = d.w[f] || 0;
-        if (w > 0) {
-          if (!fwr[f]) fwr[f] = { min: w, max: w };
-          else { fwr[f].min = Math.min(fwr[f].min, w); fwr[f].max = Math.max(fwr[f].max, w); }
-        }
-      }
-    }
-
-    const rows = [];
-    for (const [name, d] of Object.entries(era)) {
-      if (!d.mul?.DC) continue;
-      const w = d.w.DC || 0;
-      if (w === 0) continue;
-      const sig = F.computeGlobalSignature(d.w, d.mul, allFactions, fwr, factions);
-      rows.push({ name, sig, weights: d.w, prefs: {}, spread: 0, span: 0, avgPref: 0, meta: {} });
-    }
-
+    const rows = buildSigRows(era, 'DC');
     F.sortRowsInPlace(rows, [{ field: 'sig', dir: 'desc' }]);
 
-    // Dragon or Panther should be #1 (both score 10.0)
-    assert.ok(
-      rows[0].name === 'Dragon' || rows[0].name === 'Panther',
-      `Expected Dragon or Panther first, got ${rows[0].name}`
-    );
-    assert.ok(Math.abs(rows[0].sig.DC - 10.0) < 0.01);
+    const top5 = rows.slice(0, 5).map(r => r.name);
+    assert.ok(top5.includes('Dragon'), `Dragon should be in top 5, got: ${top5.join(', ')}`);
+  });
+
+  it('FS 3039 sig sort puts FS-exclusive mechs at top', () => {
+    const era = APP_DATA.eraData['3039'];
+    const rows = buildSigRows(era, 'FS');
+    F.sortRowsInPlace(rows, [{ field: 'sig', dir: 'desc' }]);
+
+    // FS-exclusive or FS-heavy mechs should dominate the top
+    // Victor has high weight but low share (many factions have it)
+    // Mechs like Enforcer, Valkyrie, Hatchetman are more FS-distinctive
+    const top10 = rows.slice(0, 10).map(r => r.name);
+    const fsIdentity = ['Enforcer', 'Valkyrie', 'Hatchetman', 'JagerMech'];
+    const found = fsIdentity.filter(m => top10.includes(m));
+    assert.ok(found.length >= 2,
+      `Expected at least 2 of ${fsIdentity.join('/')} in top 10, got: ${top10.join(', ')}`);
+  });
+
+  it('ubiquitous mechs rank in bottom 60% for DC sig', () => {
+    const era = APP_DATA.eraData['3039'];
+    const rows = buildSigRows(era, 'DC');
+    F.sortRowsInPlace(rows, [{ field: 'sig', dir: 'desc' }]);
+
+    const locustRank = rows.findIndex(r => r.name === 'Locust');
+    const total = rows.length;
+    assert.ok(locustRank > total * 0.4,
+      `Locust should be in bottom 60% (rank ${locustRank + 1} of ${total})`);
+  });
+
+  it('sort by DC-sig also works', () => {
+    const era = APP_DATA.eraData['3039'];
+    const rows = buildSigRows(era, 'DC');
+    F.sortRowsInPlace(rows, [{ field: 'DC-sig', dir: 'desc' }]);
+
+    assert.strictEqual(rows[0].name, 'Hatamoto-Chi',
+      `Expected Hatamoto-Chi first with DC-sig sort, got ${rows[0].name}`);
   });
 });

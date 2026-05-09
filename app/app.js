@@ -307,49 +307,43 @@ function computeAvgPref(prefs, scopedFactions) {
 }
 
 /**
- * Compute GLOBAL signature score per faction: √(globalPref × weight_normalized)
+ * Compute signature score per faction: weight × faction_share
  * 
- * globalPref: faction's weight normalized 1–10 against ALL factions in the era
- *   (zeros included for factions without MUL confirmation). This is stable —
- *   it doesn't change based on which factions are in the user's search scope.
+ * faction_share = faction_weight / sum(all MUL-confirmed faction weights)
  * 
- * weight_normalized: faction's raw weight scaled 1–10 across all chassis that
- *   faction fields in the entire era (not just the filtered result set).
+ * This is the faction's "effective claim" on this chassis — how heavily they
+ * use it, adjusted for how exclusively they own it. Dimensionally weight.
  * 
- * Returns { factionCode: score } for the requested factions.
+ * Returns { factionCode: rawSigScore } for the requested factions.
  */
-function computeGlobalSignature(weights, mulData, allEraFactions, factionWeightRanges, factions) {
+function computeSignature(weights, mulData, factions) {
   const result = {};
   
-  // Global preference: normalize this chassis's weights against ALL era factions
-  const allWeights = allEraFactions.map(f => (mulData[f] && weights[f]) ? weights[f] : 0);
-  const mx = Math.max(...allWeights);
-  const mn = Math.min(...allWeights); // will be 0 if any faction doesn't field it
+  // Total weight across all MUL-confirmed factions for this chassis
+  const totalWeight = Object.keys(mulData).reduce((sum, f) => sum + (weights[f] || 0), 0);
   
   for (const f of factions) {
     const raw = (mulData[f] && weights[f]) ? weights[f] : 0;
-    if (raw === 0) { result[f] = 0; continue; }
-    
-    // Global preference
-    let globalPref;
-    if (mx === mn) {
-      globalPref = 5;
-    } else {
-      globalPref = 1 + 9 * (raw - mn) / (mx - mn);
-    }
-    
-    // Weight normalized across all chassis this faction fields in the era
-    const range = factionWeightRanges[f];
-    let wNorm;
-    if (!range || range.max === range.min) {
-      wNorm = 5;
-    } else {
-      wNorm = 1 + 9 * (raw - range.min) / (range.max - range.min);
-    }
-    
-    result[f] = Math.sqrt(globalPref * wNorm);
+    if (raw === 0 || totalWeight === 0) { result[f] = 0; continue; }
+    result[f] = raw * (raw / totalWeight);
   }
   return result;
+}
+
+/**
+ * Assign a tier (1–5) based on rank position within a sorted list.
+ * Quintile bins: tier 5 = top 20%, tier 1 = bottom 20%.
+ * rank is 0-indexed (0 = highest score).
+ */
+function assignTier(rank, total) {
+  if (total <= 0) return 1;
+  if (total === 1) return 5;
+  const pct = rank / total;
+  if (pct < 0.2) return 5;
+  if (pct < 0.4) return 4;
+  if (pct < 0.6) return 3;
+  if (pct < 0.8) return 2;
+  return 1;
 }
 
 function compareOp(value, op, threshold) {
@@ -545,7 +539,8 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
         html += `<td class="faction-cell ${cls}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
         html += `<span class="pref-value">${pref.toFixed(1)}</span>`;
         if (hasSig && sig > 0) {
-          html += `<span class="sig-value">s:${sig.toFixed(1)}</span>`;
+          const tier = row.sig?.[f + '_tier'] || 0;
+          html += `<span class="sig-value">T${tier}</span>`;
         }
         html += `<span class="weight-value">w:${w}</span>`;
         html += '</td>';
@@ -557,7 +552,8 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
     if (hasSig) {
       for (const f of scopedFactions) {
         const sigVal = row.sig?.[f] || 0;
-        html += `<td class="stat-col">${sigVal > 0 ? sigVal.toFixed(1) : '—'}</td>`;
+        const sigTier = row.sig?.[f + '_tier'] || 0;
+        html += `<td class="stat-col">${sigVal > 0 ? `T${sigTier} <span class="sig-raw">(${sigVal.toFixed(1)})</span>` : '—'}</td>`;
       }
     }
     html += `<td class="stat-col">${row.spread.toFixed(1)}</td>`;
@@ -1103,36 +1099,25 @@ function runQuery() {
     });
   }
   
-  // Compute global signature scores
+  // Compute global signature scores (weight × share)
   if (scopedFactions.length > 0) {
-    const allEraFactions = [];
-    const seenFactions = new Set();
-    for (const [, d] of Object.entries(chassisData)) {
-      for (const f of Object.keys(d.mul || {})) {
-        if (!seenFactions.has(f)) { seenFactions.add(f); allEraFactions.push(f); }
-      }
+    for (const row of rows) {
+      row.sig = computeSignature(row.weights, row.mul || {}, scopedFactions);
     }
     
-    const factionWeightRanges = {};
-    for (const [, d] of Object.entries(chassisData)) {
-      const mul = d.mul || {};
-      for (const f of Object.keys(mul)) {
-        const w = d.w[f] || 0;
-        if (w > 0) {
-          if (!factionWeightRanges[f]) {
-            factionWeightRanges[f] = { min: w, max: w };
-          } else {
-            factionWeightRanges[f].min = Math.min(factionWeightRanges[f].min, w);
-            factionWeightRanges[f].max = Math.max(factionWeightRanges[f].max, w);
-          }
+    // Compute tiers per faction (quintile bins across all rows)
+    for (const f of scopedFactions) {
+      const sigValues = rows.map(r => r.sig?.[f] || 0).filter(v => v > 0);
+      sigValues.sort((a, b) => b - a);
+      const sigRankMap = new Map(sigValues.map((v, i) => [v, i]));
+      const total = sigValues.length;
+      for (const row of rows) {
+        const v = row.sig?.[f] || 0;
+        if (v > 0 && row.sig) {
+          const rank = sigRankMap.get(v) ?? total;
+          row.sig[f + '_tier'] = assignTier(rank, total);
         }
       }
-    }
-    
-    for (const row of rows) {
-      row.sig = computeGlobalSignature(
-        row.weights, row.mul || {}, allEraFactions, factionWeightRanges, scopedFactions
-      );
     }
   }
   

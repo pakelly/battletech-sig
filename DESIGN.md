@@ -81,7 +81,7 @@ The tool provides two complementary metrics that answer different questions abou
 
 **This is the primary display value in faction cells.** It drives heat map coloring.
 
-#### Global Signature (1–10) — The Identity Checklist
+#### Global Signature — The Identity Checklist
 
 **Question:** "Given this faction, which mechs define it?"
 
@@ -89,27 +89,44 @@ The tool provides two complementary metrics that answer different questions abou
 
 **Use case:** "I'm building a DC force — what should I buy?" Sort by DC signature to get the faction's most totemic mechs.
 
-**Formula:** `Signature = √(globalPref × weightNormalized)`
+**Formula:** `raw_sig = faction_weight × faction_share`
 
 Where:
-- **globalPref** = faction's weight for this chassis, normalized 1–10 against **ALL factions in the era** (not just scoped ones). Zeros included for factions without MUL confirmation. This makes it stable — DC's signature for Dragon doesn't change based on who else is in the query.
-- **weightNormalized** = faction's raw weight for this chassis, normalized 1–10 across **all chassis that faction fields in the entire era**. This rewards mechs the faction actually uses heavily, not just mechs they technically have exclusive access to.
+- **faction_weight** = the faction's raw MegaMek weight for this chassis. Higher weight = the faction fields this mech more heavily. No normalization — the raw weight IS the signal.
+- **faction_share** = `faction_weight / sum(all MUL-confirmed faction weights for this chassis)`. This is the faction's "market share" of this chassis. If DC has weight 8 for Dragon and the total across all MUL-confirmed factions is 17, DC's share is 47.1%.
 
-The geometric mean ensures both factors must be strong. A mech that's exclusive but rarely fielded (high globalPref, low weightNorm) scores mid-range. A mech that's common but not distinctive (low globalPref, high weightNorm) also scores mid-range. Only mechs that are **both distinctive AND important** score high.
+The product `weight × share` is dimensionally weight — it's the faction's **effective claim** on this chassis, adjusted for how exclusively they own it. A mech the faction fields heavily AND that few others field produces a high score. A mech everyone uses (low share) or the faction barely fields (low weight) produces a low score.
+
+**Display: Tier 1–5 (quintile bins).** The raw `weight × share` values are binned into quintiles across all chassis the faction fields in the era:
+- **Tier 5** (top 20%) — Faction-defining. The totemic mechs.
+- **Tier 4** (next 20%) — Strong identity markers.
+- **Tier 3** (middle 20%) — Moderate association.
+- **Tier 2** (next 20%) — Weak association.
+- **Tier 1** (bottom 20%) — Incidental. The faction has access but it's not "theirs."
+
+Tiers are honest about precision — raw scores of 0.54 and 0.56 aren't meaningfully different, and tiers don't pretend they are. The underlying raw value is still used for sorting and filtering.
 
 **Global signature is stable regardless of scope.** Adding or removing factions from the query doesn't change any faction's signature scores. It's a global property of the faction's relationship to that chassis.
 
+**Why weight × share and not normalized scores:**
+Earlier iterations used `√(globalPref_normalized × weight_normalized)`, where both factors were min-max normalized to 1–10. This caused two problems:
+1. **Weight normalization inflated small differences.** A faction with weight range 5–8 mapped weight 5 to 1.0 and weight 8 to 10.0 — a 3-point raw difference became a 9-point normalized gap.
+2. **Preference normalization inflated distinctiveness.** Zeros from Clan factions (who'd never field an IS mech) inflated every IS mech's "distinctiveness" score.
+
+Raw `weight × share` avoids both problems. It stays in meaningful units (weight) and doesn't amplify noise.
+
 **Expected results — DC in 3039:**
 
-| Chassis | Raw Weight | Global Pref | Weight Norm | Signature | Why |
-|---------|-----------|-------------|-------------|-----------|-----|
-| Dragon | 8 | 10.0 | 10.0 | 10.0 | DC-exclusive, heavily fielded |
-| Panther | 8 | 10.0 | 10.0 | 10.0 | DC-exclusive, heavily fielded |
-| Hatamoto-Chi | 6 | 10.0 | 7.4 | 8.6 | DC-exclusive, solid usage |
-| Grand Dragon | 6 | 10.0 | 7.4 | 8.6 | DC-exclusive, solid usage |
-| Griffin | 6 | 7.8 | 7.4 | 7.6 | Common IS mech, not distinctive |
-| Locust | 6 | 7.0 | 7.4 | 7.2 | Everyone has it |
-| Exterminator | 3 | 6.4 | 3.6 | 4.8 | Rare even for DC |
+| Chassis | DC Weight | Share | W×S | Tier | Why |
+|---------|----------|-------|-----|------|-----|
+| Hatamoto-Chi | 6 | 100% | 6.00 | 5 | DC-exclusive, solid weight |
+| Grand Dragon | 6 | 75% | 4.50 | 5 | Mostly DC |
+| Dragon | 8 | 47% | 3.76 | 5 | High weight overcomes shared access |
+| Panther | 8 | 24% | 1.88 | 5 | High weight, moderate share |
+| Griffin | 6 | 7% | 0.41 | 3 | Common IS mech, not distinctive |
+| Wasp | 8 | 7% | 0.53 | 4 | High weight but everyone has it |
+| Locust | 6 | 5% | 0.30 | 2 | Ubiquitous |
+| Exterminator | 3 | 19% | 0.56 | 4 | Moderate share but low weight |
 
 #### When to Use Which
 
@@ -131,9 +148,10 @@ All of these work as both filters (`field>value`) and sort targets (`sort by fie
 | **avg-pref** | Mean scoped preference across scoped factions that field the chassis. | `avg-pref<6` |
 | **weight** | Raw MegaMek weight. Not normalized. | `weight>5` |
 | **tons** | Chassis tonnage. | `tons>50`, `tons=75` |
-| **sig** | Global signature score (max across scoped factions). | `sig>8` |
+| **sig** | Global signature raw score (weight × share). Max across scoped factions. | `sig>3` |
+| **sig-tier** | Signature tier (1–5 quintile). | `sig-tier>3` |
 | **DC-pref** | Faction-specific scoped preference. | `DC-pref>8` |
-| **DC-sig** | Faction-specific global signature. | `DC-sig>7` |
+| **DC-sig** | Faction-specific global signature raw score. | `DC-sig>3` |
 
 **All fields that can be filtered can also be sorted, and vice versa.** This is a design invariant.
 
@@ -223,7 +241,7 @@ Queries are field expressions joined by implicit `AND`. `OR` supported within fi
 | `span` | numeric | Span filter/sort | `span<4` |
 | `avg-pref` | numeric | Avg preference filter/sort | `avg-pref<6` |
 | `weight` | numeric | Raw weight filter/sort | `weight>5` |
-| `sig` | numeric | Global signature filter/sort | `sig>8` |
+| `sig` | numeric | Global signature raw score (weight × share) | `sig>3` |
 | `tons` | numeric | Tonnage filter/sort | `tons>50` |
 | `DC-pref` | numeric | Faction-specific pref filter/sort | `DC-pref>8` |
 | `DC-sig` | numeric | Faction-specific sig filter/sort | `DC-sig>7` |
@@ -372,7 +390,7 @@ Vanilla HTML/CSS/JS. No framework. Single-page app loading `app-data.json` at st
 ## Resolved Design Decisions
 
 1. **Scoped Preference normalization:** Linear min-to-max mapping across scoped factions' weights. 1 = lowest, 10 = highest. Zeros included.
-2. **Global Signature formula:** Geometric mean of global preference and weight-normalized. Both 1–10 scale.
+2. **Global Signature formula:** `weight × share` (faction weight × faction's share of total MUL-confirmed weight). Raw score in weight units. Displayed as quintile tiers 1–5.
 3. **Signature is global, not scoped.** Normalizes against all factions in the era, not just the user's current scope. This makes it a stable faction identity metric.
 4. **Two metrics, not one.** Scoped preference and global signature answer different questions (mech→faction vs faction→mech). Neither replaces the other.
 5. **Filter/sort parity.** Every numeric field that can be filtered can also be sorted, and vice versa. This is a design invariant.
