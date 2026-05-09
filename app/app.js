@@ -769,6 +769,11 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   for (const f of scopedFactions) {
     headerHTML += `<th data-sort="${f}-preference" title="${getFactionFullName(f)}">${getFactionLabel(f)}</th>`;
   }
+  if (hasSig) {
+    for (const f of scopedFactions) {
+      headerHTML += `<th data-sort="${f}-sig" title="${getFactionFullName(f)} Signature">${getFactionLabel(f)} Sig</th>`;
+    }
+  }
   headerHTML += '<th data-sort="spread">Spread</th><th data-sort="span">Span</th><th data-sort="avg-pref">Avg</th></tr>';
   thead.innerHTML = headerHTML;
   table.appendChild(thead);
@@ -799,6 +804,12 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
       }
     }
     
+    if (hasSig) {
+      for (const f of scopedFactions) {
+        const sigVal = row.sig?.[f] || 0;
+        html += `<td class="stat-col">${sigVal > 0 ? sigVal.toFixed(1) : '—'}</td>`;
+      }
+    }
     html += `<td class="stat-col">${row.spread.toFixed(1)}</td>`;
     html += `<td class="stat-col">${row.span}</td>`;
     html += `<td class="stat-col">${row.avgPref.toFixed(1)}</td>`;
@@ -1474,6 +1485,7 @@ function runQuery() {
 }
 
 function sortRowsInPlace(rows, sortSpec) {
+  console.log('[SORT] spec:', JSON.stringify(sortSpec), 'rows:', rows.length, 'first sig:', JSON.stringify(rows[0]?.sig), 'first name:', rows[0]?.name);
   rows.sort((a, b) => {
     for (const { field, dir } of sortSpec) {
       let va, vb;
