@@ -57,6 +57,9 @@ function parseQuery(queryStr) {
     avgPref: null,
     weight: null,
     sig: null,
+    tons: null,
+    factionPref: [],  // [{faction, op, val}]
+    factionSig: [],   // [{faction, op, val}]
     year: null,
     era: null,
     family: null,     // 'on' | 'off'
@@ -164,6 +167,24 @@ function parseQuery(queryStr) {
       case 'mode':
         result.mode = value.toUpperCase();
         break;
+      case 'tons':
+      case 'tonnage':
+        result.tons = { op, val: parseFloat(value) };
+        break;
+      default: {
+        // Handle faction-prefixed filters: DC-pref>8, FS-sig>5, etc.
+        const fpMatch = field.match(/^([a-z]+)-(pref|preference|sig|signature)$/);
+        if (fpMatch) {
+          const fCode = resolveFaction(fpMatch[1]);
+          const metric = fpMatch[2].startsWith('pref') ? 'pref' : 'sig';
+          if (fCode) {
+            const entry = { faction: fCode, op, val: parseFloat(value) };
+            if (metric === 'pref') result.factionPref.push(entry);
+            else result.factionSig.push(entry);
+          }
+        }
+        break;
+      }
     }
   }
 
@@ -470,6 +491,9 @@ function executeQuery(parsed) {
     // Filter industrial mechs
     if (hideIndustrial && meta.industrial) continue;
 
+    // Filter by tonnage
+    if (parsed.tons && meta.tons && !compareOp(meta.tons, parsed.tons.op, parsed.tons.val)) continue;
+
     // Filter by year (intro date)
     if (parsed.year && meta.intro && meta.intro > parsed.year) continue;
 
@@ -502,6 +526,14 @@ function executeQuery(parsed) {
     if (parsed.weight) {
       const anyPass = scopedFactions.some(f => compareOp(weights[f] || 0, parsed.weight.op, parsed.weight.val));
       if (!anyPass) continue;
+    }
+
+    // Faction-specific preference filter (e.g. DC-pref>8)
+    if (parsed.factionPref.length > 0 && prefs) {
+      const allPass = parsed.factionPref.every(fp =>
+        compareOp(prefs[fp.faction] || 0, fp.op, fp.val)
+      );
+      if (!allPass) continue;
     }
 
     // Skip if no faction has any weight
@@ -559,20 +591,28 @@ function executeQuery(parsed) {
     }
   }
 
-  // Apply sig filter (must be after sig computation)
-  if (parsed.sig) {
-    const sigFilter = parsed.sig;
-    const beforeLen = rows.length;
+  // Apply post-computation filters (sig must be computed first)
+  {
     const toRemove = new Set();
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
-      if (!row.sig) { toRemove.add(i); continue; }
-      const sf = factions || Object.keys(row.sig);
-      if (!sf.some(f => compareOp(row.sig[f] || 0, sigFilter.op, sigFilter.val))) {
-        toRemove.add(i);
+      // Global sig filter
+      if (parsed.sig) {
+        if (!row.sig) { toRemove.add(i); continue; }
+        const sf = factions || Object.keys(row.sig);
+        if (!sf.some(f => compareOp(row.sig[f] || 0, parsed.sig.op, parsed.sig.val))) {
+          toRemove.add(i); continue;
+        }
+      }
+      // Faction-specific sig filter (e.g. DC-sig>8)
+      if (parsed.factionSig.length > 0) {
+        if (!row.sig) { toRemove.add(i); continue; }
+        const allPass = parsed.factionSig.every(fs =>
+          compareOp(row.sig[fs.faction] || 0, fs.op, fs.val)
+        );
+        if (!allPass) { toRemove.add(i); continue; }
       }
     }
-    // Remove in reverse order to preserve indices
     for (const i of [...toRemove].sort((a, b) => b - a)) {
       rows.splice(i, 1);
     }
@@ -1039,7 +1079,7 @@ function sortRows(rows, sortSpec, scopedFactions) {
 
 // ── Auto-Suggest ──
 
-const FIELD_NAMES = ['faction', 'chassis', 'class', 'spread', 'span', 'avg-pref', 'sig', 'signature', 'weight', 'year', 'era', 'family', 'industrial', 'mode', 'sort'];
+const FIELD_NAMES = ['faction', 'chassis', 'class', 'spread', 'span', 'avg-pref', 'sig', 'signature', 'weight', 'tons', 'tonnage', 'year', 'era', 'family', 'industrial', 'mode', 'sort'];
 
 function getSuggestions(text, cursorPos) {
   if (!DATA) return [];
@@ -1133,6 +1173,13 @@ function renderChips(parsed) {
   if (parsed.avgPref) chips.push({ label: `avg-pref${parsed.avgPref.op}${parsed.avgPref.val}`, field: 'avg-pref' });
   if (parsed.weight) chips.push({ label: `weight${parsed.weight.op}${parsed.weight.val}`, field: 'weight' });
   if (parsed.sig) chips.push({ label: `sig${parsed.sig.op}${parsed.sig.val}`, field: 'sig' });
+  if (parsed.tons) chips.push({ label: `tons${parsed.tons.op}${parsed.tons.val}`, field: 'tons' });
+  for (const fp of parsed.factionPref) {
+    chips.push({ label: `${fp.faction}-pref${fp.op}${fp.val}`, field: `${fp.faction}-pref` });
+  }
+  for (const fs of parsed.factionSig) {
+    chips.push({ label: `${fs.faction}-sig${fs.op}${fs.val}`, field: `${fs.faction}-sig` });
+  }
   if (parsed.year) chips.push({ label: 'year=' + parsed.year, field: 'year' });
   if (parsed.era) chips.push({ label: 'era=' + parsed.era, field: 'era' });
   if (parsed.mode !== 'B') chips.push({ label: 'mode=' + parsed.mode, field: 'mode' });
