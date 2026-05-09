@@ -1383,7 +1383,12 @@ function runQuery() {
   
   switch (view) {
     case 'single-faction':
-      renderSingleFaction(rows, scopedFactions[0], eraYear);
+      // If explicit sort or sig filter is set, use comparison view (which handles sort + shows sig)
+      if (parsed.sort.length > 0 || parsed.sig || parsed.factionSig.length > 0) {
+        renderFactionComparison(rows, scopedFactions, eraYear, parsed);
+      } else {
+        renderSingleFaction(rows, scopedFactions[0], eraYear);
+      }
       break;
     case 'faction-comparison':
     case 'mech-detail':
