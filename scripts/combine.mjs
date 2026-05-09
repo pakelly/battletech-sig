@@ -15,7 +15,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 
 const scores = JSON.parse(readFileSync(join(ROOT, 'output/scores.json'), 'utf8'));
-const mulFactionMap = JSON.parse(readFileSync(join(ROOT, 'data/mul-faction-map.json'), 'utf8'));
 const families = JSON.parse(readFileSync(join(ROOT, 'config/chassis-families.json'), 'utf8'));
 
 // ── MUL era ordering (chronological) ──
@@ -162,16 +161,38 @@ function weightClass(tonnage) {
   return 'Assault';
 }
 
-function hasMulAvail(factionCode, mulEra, chassisName) {
-  return mulCumulative[factionCode]?.[mulEra]?.has(chassisName) || false;
-}
-
 // ── Faction groups ──
 const FACTION_GROUPS = {
   GreatHouses: ['DC', 'FS', 'FWL', 'LA', 'CC'],
   Clans: ['CW', 'CJF', 'CGB', 'CSJ', 'CHH', 'CNC', 'CSV', 'CDS', 'CSR', 'CBS', 'CCO', 'CFM', 'CGS', 'CIH', 'CSA'],
   Periphery: ['TC', 'MH', 'OA', 'MC']
 };
+
+// Map faction codes to their general MUL pool
+// IS General covers all IS factions (Great Houses + ComStar + FRR + misc IS)
+// CLAN covers all Clan factions; PERI covers periphery states
+const IS_FACTIONS = new Set([
+  ...FACTION_GROUPS.GreatHouses, 'LC', 'FC', 'FRR', 'CS', 'WOB', 'SIC', 'ROS',
+  'MERC', 'KH', 'WD', 'SL', 'SLR', 'TH'
+]);
+const CLAN_FACTIONS = new Set(FACTION_GROUPS.Clans);
+const PERI_FACTIONS = new Set(FACTION_GROUPS.Periphery);
+
+function getGeneralPool(factionCode) {
+  if (IS_FACTIONS.has(factionCode)) return 'IS';
+  if (CLAN_FACTIONS.has(factionCode)) return 'CLAN';
+  if (PERI_FACTIONS.has(factionCode)) return 'PERI';
+  return null;
+}
+
+function hasMulAvail(factionCode, mulEra, chassisName) {
+  // Direct faction match
+  if (mulCumulative[factionCode]?.[mulEra]?.has(chassisName)) return true;
+  // Fall back to general pool (IS/CLAN/PERI)
+  const pool = getGeneralPool(factionCode);
+  if (pool && mulCumulative[pool]?.[mulEra]?.has(chassisName)) return true;
+  return false;
+}
 
 // ── Faction display info ──
 const FACTION_INFO = {};

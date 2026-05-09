@@ -167,6 +167,7 @@ async function main() {
     'MERC', 'KH', 'WD',
     'ROS', 'RD', 'RA',
     'SL', 'SLR', 'TH',
+    'IS', 'CLAN', 'PERI',
   ];
 
   const majorEras = [

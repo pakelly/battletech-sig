@@ -1270,11 +1270,25 @@ async function init() {
   
   const bar = document.getElementById('query-bar');
   const suggestBox = document.getElementById('suggest-box');
+  const resetBtn = document.getElementById('reset-btn');
   let suggestIndex = -1;
+  
+  // Reset button — clear query and return to landing
+  function updateResetBtn() {
+    resetBtn.classList.toggle('hidden', !bar.value.trim());
+  }
+  resetBtn.addEventListener('click', () => {
+    bar.value = '';
+    updateResetBtn();
+    runQuery(); // triggers landing page display
+    history.replaceState(null, '', location.pathname);
+    bar.focus();
+  });
   
   // Debounced query execution
   let queryTimeout = null;
   bar.addEventListener('input', () => {
+    updateResetBtn();
     clearTimeout(queryTimeout);
     queryTimeout = setTimeout(() => {
       // Show suggestions
@@ -1372,6 +1386,7 @@ async function init() {
   document.querySelectorAll('.example-query').forEach(btn => {
     btn.addEventListener('click', () => {
       bar.value = btn.dataset.query;
+      updateResetBtn();
       runQuery();
     });
   });
@@ -1386,9 +1401,19 @@ async function init() {
     }
   });
   
+  // Title click = reset to home
+  document.querySelector('header h1').addEventListener('click', () => {
+    bar.value = '';
+    updateResetBtn();
+    runQuery();
+    history.replaceState(null, '', location.pathname);
+    bar.focus();
+  });
+
   // Check URL hash for initial query
   if (location.hash) {
     bar.value = decodeURIComponent(location.hash.slice(1));
+    updateResetBtn();
     runQuery();
   }
 }
