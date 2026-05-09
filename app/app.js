@@ -692,10 +692,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   const hasSig = rows.some(r => r.sig);
   let headerHTML = '<tr><th data-sort="name">Chassis</th><th data-sort="tonnage">Tons</th>';
   for (const f of scopedFactions) {
-    headerHTML += `<th data-sort="${f}-preference" title="${getFactionFullName(f)} — Preference">${getFactionLabel(f)}</th>`;
-    if (hasSig) {
-      headerHTML += `<th data-sort="${f}-sig" title="${getFactionFullName(f)} — Signature" class="sig-col-header">Sig</th>`;
-    }
+    headerHTML += `<th data-sort="${f}-preference" title="${getFactionFullName(f)}">${getFactionLabel(f)}</th>`;
   }
   headerHTML += '<th data-sort="spread">Spread</th><th data-sort="span">Span</th><th data-sort="avg-pref">Avg</th></tr>';
   thead.innerHTML = headerHTML;
@@ -711,22 +708,19 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
     for (const f of scopedFactions) {
       const pref = row.prefs?.[f];
       const w = row.weights[f] || 0;
+      const sig = row.sig?.[f] || 0;
       const cls = w > 0 ? heatClass(pref) : 'no-data';
       
       if (w > 0 && pref) {
         html += `<td class="faction-cell ${cls}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
         html += `<span class="pref-value">${pref.toFixed(1)}</span>`;
+        if (hasSig && sig > 0) {
+          html += `<span class="sig-value">s:${sig.toFixed(1)}</span>`;
+        }
         html += `<span class="weight-value">w:${w}</span>`;
         html += '</td>';
       } else {
         html += '<td class="faction-cell no-data">—</td>';
-      }
-      if (hasSig) {
-        const sig = row.sig?.[f] || 0;
-        const sigCls = sig > 0 ? heatClass(sig) : 'no-data';
-        html += sig > 0
-          ? `<td class="sig-cell ${sigCls}"><span class="sig-value">${sig.toFixed(1)}</span></td>`
-          : '<td class="sig-cell no-data">—</td>';
       }
     }
     
