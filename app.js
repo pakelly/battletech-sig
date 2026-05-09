@@ -1401,12 +1401,86 @@ async function init() {
     bar.focus();
   });
 
+  // ── Settings Panel ──
+  initSettings();
+
   // Check URL hash for initial query
   if (location.hash) {
     bar.value = decodeURIComponent(location.hash.slice(1));
     updateResetBtn();
     runQuery();
   }
+}
+
+function initSettings() {
+  const overlay = document.getElementById('settings-overlay');
+  const panel = document.getElementById('settings-panel');
+  
+  // Open/close
+  document.getElementById('settings-btn').addEventListener('click', () => {
+    overlay.classList.remove('hidden');
+    renderFamiliesList();
+  });
+  document.getElementById('settings-close').addEventListener('click', () => {
+    overlay.classList.add('hidden');
+  });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.add('hidden');
+  });
+  
+  // Global family toggle
+  const globalToggle = document.getElementById('families-global-toggle');
+  globalToggle.addEventListener('change', () => {
+    const bar = document.getElementById('query-bar');
+    const current = bar.value.replace(/\bfamily=(on|off)\b/g, '').trim();
+    if (globalToggle.checked) {
+      bar.value = current.replace(/\s+/g, ' ').trim();
+      // family=on is default, so just remove the explicit field
+    } else {
+      bar.value = (current + ' family=off').trim();
+    }
+    runQuery();
+    renderFamiliesList();
+  });
+  
+  // Data mode radio
+  document.querySelectorAll('input[name="data-mode"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const bar = document.getElementById('query-bar');
+      const current = bar.value.replace(/\bmode=[AB]\b/g, '').trim();
+      if (radio.value === 'A') {
+        bar.value = (current + ' mode=A').trim();
+      } else {
+        bar.value = current.replace(/\s+/g, ' ').trim();
+        // mode=B is default
+      }
+      runQuery();
+    });
+  });
+}
+
+function renderFamiliesList() {
+  const container = document.getElementById('families-list');
+  if (!DATA || !DATA.families) {
+    container.innerHTML = '<p style="color:var(--text-dim)">Loading...</p>';
+    return;
+  }
+  
+  const globalOn = document.getElementById('families-global-toggle').checked;
+  
+  let html = '';
+  for (const fam of DATA.families) {
+    const members = fam.chassis.join(', ');
+    const displayName = fam.groupName.replace(/ Family$/, '');
+    html += `<label class="family-item" style="opacity:${globalOn ? 1 : 0.4}">
+      <input type="checkbox" data-family="${fam.groupName}" ${fam.enabled ? 'checked' : ''} ${globalOn ? '' : 'disabled'}>
+      <span>
+        <span class="family-name">${displayName}</span>
+        <span class="family-members">${members}</span>
+      </span>
+    </label>`;
+  }
+  container.innerHTML = html;
 }
 
 // Update hash on query

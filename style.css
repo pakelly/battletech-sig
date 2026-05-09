@@ -68,11 +68,140 @@ header h1 {
   position: relative;
 }
 
+header {
+  position: relative;
+}
 header h1 {
   cursor: pointer;
 }
 header h1:hover {
   color: var(--accent);
+}
+
+#settings-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-size: 1.2rem;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+#settings-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Settings overlay */
+#settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  display: flex;
+  justify-content: flex-end;
+}
+#settings-overlay.hidden {
+  display: none;
+}
+
+#settings-panel {
+  width: min(400px, 85vw);
+  height: 100%;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+}
+.settings-header h3 {
+  margin: 0;
+}
+#settings-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0 0.3rem;
+}
+#settings-close:hover {
+  color: var(--text);
+}
+
+.settings-body {
+  padding: 1rem 1.2rem;
+  flex: 1;
+}
+
+.settings-section {
+  margin-bottom: 1.5rem;
+}
+.settings-section h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--accent);
+  font-size: 0.95rem;
+}
+.settings-hint {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin: 0 0 0.75rem 0;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.toggle-row input[type="checkbox"],
+.toggle-row input[type="radio"] {
+  accent-color: var(--accent);
+}
+
+.families-list {
+  max-height: 50vh;
+  overflow-y: auto;
+  margin-top: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
+.family-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.2rem;
+  font-size: 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+.family-item:last-child {
+  border-bottom: none;
+}
+.family-item .family-name {
+  font-weight: 500;
+}
+.family-item .family-members {
+  color: var(--text-dim);
+  font-size: 0.7rem;
 }
 
 .deploy-stamp {

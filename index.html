@@ -12,7 +12,40 @@
       <h1>BattleTech Faction Signatures</h1>
       <p class="subtitle">Explore faction identity through mech usage data</p>
       <p class="deploy-stamp" id="deploy-stamp"></p>
+      <button id="settings-btn" title="Settings">⚙</button>
     </header>
+
+    <!-- Settings panel -->
+    <div id="settings-overlay" class="hidden">
+      <div id="settings-panel">
+        <div class="settings-header">
+          <h3>Settings</h3>
+          <button id="settings-close">&times;</button>
+        </div>
+        <div class="settings-body">
+          <div class="settings-section">
+            <h4>Chassis Families</h4>
+            <p class="settings-hint">Related chassis merged for scoring (e.g. Dragon + Grand Dragon). Toggle individual families below.</p>
+            <label class="toggle-row">
+              <input type="checkbox" id="families-global-toggle" checked>
+              <span>Enable family merging (global)</span>
+            </label>
+            <div id="families-list" class="families-list"></div>
+          </div>
+          <div class="settings-section">
+            <h4>Data Mode</h4>
+            <label class="toggle-row">
+              <input type="radio" name="data-mode" value="B" checked>
+              <span><strong>Mode B</strong> — MegaMek × MUL (canon-filtered)</span>
+            </label>
+            <label class="toggle-row">
+              <input type="radio" name="data-mode" value="A">
+              <span><strong>Mode A</strong> — MegaMek only (broader)</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div id="query-area">
       <div id="query-wrapper">
