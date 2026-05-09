@@ -24,7 +24,7 @@
       "Beowulf",
       "Beowulf IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -42,7 +42,7 @@
       "Clint",
       "Clint IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -51,7 +51,7 @@
       "Commando",
       "Commando IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -107,7 +107,7 @@
       "Griffin",
       "Griffin IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -116,7 +116,7 @@
       "Guillotine",
       "Guillotine IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -143,7 +143,7 @@
       "Highlander",
       "Highlander IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -162,7 +162,7 @@
       "Hunchback",
       "Hunchback IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -198,7 +198,7 @@
       "Jenner",
       "Jenner IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -216,7 +216,7 @@
       "Locust",
       "Locust IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -236,7 +236,7 @@
       "Marauder II",
       "Marauder IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -292,7 +292,7 @@
       "Orion",
       "Orion IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -310,7 +310,7 @@
       "Phoenix Hawk",
       "Phoenix Hawk IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -347,7 +347,7 @@
       "Rifleman II",
       "Rifleman IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -376,7 +376,7 @@
       "Shadow Hawk",
       "Shadow Hawk IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -421,7 +421,7 @@
       "Stinger",
       "Stinger IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -439,7 +439,7 @@
       "Thunderbolt",
       "Thunderbolt IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -467,7 +467,7 @@
       "UrbanMech",
       "UrbanMech IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -485,7 +485,7 @@
       "Viking",
       "Viking IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -494,7 +494,7 @@
       "Warhammer",
       "Warhammer IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -512,7 +512,7 @@
       "Wyvern",
       "Wyvern IIC"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   }
 ]

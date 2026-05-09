@@ -385,11 +385,12 @@ function getChassisForEra(eraYear, familyMode) {
   
   if (familyMode === 'off') return eraData;
   
-  // Merge families
+  // Merge families (only enabled ones)
   const merged = {};
   const familyMembers = {}; // groupName -> [chassisNames]
   
   for (const fam of DATA.families) {
+    if (!fam.enabled) continue; // skip disabled families
     for (const ch of fam.chassis) {
       if (!familyMembers[fam.groupName]) familyMembers[fam.groupName] = [];
       familyMembers[fam.groupName].push(ch);
@@ -1243,6 +1244,7 @@ async function init() {
   try {
     const resp = await fetch('app-data.json?v=' + Date.now());
     DATA = await resp.json();
+    applyFamilyOverridesToData(); // apply user's saved family preferences
     console.log('Loaded app-data.json:', Object.keys(DATA.eraData).length, 'eras,', Object.keys(DATA.chassis).length, 'chassis');
     
     // Show deploy timestamp
@@ -1412,10 +1414,50 @@ async function init() {
   }
 }
 
+// ── Family overrides (persisted in localStorage) ──
+// Structure: { "Dragon Family": { enabled: true, chassis: ["Dragon", "Grand Dragon"] }, ... }
+// Only stores overrides — missing entries use DATA.families defaults.
+
+const FAMILY_STORAGE_KEY = 'bt-sig-family-overrides';
+
+function loadFamilyOverrides() {
+  try {
+    return JSON.parse(localStorage.getItem(FAMILY_STORAGE_KEY) || '{}');
+  } catch { return {}; }
+}
+
+function saveFamilyOverrides(overrides) {
+  localStorage.setItem(FAMILY_STORAGE_KEY, JSON.stringify(overrides));
+}
+
+function getEffectiveFamilies() {
+  if (!DATA || !DATA.families) return [];
+  const overrides = loadFamilyOverrides();
+  return DATA.families.map(fam => {
+    const ov = overrides[fam.groupName];
+    return {
+      groupName: fam.groupName,
+      chassis: ov?.chassis || fam.chassis,
+      enabled: ov?.hasOwnProperty('enabled') ? ov.enabled : fam.enabled,
+      isOverridden: !!ov
+    };
+  }).concat(
+    // User-created families (not in DATA.families)
+    Object.entries(overrides)
+      .filter(([name]) => !DATA.families.some(f => f.groupName === name))
+      .map(([name, ov]) => ({
+        groupName: name,
+        chassis: ov.chassis || [],
+        enabled: ov.enabled !== false,
+        isOverridden: true,
+        isCustom: true
+      }))
+  );
+}
+
 function initSettings() {
   const overlay = document.getElementById('settings-overlay');
-  const panel = document.getElementById('settings-panel');
-  
+
   // Open/close
   document.getElementById('settings-btn').addEventListener('click', () => {
     overlay.classList.remove('hidden');
@@ -1427,22 +1469,21 @@ function initSettings() {
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) overlay.classList.add('hidden');
   });
-  
+
   // Global family toggle
   const globalToggle = document.getElementById('families-global-toggle');
   globalToggle.addEventListener('change', () => {
     const bar = document.getElementById('query-bar');
     const current = bar.value.replace(/\bfamily=(on|off)\b/g, '').trim();
-    if (globalToggle.checked) {
-      bar.value = current.replace(/\s+/g, ' ').trim();
-      // family=on is default, so just remove the explicit field
-    } else {
+    if (!globalToggle.checked) {
       bar.value = (current + ' family=off').trim();
+    } else {
+      bar.value = current.replace(/\s+/g, ' ').trim();
     }
     runQuery();
     renderFamiliesList();
   });
-  
+
   // Data mode radio
   document.querySelectorAll('input[name="data-mode"]').forEach(radio => {
     radio.addEventListener('change', () => {
@@ -1452,7 +1493,6 @@ function initSettings() {
         bar.value = (current + ' mode=A').trim();
       } else {
         bar.value = current.replace(/\s+/g, ' ').trim();
-        // mode=B is default
       }
       runQuery();
     });
@@ -1465,22 +1505,157 @@ function renderFamiliesList() {
     container.innerHTML = '<p style="color:var(--text-dim)">Loading...</p>';
     return;
   }
-  
+
   const globalOn = document.getElementById('families-global-toggle').checked;
-  
+  const families = getEffectiveFamilies();
+
   let html = '';
-  for (const fam of DATA.families) {
-    const members = fam.chassis.join(', ');
+  for (const fam of families) {
     const displayName = fam.groupName.replace(/ Family$/, '');
-    html += `<label class="family-item" style="opacity:${globalOn ? 1 : 0.4}">
-      <input type="checkbox" data-family="${fam.groupName}" ${fam.enabled ? 'checked' : ''} ${globalOn ? '' : 'disabled'}>
-      <span>
-        <span class="family-name">${displayName}</span>
-        <span class="family-members">${members}</span>
-      </span>
-    </label>`;
+    const membersStr = fam.chassis.join(', ');
+    html += `<div class="family-item" style="opacity:${globalOn ? 1 : 0.4}">
+      <label class="family-toggle">
+        <input type="checkbox" class="family-enable-cb" data-family="${fam.groupName}" ${fam.enabled ? 'checked' : ''} ${globalOn ? '' : 'disabled'}>
+      </label>
+      <div class="family-info">
+        <span class="family-name">${displayName}${fam.isOverridden ? ' ✎' : ''}</span>
+        <span class="family-members">${membersStr}</span>
+      </div>
+      <button class="family-edit-btn" data-family="${fam.groupName}" title="Edit family" ${globalOn ? '' : 'disabled'}>✎</button>
+    </div>`;
   }
+  html += `<button id="add-family-btn" class="add-family-btn" ${globalOn ? '' : 'disabled'}>+ Add Family</button>`;
   container.innerHTML = html;
+
+  // Wire up per-family toggle
+  container.querySelectorAll('.family-enable-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const overrides = loadFamilyOverrides();
+      const name = cb.dataset.family;
+      if (!overrides[name]) overrides[name] = {};
+      overrides[name].enabled = cb.checked;
+      saveFamilyOverrides(overrides);
+      applyFamilyOverridesToData();
+      runQuery();
+    });
+  });
+
+  // Wire up edit buttons
+  container.querySelectorAll('.family-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => openFamilyEditor(btn.dataset.family));
+  });
+
+  // Wire up add button
+  const addBtn = container.querySelector('#add-family-btn');
+  if (addBtn) addBtn.addEventListener('click', () => openFamilyEditor(null));
+}
+
+function openFamilyEditor(familyName) {
+  const families = getEffectiveFamilies();
+  const fam = familyName ? families.find(f => f.groupName === familyName) : null;
+
+  const name = fam ? fam.groupName.replace(/ Family$/, '') : '';
+  const members = fam ? fam.chassis.join(', ') : '';
+
+  const dialog = document.createElement('div');
+  dialog.className = 'family-editor-overlay';
+  dialog.innerHTML = `
+    <div class="family-editor">
+      <h4>${fam ? 'Edit' : 'New'} Family</h4>
+      <label>Name:<input type="text" id="fed-name" value="${name}" placeholder="e.g. Dragon"></label>
+      <label>Chassis (comma-separated):<input type="text" id="fed-members" value="${members}" placeholder="e.g. Dragon, Grand Dragon, Dragon II"></label>
+      <div class="fed-actions">
+        ${fam ? '<button id="fed-delete" class="fed-delete">Delete</button>' : '<span></span>'}
+        ${fam?.isOverridden ? '<button id="fed-reset" class="fed-reset">Reset to Default</button>' : '<span></span>'}
+        <button id="fed-cancel">Cancel</button>
+        <button id="fed-save" class="fed-save">Save</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+
+  dialog.querySelector('#fed-cancel').addEventListener('click', () => dialog.remove());
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.remove(); });
+
+  dialog.querySelector('#fed-save').addEventListener('click', () => {
+    const newName = dialog.querySelector('#fed-name').value.trim();
+    const newMembers = dialog.querySelector('#fed-members').value.split(',').map(s => s.trim()).filter(Boolean);
+    if (!newName || newMembers.length === 0) return;
+
+    const fullName = newName.endsWith(' Family') ? newName : newName + ' Family';
+    const overrides = loadFamilyOverrides();
+
+    // If renaming, remove old entry
+    if (fam && fam.groupName !== fullName) {
+      delete overrides[fam.groupName];
+    }
+
+    overrides[fullName] = {
+      enabled: fam ? (overrides[fam.groupName]?.enabled ?? fam.enabled) : true,
+      chassis: newMembers
+    };
+    saveFamilyOverrides(overrides);
+    applyFamilyOverridesToData();
+    dialog.remove();
+    renderFamiliesList();
+    runQuery();
+  });
+
+  const deleteBtn = dialog.querySelector('#fed-delete');
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', () => {
+      const overrides = loadFamilyOverrides();
+      if (fam.isCustom) {
+        delete overrides[fam.groupName];
+      } else {
+        // Can't delete a built-in — disable it instead
+        overrides[fam.groupName] = { enabled: false, chassis: fam.chassis };
+      }
+      saveFamilyOverrides(overrides);
+      applyFamilyOverridesToData();
+      dialog.remove();
+      renderFamiliesList();
+      runQuery();
+    });
+  }
+
+  const resetBtn = dialog.querySelector('#fed-reset');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      const overrides = loadFamilyOverrides();
+      delete overrides[fam.groupName];
+      saveFamilyOverrides(overrides);
+      applyFamilyOverridesToData();
+      dialog.remove();
+      renderFamiliesList();
+      runQuery();
+    });
+  }
+}
+
+function applyFamilyOverridesToData() {
+  if (!DATA) return;
+  const overrides = loadFamilyOverrides();
+
+  // Update DATA.families in place from defaults + overrides
+  for (const fam of DATA.families) {
+    const ov = overrides[fam.groupName];
+    if (ov) {
+      if (ov.hasOwnProperty('enabled')) fam.enabled = ov.enabled;
+      if (ov.chassis) fam.chassis = ov.chassis;
+    }
+  }
+
+  // Add custom families
+  for (const [name, ov] of Object.entries(overrides)) {
+    if (!DATA.families.some(f => f.groupName === name)) {
+      DATA.families.push({
+        groupName: name,
+        chassis: ov.chassis || [],
+        enabled: ov.enabled !== false
+      });
+    }
+  }
 }
 
 // Update hash on query
