@@ -56,6 +56,7 @@ function parseQuery(queryStr) {
     span: null,
     avgPref: null,
     weight: null,
+    sig: null,
     year: null,
     era: null,
     family: null,     // 'on' | 'off'
@@ -143,6 +144,10 @@ function parseQuery(queryStr) {
         break;
       case 'weight':
         result.weight = { op, val: parseFloat(value) };
+        break;
+      case 'sig':
+      case 'signature':
+        result.sig = { op, val: parseFloat(value) };
         break;
       case 'year':
         result.year = parseInt(value);
@@ -551,6 +556,25 @@ function executeQuery(parsed) {
       row.sig = computeGlobalSignature(
         row.weights, row.mul || {}, allEraFactions, factionWeightRanges, factions
       );
+    }
+  }
+
+  // Apply sig filter (must be after sig computation)
+  if (parsed.sig) {
+    const sigFilter = parsed.sig;
+    const beforeLen = rows.length;
+    const toRemove = new Set();
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row.sig) { toRemove.add(i); continue; }
+      const sf = factions || Object.keys(row.sig);
+      if (!sf.some(f => compareOp(row.sig[f] || 0, sigFilter.op, sigFilter.val))) {
+        toRemove.add(i);
+      }
+    }
+    // Remove in reverse order to preserve indices
+    for (const i of [...toRemove].sort((a, b) => b - a)) {
+      rows.splice(i, 1);
     }
   }
 
@@ -1108,6 +1132,7 @@ function renderChips(parsed) {
   if (parsed.span) chips.push({ label: `span${parsed.span.op}${parsed.span.val}`, field: 'span' });
   if (parsed.avgPref) chips.push({ label: `avg-pref${parsed.avgPref.op}${parsed.avgPref.val}`, field: 'avg-pref' });
   if (parsed.weight) chips.push({ label: `weight${parsed.weight.op}${parsed.weight.val}`, field: 'weight' });
+  if (parsed.sig) chips.push({ label: `sig${parsed.sig.op}${parsed.sig.val}`, field: 'sig' });
   if (parsed.year) chips.push({ label: 'year=' + parsed.year, field: 'year' });
   if (parsed.era) chips.push({ label: 'era=' + parsed.era, field: 'era' });
   if (parsed.mode !== 'B') chips.push({ label: 'mode=' + parsed.mode, field: 'mode' });
