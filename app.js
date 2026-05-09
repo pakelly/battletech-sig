@@ -1496,6 +1496,13 @@ function sortRowsInPlace(rows, sortSpec) {
         const fCode = field.replace('-preference', '');
         va = a.prefs?.[fCode] || 0;
         vb = b.prefs?.[fCode] || 0;
+      } else if (field.endsWith('-sig') || field.endsWith('-signature')) {
+        const fCode = field.replace(/-sig(nature)?$/, '').toUpperCase();
+        va = a.sig?.[fCode] || 0;
+        vb = b.sig?.[fCode] || 0;
+      } else if (field === 'sig' || field === 'signature') {
+        va = a.sig ? Math.max(0, ...Object.values(a.sig)) : 0;
+        vb = b.sig ? Math.max(0, ...Object.values(b.sig)) : 0;
       } else {
         continue;
       }
