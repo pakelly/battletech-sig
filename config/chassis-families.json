@@ -1,0 +1,518 @@
+[
+  {
+    "groupName": "Arctic Wolf Family",
+    "chassis": [
+      "Arctic Wolf",
+      "Arctic Wolf II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Atlas Family",
+    "chassis": [
+      "Atlas",
+      "Atlas II",
+      "Atlas III"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Beowulf Family",
+    "chassis": [
+      "Beowulf",
+      "Beowulf IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Catapult Family",
+    "chassis": [
+      "Catapult",
+      "Catapult II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Clint Family",
+    "chassis": [
+      "Clint",
+      "Clint IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Commando Family",
+    "chassis": [
+      "Commando",
+      "Commando IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Dragon Family",
+    "chassis": [
+      "Dragon",
+      "Dragon II",
+      "Grand Dragon"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Enforcer Family",
+    "chassis": [
+      "Enforcer",
+      "Enforcer III"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Executioner Variants",
+    "chassis": [
+      "Gladiator (Executioner)",
+      "Gladiator-B (Executioner-B)"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Grand Crusader Family",
+    "chassis": [
+      "Crusader",
+      "Grand Crusader",
+      "Grand Crusader II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Grand Summoner Family",
+    "chassis": [
+      "Thor (Summoner)",
+      "Thor II (Grand Summoner)"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Griffin Family",
+    "chassis": [
+      "Griffin",
+      "Griffin IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Guillotine Family",
+    "chassis": [
+      "Guillotine",
+      "Guillotine IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Hel Family",
+    "chassis": [
+      "Loki (Hellbringer)",
+      "Loki Mk II (Hel)"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Hermes Family",
+    "chassis": [
+      "Hermes",
+      "Hermes II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Highlander Family",
+    "chassis": [
+      "Highlander",
+      "Highlander IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Hollander Family",
+    "chassis": [
+      "Hollander",
+      "Hollander II",
+      "Hollander III"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Hunchback Family",
+    "chassis": [
+      "Hunchback",
+      "Hunchback IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Icarus Family",
+    "chassis": [
+      "Icarus",
+      "Icarus II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Inquisitor Family",
+    "chassis": [
+      "Inquisitor",
+      "Inquisitor II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "JagerMech Family",
+    "chassis": [
+      "JagerMech",
+      "JagerMech III"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Jenner Family",
+    "chassis": [
+      "Jenner",
+      "Jenner IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Kodiak Family",
+    "chassis": [
+      "Kodiak",
+      "Kodiak II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Locust Family",
+    "chassis": [
+      "Locust",
+      "Locust IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Mad Dog Family",
+    "chassis": [
+      "Vulture (Mad Dog)",
+      "Vulture Mk III (Mad Dog Mk III)",
+      "Vulture Mk IV (Mad Dog Mk IV)"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Marauder Family",
+    "chassis": [
+      "Marauder",
+      "Marauder II",
+      "Marauder IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Mercury Family",
+    "chassis": [
+      "Mercury",
+      "Mercury II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Mongoose Family",
+    "chassis": [
+      "Mongoose",
+      "Mongoose II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Naga Family",
+    "chassis": [
+      "Naga",
+      "Naga II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Nexus Family",
+    "chassis": [
+      "Nexus",
+      "Nexus II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Nova Family",
+    "chassis": [
+      "Black Hawk (Nova)",
+      "Black Hawk (Standard)",
+      "Koshi (Mist Lynx)",
+      "Koshi (Standard)"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Orion Family",
+    "chassis": [
+      "Orion",
+      "Orion IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Pack Hunter Family",
+    "chassis": [
+      "Pack Hunter",
+      "Pack Hunter II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Phoenix Hawk Family",
+    "chassis": [
+      "Phoenix Hawk",
+      "Phoenix Hawk IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Raijin Family",
+    "chassis": [
+      "Raijin",
+      "Raijin II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Raptor Family",
+    "chassis": [
+      "Raptor",
+      "Raptor II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Raven Family",
+    "chassis": [
+      "Raven",
+      "Raven II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Rifleman Family",
+    "chassis": [
+      "Rifleman",
+      "Rifleman II",
+      "Rifleman IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Savage Wolf Variants",
+    "chassis": [
+      "Mad Cat (Timber Wolf)",
+      "Mad Cat Mk IV (Savage Wolf)",
+      "Mad Cat Mk IV PR (Savage Wolf)"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Shadow Cat Family",
+    "chassis": [
+      "Shadow Cat",
+      "Shadow Cat II",
+      "Shadow Cat III"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Shadow Hawk Family",
+    "chassis": [
+      "Shadow Hawk",
+      "Shadow Hawk IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Skinwalker Variants",
+    "chassis": [
+      "Ryoken III (Skinwalker)",
+      "Ryoken III-XP (Skinwalker)"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Stag Family",
+    "chassis": [
+      "Stag",
+      "Stag II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Stalker Family",
+    "chassis": [
+      "Stalker",
+      "Stalker II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Stalking Spider Family",
+    "chassis": [
+      "Stalking Spider",
+      "Stalking Spider II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Stinger Family",
+    "chassis": [
+      "Stinger",
+      "Stinger IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Templar Family",
+    "chassis": [
+      "Templar",
+      "Templar III"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Thunderbolt Family",
+    "chassis": [
+      "Thunderbolt",
+      "Thunderbolt IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Titan Family",
+    "chassis": [
+      "Grand Titan",
+      "Titan",
+      "Titan II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Tomahawk Family",
+    "chassis": [
+      "Tomahawk",
+      "Tomahawk II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "UrbanMech Family",
+    "chassis": [
+      "UrbanMech",
+      "UrbanMech IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Ursus Family",
+    "chassis": [
+      "Ursus",
+      "Ursus II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Viking Family",
+    "chassis": [
+      "Viking",
+      "Viking IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Warhammer Family",
+    "chassis": [
+      "Warhammer",
+      "Warhammer IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Wolverine Family",
+    "chassis": [
+      "Wolverine",
+      "Wolverine II"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Wyvern Family",
+    "chassis": [
+      "Wyvern",
+      "Wyvern IIC"
+    ],
+    "enabled": true,
+    "autoDetected": true
+  }
+]

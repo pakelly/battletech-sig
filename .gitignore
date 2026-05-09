@@ -1,0 +1,5 @@
+node_modules/
+*.log
+
+# Large raw MUL data files (keep app-data.json which is the built output)
+mul-*.json
