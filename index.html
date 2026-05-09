@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BattleTech Faction Signatures</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>BattleTech Faction Signatures</h1>
+      <p class="subtitle">Explore faction identity through mech usage data</p>
+    </header>
+
+    <div id="query-area">
+      <div id="query-wrapper">
+        <input type="text" id="query-bar" placeholder="e.g. faction=GreatHouses year=3039 spread>2 sort by spread desc" autocomplete="off" spellcheck="false">
+        <div id="suggest-box" class="hidden"></div>
+      </div>
+      <div id="filter-chips"></div>
+    </div>
+
+    <div id="status-bar">
+      <span id="status-text"></span>
+      <span id="mode-indicator">Mode B (MegaMek × MUL)</span>
+    </div>
+
+    <div id="results-area">
+      <div id="landing">
+        <h2>Example Queries</h2>
+        <div class="example-queries">
+          <button class="example-query" data-query="faction=GreatHouses year=3039 spread>2 sort by spread desc">Great Houses, 3039 — Distinctive mechs</button>
+          <button class="example-query" data-query="faction=(DC OR FS) sort by DC preference desc">DC vs FedSuns — DC favorites first</button>
+          <button class="example-query" data-query="chassis=Awesome">Awesome — Who uses it?</button>
+          <button class="example-query" data-query="faction=DC year=3039">Draconis Combine roster, 3039</button>
+          <button class="example-query" data-query="faction=GreatHouses chassis=Dragon">Dragon across the Great Houses</button>
+          <button class="example-query" data-query="faction=Clans year=3055 spread>2 sort by spread desc">Clans, 3055 — Distinctive OmniMechs</button>
+          <button class="example-query" data-query="faction=GreatHouses year=3039 class=Assault sort by spread desc">Great Houses Assaults, 3039</button>
+          <button class="example-query" data-query="faction=(FWL OR CC) sort by spread desc">FWL vs Capellan — What sets them apart</button>
+        </div>
+      </div>
+      
+      <div id="view-container" class="hidden"></div>
+    </div>
+
+    <!-- Variant drill-down overlay -->
+    <div id="variant-overlay" class="hidden">
+      <div id="variant-panel">
+        <button id="variant-close">&times;</button>
+        <h3 id="variant-title"></h3>
+        <div id="variant-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
