@@ -1442,6 +1442,15 @@ async function init() {
     const resp = await fetch('app-data.json');
     DATA = await resp.json();
     console.log('Loaded app-data.json:', Object.keys(DATA.eraData).length, 'eras,', Object.keys(DATA.chassis).length, 'chassis');
+    
+    // Show deploy timestamp
+    if (DATA._meta?.generated) {
+      const d = new Date(DATA._meta.generated);
+      document.getElementById('deploy-stamp').textContent =
+        'v' + d.toISOString().slice(0, 10).replace(/-/g, '') + '.' +
+        d.toISOString().slice(11, 16).replace(':', '') +
+        ' • ' + DATA._meta.description;
+    }
   } catch (err) {
     console.error('Failed to load app-data.json:', err);
     document.getElementById('status-text').textContent = 'Error loading data!';
