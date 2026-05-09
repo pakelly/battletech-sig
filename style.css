@@ -329,6 +329,21 @@ header h1:hover {
   display: block;
 }
 
+/* Signature column */
+.sig-cell {
+  text-align: center;
+  min-width: 45px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-left: 1px solid var(--border);
+}
+
+.sig-col-header {
+  font-size: 0.75rem;
+  min-width: 45px;
+  border-left: 1px solid var(--border);
+}
+
 /* Heat map colors */
 .heat-1  { background: var(--heat-1); }
 .heat-2  { background: var(--heat-2); }

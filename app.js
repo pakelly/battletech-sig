@@ -79,13 +79,14 @@ function parseQuery(queryStr) {
       let field = tokens[0].toLowerCase();
       let dir = 'desc';
       
-      // Handle "DC preference desc" -> field = preference, faction context = DC
-      if (tokens.length >= 2 && tokens[1].toLowerCase() === 'preference') {
+      // Handle "DC preference desc" or "DC sig desc" -> field = DC-preference or DC-sig
+      if (tokens.length >= 2 && (tokens[1].toLowerCase() === 'preference' || tokens[1].toLowerCase() === 'sig' || tokens[1].toLowerCase() === 'signature')) {
         const factionCode = resolveFaction(tokens[0]);
+        const metric = tokens[1].toLowerCase() === 'preference' ? 'preference' : 'sig';
         if (factionCode) {
-          field = factionCode + '-preference';
+          field = factionCode + '-' + metric;
         } else {
-          field = 'preference';
+          field = metric;
         }
         dir = (tokens[2] || 'desc').toLowerCase();
       } else {
@@ -266,6 +267,31 @@ function computeAvgPref(prefs, scopedFactions) {
   const vals = scopedFactions.map(f => prefs[f] || 0).filter(v => v > 0);
   if (vals.length === 0) return 0;
   return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+/**
+ * Compute signature score per faction: √(scoped_preference × weight_normalized)
+ * weight_normalized: faction's raw weight for this chassis, scaled 1–10 across
+ * all chassis that faction fields in the current result set.
+ * Returns { factionCode: score } for each scoped faction.
+ */
+function computeSignature(prefs, weights, factionWeightRanges, scopedFactions) {
+  if (!prefs) return null;
+  const result = {};
+  for (const f of scopedFactions) {
+    const pref = prefs[f] || 0;
+    const raw = weights[f] || 0;
+    if (raw === 0) { result[f] = 0; continue; }
+    const range = factionWeightRanges[f];
+    let wNorm;
+    if (!range || range.max === range.min) {
+      wNorm = 5;
+    } else {
+      wNorm = 1 + 9 * (raw - range.min) / (range.max - range.min);
+    }
+    result[f] = Math.sqrt(pref * wNorm);
+  }
+  return result;
 }
 
 function compareOp(value, op, threshold) {
@@ -464,11 +490,26 @@ function executeQuery(parsed) {
       spread,
       span,
       avgPref,
+      sig: null,
       variants: data.v,
       mul: data.mul,
       family: data.fam,
       members: data._members
     });
+  }
+
+  // Compute per-faction weight ranges across result set, then signature scores
+  if (factions && factions.length > 1) {
+    const factionWeightRanges = {};
+    for (const f of factions) {
+      const vals = rows.map(r => r.weights[f] || 0).filter(v => v > 0);
+      factionWeightRanges[f] = vals.length > 0
+        ? { min: Math.min(...vals), max: Math.max(...vals) }
+        : { min: 0, max: 0 };
+    }
+    for (const row of rows) {
+      row.sig = computeSignature(row.prefs, row.weights, factionWeightRanges, factions);
+    }
   }
 
   // Sort
@@ -496,6 +537,14 @@ function executeQuery(parsed) {
           const fCode = field.replace('-preference', '').toUpperCase();
           va = a.prefs?.[fCode] || 0;
           vb = b.prefs?.[fCode] || 0;
+        } else if (field.endsWith('-sig') || field.endsWith('-signature')) {
+          const fCode = field.replace(/-sig(nature)?$/, '').toUpperCase();
+          va = a.sig?.[fCode] || 0;
+          vb = b.sig?.[fCode] || 0;
+        } else if (field === 'sig' || field === 'signature') {
+          // Max signature across all factions
+          va = a.sig ? Math.max(...Object.values(a.sig)) : 0;
+          vb = b.sig ? Math.max(...Object.values(b.sig)) : 0;
         } else {
           continue;
         }
@@ -598,9 +647,13 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   
   // Header
   const thead = document.createElement('thead');
+  const hasSig = rows.some(r => r.sig);
   let headerHTML = '<tr><th data-sort="name">Chassis</th><th data-sort="tonnage">Tons</th>';
   for (const f of scopedFactions) {
-    headerHTML += `<th data-sort="${f}-preference" title="${getFactionFullName(f)}">${getFactionLabel(f)}</th>`;
+    headerHTML += `<th data-sort="${f}-preference" title="${getFactionFullName(f)} — Preference">${getFactionLabel(f)}</th>`;
+    if (hasSig) {
+      headerHTML += `<th data-sort="${f}-sig" title="${getFactionFullName(f)} — Signature" class="sig-col-header">Sig</th>`;
+    }
   }
   headerHTML += '<th data-sort="spread">Spread</th><th data-sort="span">Span</th><th data-sort="avg-pref">Avg</th></tr>';
   thead.innerHTML = headerHTML;
@@ -625,6 +678,13 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
         html += '</td>';
       } else {
         html += '<td class="faction-cell no-data">—</td>';
+      }
+      if (hasSig) {
+        const sig = row.sig?.[f] || 0;
+        const sigCls = sig > 0 ? heatClass(sig) : 'no-data';
+        html += sig > 0
+          ? `<td class="sig-cell ${sigCls}"><span class="sig-value">${sig.toFixed(1)}</span></td>`
+          : '<td class="sig-cell no-data">—</td>';
       }
     }
     
@@ -900,6 +960,13 @@ function sortRows(rows, sortSpec, scopedFactions) {
         const fCode = field.replace('-preference', '');
         va = a.prefs?.[fCode] || 0;
         vb = b.prefs?.[fCode] || 0;
+      } else if (field.endsWith('-sig')) {
+        const fCode = field.replace('-sig', '');
+        va = a.sig?.[fCode] || 0;
+        vb = b.sig?.[fCode] || 0;
+      } else if (field === 'sig' || field === 'signature') {
+        va = a.sig ? Math.max(...Object.values(a.sig)) : 0;
+        vb = b.sig ? Math.max(...Object.values(b.sig)) : 0;
       } else {
         continue;
       }
@@ -912,7 +979,7 @@ function sortRows(rows, sortSpec, scopedFactions) {
 
 // ── Auto-Suggest ──
 
-const FIELD_NAMES = ['faction', 'chassis', 'class', 'spread', 'span', 'avg-pref', 'weight', 'year', 'era', 'family', 'industrial', 'mode', 'sort'];
+const FIELD_NAMES = ['faction', 'chassis', 'class', 'spread', 'span', 'avg-pref', 'sig', 'signature', 'weight', 'year', 'era', 'family', 'industrial', 'mode', 'sort'];
 
 function getSuggestions(text, cursorPos) {
   if (!DATA) return [];
