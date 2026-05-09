@@ -1324,6 +1324,7 @@ function runQuery() {
     
     if (hideIndustrial && meta.industrial) continue;
     if (parsed.year && meta.intro && meta.intro > parsed.year) continue;
+    if (parsed.tons && meta.tons && !compareOp(meta.tons, parsed.tons.op, parsed.tons.val)) continue;
     
     let weights = { ...data.w };
     if (modeB) {
@@ -1353,6 +1354,11 @@ function runQuery() {
       if (!anyPass) continue;
     }
     
+    // Faction-specific preference filter
+    if (parsed.factionPref.length > 0 && prefs) {
+      if (!parsed.factionPref.every(fp => compareOp(prefs[fp.faction] || 0, fp.op, fp.val))) continue;
+    }
+    
     const hasAnyWeight = (scopedFactions.length > 0 ? scopedFactions : Object.keys(weights)).some(f => (weights[f] || 0) > 0);
     if (!hasAnyWeight) continue;
     
@@ -1364,11 +1370,65 @@ function runQuery() {
       spread,
       span,
       avgPref,
+      sig: null,
       variants: data.v,
       mul: data.mul,
       family: data.fam,
       members: data._members
     });
+  }
+  
+  // Compute global signature scores
+  if (scopedFactions.length > 0) {
+    const allEraFactions = [];
+    const seenFactions = new Set();
+    for (const [, d] of Object.entries(chassisData)) {
+      for (const f of Object.keys(d.mul || {})) {
+        if (!seenFactions.has(f)) { seenFactions.add(f); allEraFactions.push(f); }
+      }
+    }
+    
+    const factionWeightRanges = {};
+    for (const [, d] of Object.entries(chassisData)) {
+      const mul = d.mul || {};
+      for (const f of Object.keys(mul)) {
+        const w = d.w[f] || 0;
+        if (w > 0) {
+          if (!factionWeightRanges[f]) {
+            factionWeightRanges[f] = { min: w, max: w };
+          } else {
+            factionWeightRanges[f].min = Math.min(factionWeightRanges[f].min, w);
+            factionWeightRanges[f].max = Math.max(factionWeightRanges[f].max, w);
+          }
+        }
+      }
+    }
+    
+    for (const row of rows) {
+      row.sig = computeGlobalSignature(
+        row.weights, row.mul || {}, allEraFactions, factionWeightRanges, scopedFactions
+      );
+    }
+  }
+  
+  // Apply post-computation filters (sig)
+  if (parsed.sig || parsed.factionSig.length > 0) {
+    for (let i = rows.length - 1; i >= 0; i--) {
+      const row = rows[i];
+      if (parsed.sig) {
+        if (!row.sig) { rows.splice(i, 1); continue; }
+        const sf = scopedFactions.length > 0 ? scopedFactions : Object.keys(row.sig);
+        if (!sf.some(f => compareOp(row.sig[f] || 0, parsed.sig.op, parsed.sig.val))) {
+          rows.splice(i, 1); continue;
+        }
+      }
+      if (parsed.factionSig.length > 0) {
+        if (!row.sig) { rows.splice(i, 1); continue; }
+        if (!parsed.factionSig.every(fs => compareOp(row.sig[fs.faction] || 0, fs.op, fs.val))) {
+          rows.splice(i, 1); continue;
+        }
+      }
+    }
   }
   
   // Sort
