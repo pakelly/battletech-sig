@@ -270,18 +270,38 @@ function computeAvgPref(prefs, scopedFactions) {
 }
 
 /**
- * Compute signature score per faction: √(scoped_preference × weight_normalized)
- * weight_normalized: faction's raw weight for this chassis, scaled 1–10 across
- * all chassis that faction fields in the current result set.
- * Returns { factionCode: score } for each scoped faction.
+ * Compute GLOBAL signature score per faction: √(globalPref × weight_normalized)
+ * 
+ * globalPref: faction's weight normalized 1–10 against ALL factions in the era
+ *   (zeros included for factions without MUL confirmation). This is stable —
+ *   it doesn't change based on which factions are in the user's search scope.
+ * 
+ * weight_normalized: faction's raw weight scaled 1–10 across all chassis that
+ *   faction fields in the entire era (not just the filtered result set).
+ * 
+ * Returns { factionCode: score } for the requested factions.
  */
-function computeSignature(prefs, weights, factionWeightRanges, scopedFactions) {
-  if (!prefs) return null;
+function computeGlobalSignature(weights, mulData, allEraFactions, factionWeightRanges, factions) {
   const result = {};
-  for (const f of scopedFactions) {
-    const pref = prefs[f] || 0;
-    const raw = weights[f] || 0;
+  
+  // Global preference: normalize this chassis's weights against ALL era factions
+  const allWeights = allEraFactions.map(f => (mulData[f] && weights[f]) ? weights[f] : 0);
+  const mx = Math.max(...allWeights);
+  const mn = Math.min(...allWeights); // will be 0 if any faction doesn't field it
+  
+  for (const f of factions) {
+    const raw = (mulData[f] && weights[f]) ? weights[f] : 0;
     if (raw === 0) { result[f] = 0; continue; }
+    
+    // Global preference
+    let globalPref;
+    if (mx === mn) {
+      globalPref = 5;
+    } else {
+      globalPref = 1 + 9 * (raw - mn) / (mx - mn);
+    }
+    
+    // Weight normalized across all chassis this faction fields in the era
     const range = factionWeightRanges[f];
     let wNorm;
     if (!range || range.max === range.min) {
@@ -289,7 +309,8 @@ function computeSignature(prefs, weights, factionWeightRanges, scopedFactions) {
     } else {
       wNorm = 1 + 9 * (raw - range.min) / (range.max - range.min);
     }
-    result[f] = Math.sqrt(pref * wNorm);
+    
+    result[f] = Math.sqrt(globalPref * wNorm);
   }
   return result;
 }
@@ -498,17 +519,38 @@ function executeQuery(parsed) {
     });
   }
 
-  // Compute per-faction weight ranges across result set, then signature scores
-  if (factions && factions.length > 1) {
-    const factionWeightRanges = {};
-    for (const f of factions) {
-      const vals = rows.map(r => r.weights[f] || 0).filter(v => v > 0);
-      factionWeightRanges[f] = vals.length > 0
-        ? { min: Math.min(...vals), max: Math.max(...vals) }
-        : { min: 0, max: 0 };
+  // Compute global signature scores (stable across scope changes)
+  if (factions && factions.length > 0) {
+    // Build list of ALL factions present in this era (for global pref normalization)
+    const allEraFactions = [];
+    const seenFactions = new Set();
+    for (const [, d] of Object.entries(chassisData)) {
+      for (const f of Object.keys(d.mul || {})) {
+        if (!seenFactions.has(f)) { seenFactions.add(f); allEraFactions.push(f); }
+      }
     }
+    
+    // Build per-faction weight ranges across ENTIRE era (not just filtered results)
+    const factionWeightRanges = {};
+    for (const [, d] of Object.entries(chassisData)) {
+      const mul = d.mul || {};
+      for (const f of Object.keys(mul)) {
+        const w = d.w[f] || 0;
+        if (w > 0) {
+          if (!factionWeightRanges[f]) {
+            factionWeightRanges[f] = { min: w, max: w };
+          } else {
+            factionWeightRanges[f].min = Math.min(factionWeightRanges[f].min, w);
+            factionWeightRanges[f].max = Math.max(factionWeightRanges[f].max, w);
+          }
+        }
+      }
+    }
+    
     for (const row of rows) {
-      row.sig = computeSignature(row.prefs, row.weights, factionWeightRanges, factions);
+      row.sig = computeGlobalSignature(
+        row.weights, row.mul || {}, allEraFactions, factionWeightRanges, factions
+      );
     }
   }
 
