@@ -75,6 +75,13 @@ header h1:hover {
   color: var(--accent);
 }
 
+.deploy-stamp {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  opacity: 0.5;
+  margin: 0;
+}
+
 #reset-btn {
   position: absolute;
   right: 8px;
