@@ -857,9 +857,9 @@ function getSuggestions(text, cursorPos) {
         return items.filter(i => i.text.toLowerCase().startsWith(lower) || i.hint.toLowerCase().includes(lower)).slice(0, 12);
       }
       case 'chassis': {
-        // Suggest from current era (or 3049 default), including family group names
-        const eraYear = String(currentEraYear || 3049);
-        const chassisData = getChassisForEra(eraYear, 'on');
+        // Suggest from latest era for broadest coverage
+        const latestEra = DATA.eras[DATA.eras.length - 1]?.year || 3160;
+        const chassisData = getChassisForEra(String(latestEra), 'on');
         const names = Object.keys(chassisData).sort();
         return names.filter(n => n.toLowerCase().includes(lower))
           .slice(0, 12)
