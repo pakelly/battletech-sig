@@ -188,20 +188,134 @@ header h1:hover {
 .family-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.3rem 0.2rem;
+  gap: 0.4rem;
+  padding: 0.35rem 0.2rem;
   font-size: 0.8rem;
   border-bottom: 1px solid var(--border);
 }
 .family-item:last-child {
   border-bottom: none;
 }
-.family-item .family-name {
-  font-weight: 500;
+.family-toggle {
+  flex-shrink: 0;
 }
-.family-item .family-members {
+.family-info {
+  flex: 1;
+  min-width: 0;
+}
+.family-info .family-name {
+  font-weight: 500;
+  display: block;
+}
+.family-info .family-members {
   color: var(--text-dim);
   font-size: 0.7rem;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.family-edit-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  padding: 0.15rem 0.4rem;
+  cursor: pointer;
+}
+.family-edit-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.add-family-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: var(--bg-raised);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.add-family-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Family editor dialog */
+.family-editor-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.family-editor {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.2rem;
+  width: min(360px, 90vw);
+}
+.family-editor h4 {
+  margin: 0 0 0.75rem 0;
+  color: var(--accent);
+}
+.family-editor label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 0.6rem;
+}
+.family-editor input[type="text"] {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.4rem 0.6rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 0.85rem;
+  box-sizing: border-box;
+}
+.family-editor input[type="text"]:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+.fed-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+.fed-actions button {
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.fed-save {
+  background: var(--accent) !important;
+  color: var(--bg) !important;
+  border-color: var(--accent) !important;
+}
+.fed-delete {
+  color: #e55 !important;
+  border-color: #e55 !important;
+  margin-right: auto;
+}
+.fed-reset {
+  color: var(--text-dim) !important;
 }
 
 .deploy-stamp {
