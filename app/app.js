@@ -857,11 +857,17 @@ function getSuggestions(text, cursorPos) {
         return items.filter(i => i.text.toLowerCase().startsWith(lower) || i.hint.toLowerCase().includes(lower)).slice(0, 12);
       }
       case 'chassis': {
-        const era = DATA.eraData['3049'] || Object.values(DATA.eraData)[0] || {};
-        const names = Object.keys(era).sort();
+        // Suggest from current era (or 3049 default), including family group names
+        const eraYear = String(currentEraYear || 3049);
+        const chassisData = getChassisForEra(eraYear, 'on');
+        const names = Object.keys(chassisData).sort();
         return names.filter(n => n.toLowerCase().includes(lower))
           .slice(0, 12)
-          .map(n => ({ text: n, hint: DATA.chassis[n]?.class || '' }));
+          .map(n => {
+            const members = chassisData[n]?._members;
+            const hint = members ? members.join(', ') : (DATA.chassis[n]?.class || '');
+            return { text: n, hint };
+          });
       }
       case 'class':
         return ['Light', 'Medium', 'Heavy', 'Assault']

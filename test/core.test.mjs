@@ -59,6 +59,7 @@ before(() => {
         sortRowsInPlace,
         resolveFaction,
         resolveFactionGroup,
+        resolveChassis,
         determineView,
       };
     }
@@ -578,5 +579,30 @@ describe('End-to-End Sort — sig desc produces correct order', () => {
 
     assert.strictEqual(rows[0].name, 'Hatamoto-Chi',
       `Expected Hatamoto-Chi first with DC-sig sort, got ${rows[0].name}`);
+  });
+});
+
+// ════════════════════════════════════════════════════════
+// 11. CHASSIS RESOLUTION & FAMILY NAMES
+// ════════════════════════════════════════════════════════
+
+describe('Chassis Resolution', () => {
+  it('resolves exact chassis name', () => {
+    assert.strictEqual(F.resolveChassis('Atlas'), 'Atlas');
+  });
+
+  it('resolves case-insensitively', () => {
+    assert.strictEqual(F.resolveChassis('atlas'), 'Atlas');
+    assert.strictEqual(F.resolveChassis('ATLAS'), 'Atlas');
+  });
+
+  it('resolves partial match', () => {
+    const result = F.resolveChassis('hatch');
+    assert.strictEqual(result, 'Hatchetman');
+  });
+
+  it('resolves model prefix to a chassis', () => {
+    const result = F.resolveChassis('AWS');
+    assert.strictEqual(result, 'Awesome');
   });
 });
