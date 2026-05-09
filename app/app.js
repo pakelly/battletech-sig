@@ -1450,7 +1450,7 @@ function sortRowsInPlace(rows, sortSpec) {
 
 async function init() {
   try {
-    const resp = await fetch('app-data.json');
+    const resp = await fetch('app-data.json?v=' + Date.now());
     DATA = await resp.json();
     console.log('Loaded app-data.json:', Object.keys(DATA.eraData).length, 'eras,', Object.keys(DATA.chassis).length, 'chassis');
     
