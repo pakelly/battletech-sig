@@ -514,5 +514,19 @@
     ],
     "enabled": false,
     "autoDetected": true
+  },
+  {
+    "groupName": "Hatamoto Family",
+    "chassis": [
+      "Hatamoto-Chi",
+      "Hatamoto-Hi",
+      "Hatamoto-Kaze",
+      "Hatamoto-Ku",
+      "Hatamoto-Mizo",
+      "Hatamoto-Suna",
+      "Hatamoto-Godai",
+      "Hatamoto-Kaeru"
+    ],
+    "enabled": true
   }
 ]
