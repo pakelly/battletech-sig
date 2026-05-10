@@ -279,6 +279,14 @@ for (const [eraYear, chassisEntries] of Object.entries(scores.eras)) {
   appData.eraData[eraYear] = eraOut;
 }
 
+// Collect omni status from scores data (any era where chassis appears)
+const omniMap = {};
+for (const [eraYear, chassisEntries] of Object.entries(scores.eras)) {
+  for (const [name, data] of Object.entries(chassisEntries)) {
+    if (data.omni && !omniMap[name]) omniMap[name] = data.omni;
+  }
+}
+
 // Fill chassis metadata
 for (const name of allChassis) {
   const meta = chassisMeta[name];
@@ -288,7 +296,8 @@ for (const name of allChassis) {
     class: weightClass(tonnage),
     intro: meta?.introDate || null,
     industrial: meta?.type === 'IndustrialMech',
-    tech: meta?.tech || null
+    tech: meta?.tech || null,
+    omni: !!omniMap[name]
   };
 }
 
