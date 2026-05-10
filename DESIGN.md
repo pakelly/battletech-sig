@@ -80,13 +80,17 @@ The tool shows two complementary values for each faction+chassis cell: raw weigh
 
 **Use case:** "I'm building a DC force — what should I buy?" Sort by DC signature to get the faction's most totemic mechs.
 
-**Formula:** `raw_sig = faction_weight × faction_share`
+**Formula:** `raw_sig = weight × max(0, z-score)`
 
 Where:
-- **faction_weight** = the faction's raw MegaMek weight for this chassis. Higher weight = the faction fields this mech more heavily. No normalization — the raw weight IS the signal.
-- **faction_share** = `faction_weight / sum(all MUL-confirmed faction weights for this chassis)`. This is the faction's "market share" of this chassis. If DC has weight 8 for Dragon and the total across all MUL-confirmed factions is 17, DC's share is 47.1%.
+- **weight** = the faction's raw MegaMek weight for this chassis (1–10).
+- **z-score** = `(weight - mean) / stddev` across ALL factions in the era (non-fielding factions counted as 0). This measures how much this faction's usage stands out from the crowd, including the "crowd" of factions that don't field it at all.
 
-The product `weight × share` is dimensionally weight — it's the faction's **effective claim** on this chassis, adjusted for how exclusively they own it. A mech the faction fields heavily AND that few others field produces a high score. A mech everyone uses (low share) or the faction barely fields (low weight) produces a low score.
+**Why z-score works:** MegaMek weights are relative probabilities within each faction's generation table — they're not comparable across factions by simple summation. But comparing ranks and statistical position IS valid. The z-score measures "how unusual is this faction's weight for this chassis compared to everyone else."
+
+**Why include zeros:** Non-fielding factions are counted as weight 0. This makes exclusivity emerge naturally — a mech only one faction fields has ~39 zeros pulling the mean down, so that faction's z-score is enormous. No separate scarcity factor needed.
+
+The product `weight × z` captures both signals: high weight (the faction fields it a lot) AND high z (the faction stands out from the crowd). A DC-exclusive mech at weight 6 scores high because z ≈ 6. A ubiquitous mech at weight 6 scores low because z ≈ 1.
 
 **Display: Tier 1–5 (quintile bins).** The raw `weight × share` values are binned into quintiles across all chassis the faction fields in the era:
 - **Tier 1** (top 20%) — Faction-defining. The totemic mechs.
@@ -108,16 +112,14 @@ Raw `weight × share` avoids both problems. It stays in meaningful units (weight
 
 **Expected results — DC in 3039:**
 
-| Chassis | DC Weight | Share | W×S | Tier | Why |
-|---------|----------|-------|-----|------|-----|
-| Hatamoto-Chi | 6 | 100% | 6.00 | 1 | DC-exclusive, solid weight |
-| Grand Dragon | 6 | 75% | 4.50 | 1 | Mostly DC |
-| Dragon | 8 | 47% | 3.76 | 1 | High weight overcomes shared access |
-| Panther | 8 | 24% | 1.88 | 1 | High weight, moderate share |
-| Griffin | 6 | 7% | 0.41 | 3 | Common IS mech, not distinctive |
-| Wasp | 8 | 7% | 0.53 | 2 | High weight but everyone has it |
-| Locust | 6 | 5% | 0.30 | 4 | Ubiquitous |
-| Exterminator | 3 | 19% | 0.56 | 2 | Moderate share but low weight |
+| Chassis | DC Weight | z-score | W×z | Tier | Why |
+|---------|----------|---------|-----|------|-----|
+| Hatamoto-Chi | 6 | ~5.9 | ~35.5 | 1 | DC-exclusive, massive z |
+| Dragon | 8 | ~4.6 | ~36.7 | 1 | Near-exclusive, high weight |
+| Zeus | (0) | — | — | — | Not fielded by DC |
+| Victor | 5 | ~1.0 | ~5.0 | 3–4 | Everyone has it, DC isn't special |
+| Griffin | 6 | ~1.3 | ~7.6 | 2–3 | Common IS mech, slightly above average |
+| Locust | 6 | ~0.8 | ~5.0 | 3–4 | Ubiquitous, DC doesn't stand out |
 
 #### When to Use Which
 

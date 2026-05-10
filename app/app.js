@@ -295,25 +295,32 @@ function computeAvgWeight(weights, scopedFactions) {
 }
 
 /**
- * Compute signature score per faction: weight × faction_share
+ * Compute signature score per faction: weight × max(0, z-score)
  * 
- * faction_share = faction_weight / sum(all MUL-confirmed faction weights)
+ * z-score = (weight - mean) / stddev across ALL factions in the era,
+ * with non-fielding factions counted as 0. This captures both usage
+ * intensity and exclusivity in a single statistically sound metric.
  * 
- * This is the faction's "effective claim" on this chassis — how heavily they
- * use it, adjusted for how exclusively they own it. Dimensionally weight.
- * 
+ * allFactionCodes: array of ALL faction codes in the era (for zero-padding)
  * Returns { factionCode: rawSigScore } for the requested factions.
  */
-function computeSignature(weights, mulData, factions) {
+function computeSignature(weights, mulData, factions, allFactionCodes) {
   const result = {};
   
-  // Total weight across all MUL-confirmed factions for this chassis
-  const totalWeight = Object.keys(mulData).reduce((sum, f) => sum + (weights[f] || 0), 0);
+  // Build weight array for ALL factions (0 for non-fielders)
+  const allWeights = allFactionCodes.map(f => (mulData[f] && weights[f]) ? weights[f] : 0);
+  const n = allWeights.length;
+  if (n === 0) { for (const f of factions) result[f] = 0; return result; }
+  
+  const mean = allWeights.reduce((a, b) => a + b, 0) / n;
+  const variance = allWeights.reduce((s, w) => s + (w - mean) ** 2, 0) / n;
+  const stddev = Math.sqrt(variance);
   
   for (const f of factions) {
-    const raw = (mulData[f] && weights[f]) ? weights[f] : 0;
-    if (raw === 0 || totalWeight === 0) { result[f] = 0; continue; }
-    result[f] = raw * (raw / totalWeight);
+    const w = (mulData[f] && weights[f]) ? weights[f] : 0;
+    if (w === 0 || stddev === 0) { result[f] = 0; continue; }
+    const z = (w - mean) / stddev;
+    result[f] = w * Math.max(0, z);
   }
   return result;
 }
@@ -1202,10 +1209,11 @@ function runQuery() {
     });
   }
   
-  // Compute global signature scores (weight × share)
+  // Compute global signature scores (weight × z-score)
+  const allFactionCodes = Object.keys(DATA.factions);
   if (scopedFactions.length > 0) {
     for (const row of rows) {
-      row.sig = computeSignature(row.weights, row.mul || {}, scopedFactions);
+      row.sig = computeSignature(row.weights, row.mul || {}, scopedFactions, allFactionCodes);
     }
     
     // Compute tiers per faction (quintile bins across all rows)
