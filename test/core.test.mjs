@@ -309,17 +309,17 @@ describe('Global Signature (weight × share)', () => {
 });
 
 describe('Signature Tiers', () => {
-  it('assigns tier 5 to top 20%', () => {
-    // 10 items, sorted desc. Top 2 should be tier 5.
+  it('assigns tier 1 to top 20% (most iconic)', () => {
+    // 10 items, sorted desc. Top 2 should be tier 1.
     const values = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
-    assert.strictEqual(F.assignTier(0, values.length), 5);
-    assert.strictEqual(F.assignTier(1, values.length), 5);
+    assert.strictEqual(F.assignTier(0, values.length), 1);
+    assert.strictEqual(F.assignTier(1, values.length), 1);
   });
 
-  it('assigns tier 1 to bottom 20%', () => {
+  it('assigns tier 5 to bottom 20% (incidental)', () => {
     const values = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
-    assert.strictEqual(F.assignTier(8, values.length), 1);
-    assert.strictEqual(F.assignTier(9, values.length), 1);
+    assert.strictEqual(F.assignTier(8, values.length), 5);
+    assert.strictEqual(F.assignTier(9, values.length), 5);
   });
 
   it('assigns tier 3 to middle', () => {
@@ -329,7 +329,7 @@ describe('Signature Tiers', () => {
   });
 
   it('handles single item', () => {
-    assert.strictEqual(F.assignTier(0, 1), 5);
+    assert.strictEqual(F.assignTier(0, 1), 1);
   });
 });
 

@@ -98,11 +98,11 @@ Where:
 The product `weight × share` is dimensionally weight — it's the faction's **effective claim** on this chassis, adjusted for how exclusively they own it. A mech the faction fields heavily AND that few others field produces a high score. A mech everyone uses (low share) or the faction barely fields (low weight) produces a low score.
 
 **Display: Tier 1–5 (quintile bins).** The raw `weight × share` values are binned into quintiles across all chassis the faction fields in the era:
-- **Tier 5** (top 20%) — Faction-defining. The totemic mechs.
-- **Tier 4** (next 20%) — Strong identity markers.
+- **Tier 1** (top 20%) — Faction-defining. The totemic mechs.
+- **Tier 2** (next 20%) — Strong identity markers.
 - **Tier 3** (middle 20%) — Moderate association.
-- **Tier 2** (next 20%) — Weak association.
-- **Tier 1** (bottom 20%) — Incidental. The faction has access but it's not "theirs."
+- **Tier 4** (next 20%) — Weak association.
+- **Tier 5** (bottom 20%) — Incidental. The faction has access but it's not "theirs."
 
 Tiers are honest about precision — raw scores of 0.54 and 0.56 aren't meaningfully different, and tiers don't pretend they are. The underlying raw value is still used for sorting and filtering.
 
@@ -119,14 +119,14 @@ Raw `weight × share` avoids both problems. It stays in meaningful units (weight
 
 | Chassis | DC Weight | Share | W×S | Tier | Why |
 |---------|----------|-------|-----|------|-----|
-| Hatamoto-Chi | 6 | 100% | 6.00 | 5 | DC-exclusive, solid weight |
-| Grand Dragon | 6 | 75% | 4.50 | 5 | Mostly DC |
-| Dragon | 8 | 47% | 3.76 | 5 | High weight overcomes shared access |
-| Panther | 8 | 24% | 1.88 | 5 | High weight, moderate share |
+| Hatamoto-Chi | 6 | 100% | 6.00 | 1 | DC-exclusive, solid weight |
+| Grand Dragon | 6 | 75% | 4.50 | 1 | Mostly DC |
+| Dragon | 8 | 47% | 3.76 | 1 | High weight overcomes shared access |
+| Panther | 8 | 24% | 1.88 | 1 | High weight, moderate share |
 | Griffin | 6 | 7% | 0.41 | 3 | Common IS mech, not distinctive |
-| Wasp | 8 | 7% | 0.53 | 4 | High weight but everyone has it |
-| Locust | 6 | 5% | 0.30 | 2 | Ubiquitous |
-| Exterminator | 3 | 19% | 0.56 | 4 | Moderate share but low weight |
+| Wasp | 8 | 7% | 0.53 | 2 | High weight but everyone has it |
+| Locust | 6 | 5% | 0.30 | 4 | Ubiquitous |
+| Exterminator | 3 | 19% | 0.56 | 2 | Moderate share but low weight |
 
 #### When to Use Which
 
@@ -149,7 +149,7 @@ All of these work as both filters (`field>value`) and sort targets (`sort by fie
 | **weight** | Raw MegaMek weight. Not normalized. | `weight>5` |
 | **tons** | Chassis tonnage. | `tons>50`, `tons=75` |
 | **sig** | Global signature raw score (weight × share). Max across scoped factions. | `sig>3` |
-| **sig-tier** | Signature tier (1–5 quintile). | `sig-tier>3` |
+| **sig-tier** | Signature tier (1=most iconic, 5=incidental). | `sig-tier<3` |
 | **DC-pref** | Faction-specific scoped preference. | `DC-pref>8` |
 | **DC-sig** | Faction-specific global signature raw score. | `DC-sig>3` |
 
