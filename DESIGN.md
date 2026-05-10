@@ -419,7 +419,7 @@ A secondary input field below the query bar and filter chips for composing one f
 - On clear (click ✕): blank the field, no query change.
 - Autocomplete reuses `getSuggestions()` — no duplicate logic.
 
-**Location in DOM:** Below `#filter-chips`, above `#status-bar`.
+**Location in DOM:** Below `#query-bar`, above `#filter-chips`.
 
 ---
 
