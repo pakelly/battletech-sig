@@ -19,39 +19,12 @@
     "autoDetected": true
   },
   {
-    "groupName": "Beowulf Family",
-    "chassis": [
-      "Beowulf",
-      "Beowulf IIC"
-    ],
-    "enabled": false,
-    "autoDetected": true
-  },
-  {
     "groupName": "Catapult Family",
     "chassis": [
       "Catapult",
       "Catapult II"
     ],
     "enabled": true,
-    "autoDetected": true
-  },
-  {
-    "groupName": "Clint Family",
-    "chassis": [
-      "Clint",
-      "Clint IIC"
-    ],
-    "enabled": false,
-    "autoDetected": true
-  },
-  {
-    "groupName": "Commando Family",
-    "chassis": [
-      "Commando",
-      "Commando IIC"
-    ],
-    "enabled": false,
     "autoDetected": true
   },
   {
@@ -85,7 +58,6 @@
   {
     "groupName": "Grand Crusader Family",
     "chassis": [
-      "Crusader",
       "Grand Crusader",
       "Grand Crusader II"
     ],
@@ -99,24 +71,6 @@
       "Thor II (Grand Summoner)"
     ],
     "enabled": true,
-    "autoDetected": true
-  },
-  {
-    "groupName": "Griffin Family",
-    "chassis": [
-      "Griffin",
-      "Griffin IIC"
-    ],
-    "enabled": false,
-    "autoDetected": true
-  },
-  {
-    "groupName": "Guillotine Family",
-    "chassis": [
-      "Guillotine",
-      "Guillotine IIC"
-    ],
-    "enabled": false,
     "autoDetected": true
   },
   {
@@ -138,15 +92,6 @@
     "autoDetected": true
   },
   {
-    "groupName": "Highlander Family",
-    "chassis": [
-      "Highlander",
-      "Highlander IIC"
-    ],
-    "enabled": false,
-    "autoDetected": true
-  },
-  {
     "groupName": "Hollander Family",
     "chassis": [
       "Hollander",
@@ -154,15 +99,6 @@
       "Hollander III"
     ],
     "enabled": true,
-    "autoDetected": true
-  },
-  {
-    "groupName": "Hunchback Family",
-    "chassis": [
-      "Hunchback",
-      "Hunchback IIC"
-    ],
-    "enabled": false,
     "autoDetected": true
   },
   {
@@ -193,30 +129,12 @@
     "autoDetected": true
   },
   {
-    "groupName": "Jenner Family",
-    "chassis": [
-      "Jenner",
-      "Jenner IIC"
-    ],
-    "enabled": false,
-    "autoDetected": true
-  },
-  {
     "groupName": "Kodiak Family",
     "chassis": [
       "Kodiak",
       "Kodiak II"
     ],
     "enabled": true,
-    "autoDetected": true
-  },
-  {
-    "groupName": "Locust Family",
-    "chassis": [
-      "Locust",
-      "Locust IIC"
-    ],
-    "enabled": false,
     "autoDetected": true
   },
   {
@@ -233,8 +151,7 @@
     "groupName": "Marauder Family",
     "chassis": [
       "Marauder",
-      "Marauder II",
-      "Marauder IIC"
+      "Marauder II"
     ],
     "enabled": false,
     "autoDetected": true
@@ -287,30 +204,12 @@
     "autoDetected": true
   },
   {
-    "groupName": "Orion Family",
-    "chassis": [
-      "Orion",
-      "Orion IIC"
-    ],
-    "enabled": false,
-    "autoDetected": true
-  },
-  {
     "groupName": "Pack Hunter Family",
     "chassis": [
       "Pack Hunter",
       "Pack Hunter II"
     ],
     "enabled": true,
-    "autoDetected": true
-  },
-  {
-    "groupName": "Phoenix Hawk Family",
-    "chassis": [
-      "Phoenix Hawk",
-      "Phoenix Hawk IIC"
-    ],
-    "enabled": false,
     "autoDetected": true
   },
   {
@@ -344,8 +243,7 @@
     "groupName": "Rifleman Family",
     "chassis": [
       "Rifleman",
-      "Rifleman II",
-      "Rifleman IIC"
+      "Rifleman II"
     ],
     "enabled": false,
     "autoDetected": true
@@ -368,15 +266,6 @@
       "Shadow Cat III"
     ],
     "enabled": true,
-    "autoDetected": true
-  },
-  {
-    "groupName": "Shadow Hawk Family",
-    "chassis": [
-      "Shadow Hawk",
-      "Shadow Hawk IIC"
-    ],
-    "enabled": false,
     "autoDetected": true
   },
   {
@@ -416,30 +305,12 @@
     "autoDetected": true
   },
   {
-    "groupName": "Stinger Family",
-    "chassis": [
-      "Stinger",
-      "Stinger IIC"
-    ],
-    "enabled": false,
-    "autoDetected": true
-  },
-  {
     "groupName": "Templar Family",
     "chassis": [
       "Templar",
       "Templar III"
     ],
     "enabled": true,
-    "autoDetected": true
-  },
-  {
-    "groupName": "Thunderbolt Family",
-    "chassis": [
-      "Thunderbolt",
-      "Thunderbolt IIC"
-    ],
-    "enabled": false,
     "autoDetected": true
   },
   {
@@ -462,15 +333,6 @@
     "autoDetected": true
   },
   {
-    "groupName": "UrbanMech Family",
-    "chassis": [
-      "UrbanMech",
-      "UrbanMech IIC"
-    ],
-    "enabled": false,
-    "autoDetected": true
-  },
-  {
     "groupName": "Ursus Family",
     "chassis": [
       "Ursus",
@@ -480,39 +342,12 @@
     "autoDetected": true
   },
   {
-    "groupName": "Viking Family",
-    "chassis": [
-      "Viking",
-      "Viking IIC"
-    ],
-    "enabled": false,
-    "autoDetected": true
-  },
-  {
-    "groupName": "Warhammer Family",
-    "chassis": [
-      "Warhammer",
-      "Warhammer IIC"
-    ],
-    "enabled": false,
-    "autoDetected": true
-  },
-  {
     "groupName": "Wolverine Family",
     "chassis": [
       "Wolverine",
       "Wolverine II"
     ],
     "enabled": true,
-    "autoDetected": true
-  },
-  {
-    "groupName": "Wyvern Family",
-    "chassis": [
-      "Wyvern",
-      "Wyvern IIC"
-    ],
-    "enabled": false,
     "autoDetected": true
   },
   {
