@@ -223,6 +223,14 @@ const appData = {
 
 const allChassis = new Set();
 
+// Build chassis → family group name lookup from config
+const chassisToFamily = {};
+for (const fam of families) {
+  for (const ch of fam.chassis) {
+    chassisToFamily[ch] = fam.groupName;
+  }
+}
+
 for (const [eraYear, chassisEntries] of Object.entries(scores.eras)) {
   const eraOut = {};
   const mulEra = yearToMulEra[parseInt(eraYear)];
@@ -249,8 +257,10 @@ for (const [eraYear, chassisEntries] of Object.entries(scores.eras)) {
       }
     }
     
-    if (data.family) {
-      entry.fam = data.family;
+    // Stamp family membership from chassis-families.json config
+    const famName = chassisToFamily[chassisName];
+    if (famName) {
+      entry.fam = famName;
     }
     
     eraOut[chassisName] = entry;
