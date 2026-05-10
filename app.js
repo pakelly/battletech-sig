@@ -726,32 +726,35 @@ function showVariants(chassisName, faction, eraYear) {
   const eraData = DATA.eraData[String(eraYear)];
   if (!eraData) return;
   
-  // Check both direct and family-merged names
+  // Check if this is a family display name — if so, collect variants from ALL members
   let variants = null;
-  let sourceName = chassisName;
+  let isFamily = false;
   
-  // Check direct
-  if (eraData[chassisName]?.v) {
-    variants = eraData[chassisName].v;
-  } else {
-    // Check family members
-    for (const [cn, data] of Object.entries(eraData)) {
-      if (cn === chassisName || (data.fam && data.fam.replace(/ Family$/, '') === chassisName)) {
-        if (data.v) {
-          variants = { ...(variants || {}), ...data.v };
-          sourceName = cn;
+  for (const fam of DATA.families) {
+    if (fam.groupName.replace(/ Family$/, '') === chassisName ||
+        fam.groupName === chassisName) {
+      isFamily = true;
+      for (const member of fam.chassis) {
+        if (eraData[member]?.v) {
+          variants = { ...(variants || {}), ...eraData[member].v };
         }
       }
+      break;
     }
-    // Also check if the chassis is a family display name
-    for (const fam of DATA.families) {
-      if (fam.groupName.replace(/ Family$/, '') === chassisName) {
-        for (const member of fam.chassis) {
-          if (eraData[member]?.v) {
-            variants = { ...(variants || {}), ...eraData[member].v };
+  }
+  
+  // If not a family, check direct chassis name
+  if (!isFamily) {
+    if (eraData[chassisName]?.v) {
+      variants = eraData[chassisName].v;
+    } else {
+      // Check if it's a member of a family (fam field match)
+      for (const [cn, data] of Object.entries(eraData)) {
+        if (data.fam && data.fam.replace(/ Family$/, '') === chassisName) {
+          if (data.v) {
+            variants = { ...(variants || {}), ...data.v };
           }
         }
-        break;
       }
     }
   }
