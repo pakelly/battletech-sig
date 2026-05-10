@@ -1841,7 +1841,13 @@ function initQuickFilter() {
     if (!text) return;
     const bar = document.getElementById('query-bar');
     const current = bar.value.trim();
-    bar.value = current ? current + ' ' + text : text;
+    // Insert before any trailing sort clause so "sort by ..." stays last
+    const sortMatch = current.match(/^(.*?)(\s+sort\s+by\s+.+)$/i);
+    if (sortMatch) {
+      bar.value = sortMatch[1].trim() + ' ' + text + sortMatch[2];
+    } else {
+      bar.value = current ? current + ' ' + text : text;
+    }
     qfInput.value = '';
     qfSuggestBox.classList.add('hidden');
     qfSuggestIndex = -1;
