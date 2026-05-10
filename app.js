@@ -957,6 +957,19 @@ function getSuggestions(text, cursorPos) {
   // Check what we're completing
   const lastToken = beforeCursor.split(/\s+/).pop() || '';
   
+  // Check for "field value" pattern (space-separated, no operator)
+  // e.g. "chassis atl" → suggest chassis values matching "atl"
+  const spaceMatch = beforeCursor.match(/^(\w[\w-]*)\s+(.+)$/);
+  if (spaceMatch) {
+    const field = spaceMatch[1].toLowerCase();
+    const partial = spaceMatch[2].trim().toLowerCase();
+    const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'year', 'era', 'family', 'industrial', 'mode']);
+    if (VALUE_FIELD_SET.has(field) && partial) {
+      // Fake an eq match and fall through to value completion
+      return getValueSuggestions(field, partial);
+    }
+  }
+
   // Field name completion
   if (!lastToken.includes('=') && !lastToken.includes('>') && !lastToken.includes('<')) {
     const lower = lastToken.toLowerCase();
@@ -977,53 +990,56 @@ function getSuggestions(text, cursorPos) {
   if (eqMatch) {
     const [, field, op, partial] = eqMatch;
     const lower = (partial || '').toLowerCase().replace(/^\(/, '');
-    
-    switch (field.toLowerCase()) {
-      case 'faction': {
-        // Suggest faction codes and names
-        const items = [
-          { text: 'GreatHouses', hint: 'DC, FS, FWL, LA, CC' },
-          { text: 'Clans', hint: 'All Clan factions' },
-          { text: 'Periphery', hint: 'TC, MH, OA, MC' },
-        ];
-        for (const [code, info] of Object.entries(DATA.factions)) {
-          items.push({ text: code, hint: info.name });
-        }
-        return items.filter(i => i.text.toLowerCase().startsWith(lower) || i.hint.toLowerCase().includes(lower)).slice(0, 12);
-      }
-      case 'chassis': {
-        // Suggest from latest era for broadest coverage
-        const latestEra = DATA.eras[DATA.eras.length - 1]?.year || 3160;
-        const chassisData = getChassisForEra(String(latestEra), 'on');
-        const names = Object.keys(chassisData).sort();
-        return names.filter(n => n.toLowerCase().includes(lower))
-          .slice(0, 12)
-          .map(n => {
-            const members = chassisData[n]?._members;
-            const hint = members ? members.join(', ') : (DATA.chassis[n]?.class || '');
-            return { text: n, hint };
-          });
-      }
-      case 'class':
-        return ['Light', 'Medium', 'Heavy', 'Assault']
-          .filter(c => c.toLowerCase().startsWith(lower))
-          .map(c => ({ text: c, hint: '' }));
-      case 'era':
-        return DATA.eras
-          .filter((e, i, arr) => arr.findIndex(x => x.mulEra === e.mulEra) === i)
-          .filter(e => e.mulEra.toLowerCase().includes(lower) || e.label.toLowerCase().includes(lower))
-          .slice(0, 10)
-          .map(e => ({ text: e.mulEra, hint: e.label }));
-      case 'mode':
-        return [{ text: 'A', hint: 'MegaMek Only' }, { text: 'B', hint: 'MegaMek × MUL' }];
-      case 'family':
-        return [{ text: 'on', hint: 'Merge families' }, { text: 'off', hint: 'Individual chassis' }];
-      case 'industrial':
-        return [{ text: 'show', hint: '' }, { text: 'hide', hint: '' }];
-    }
+    return getValueSuggestions(field.toLowerCase(), lower);
   }
   
   return suggestions;
+}
+
+function getValueSuggestions(field, lower) {
+  if (!DATA) return [];
+  switch (field) {
+    case 'faction': {
+      const items = [
+        { text: 'GreatHouses', hint: 'DC, FS, FWL, LA, CC' },
+        { text: 'Clans', hint: 'All Clan factions' },
+        { text: 'Periphery', hint: 'TC, MH, OA, MC' },
+      ];
+      for (const [code, info] of Object.entries(DATA.factions)) {
+        items.push({ text: code, hint: info.name });
+      }
+      return items.filter(i => i.text.toLowerCase().startsWith(lower) || i.hint.toLowerCase().includes(lower)).slice(0, 12);
+    }
+    case 'chassis': {
+      const latestEra = DATA.eras[DATA.eras.length - 1]?.year || 3160;
+      const chassisData = getChassisForEra(String(latestEra), 'on');
+      const names = Object.keys(chassisData).sort();
+      return names.filter(n => n.toLowerCase().includes(lower))
+        .slice(0, 12)
+        .map(n => {
+          const members = chassisData[n]?._members;
+          const hint = members ? members.join(', ') : (DATA.chassis[n]?.class || '');
+          return { text: n, hint };
+        });
+    }
+    case 'class':
+      return ['Light', 'Medium', 'Heavy', 'Assault']
+        .filter(c => c.toLowerCase().startsWith(lower))
+        .map(c => ({ text: c, hint: '' }));
+    case 'era':
+      return DATA.eras
+        .filter((e, i, arr) => arr.findIndex(x => x.mulEra === e.mulEra) === i)
+        .filter(e => e.mulEra.toLowerCase().includes(lower) || e.label.toLowerCase().includes(lower))
+        .slice(0, 10)
+        .map(e => ({ text: e.mulEra, hint: e.label }));
+    case 'mode':
+      return [{ text: 'A', hint: 'MegaMek Only' }, { text: 'B', hint: 'MegaMek × MUL' }];
+    case 'family':
+      return [{ text: 'on', hint: 'Merge families' }, { text: 'off', hint: 'Individual chassis' }];
+    case 'industrial':
+      return [{ text: 'show', hint: '' }, { text: 'hide', hint: '' }];
+  }
+  return [];
 }
 
 // ── Filter Chips ──
