@@ -1480,6 +1480,9 @@ async function init() {
   // ── Settings Panel ──
   initSettings();
 
+  // ── Quick Filter Insert ──
+  initQuickFilter();
+
   // Check URL hash for initial query
   if (location.hash) {
     bar.value = decodeURIComponent(location.hash.slice(1));
@@ -1703,6 +1706,131 @@ function openFamilyEditor(familyName) {
       dialog.remove();
       renderFamiliesList();
       runQuery();
+    });
+  }
+}
+
+// ── Quick Filter Insert ──
+
+function initQuickFilter() {
+  const qfInput = document.getElementById('quick-filter-input');
+  const qfClear = document.getElementById('qf-clear');
+  const qfInsert = document.getElementById('qf-insert');
+  const qfSuggestBox = document.getElementById('qf-suggest-box');
+  let qfSuggestIndex = -1;
+
+  function insertFilter() {
+    const text = qfInput.value.trim();
+    if (!text) return;
+    const bar = document.getElementById('query-bar');
+    const current = bar.value.trim();
+    bar.value = current ? current + ' ' + text : text;
+    qfInput.value = '';
+    qfSuggestBox.classList.add('hidden');
+    qfSuggestIndex = -1;
+    document.getElementById('reset-btn').classList.toggle('hidden', !bar.value.trim());
+    runQuery();
+    qfInput.focus();
+  }
+
+  qfInsert.addEventListener('click', insertFilter);
+
+  qfClear.addEventListener('click', () => {
+    qfInput.value = '';
+    qfSuggestBox.classList.add('hidden');
+    qfSuggestIndex = -1;
+    qfInput.focus();
+  });
+
+  // Autocomplete — reuse getSuggestions
+  let qfTimeout = null;
+  qfInput.addEventListener('input', () => {
+    clearTimeout(qfTimeout);
+    qfTimeout = setTimeout(() => {
+      const suggestions = getSuggestions(qfInput.value, qfInput.selectionStart);
+      renderQfSuggestions(suggestions);
+    }, 150);
+  });
+
+  qfInput.addEventListener('keydown', (e) => {
+    const items = qfSuggestBox.querySelectorAll('.suggest-item');
+
+    if (e.key === 'Enter') {
+      if (qfSuggestIndex >= 0 && items[qfSuggestIndex]) {
+        e.preventDefault();
+        applyQfSuggestion(items[qfSuggestIndex].dataset.text);
+      } else {
+        e.preventDefault();
+        insertFilter();
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      qfSuggestIndex = Math.min(qfSuggestIndex + 1, items.length - 1);
+      updateQfHighlight(items);
+      return;
+    }
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      qfSuggestIndex = Math.max(qfSuggestIndex - 1, -1);
+      updateQfHighlight(items);
+      return;
+    }
+
+    if (e.key === 'Tab' && items.length > 0) {
+      e.preventDefault();
+      const idx = qfSuggestIndex >= 0 ? qfSuggestIndex : 0;
+      if (items[idx]) applyQfSuggestion(items[idx].dataset.text);
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      qfSuggestBox.classList.add('hidden');
+      qfSuggestIndex = -1;
+    }
+  });
+
+  function renderQfSuggestions(suggestions) {
+    qfSuggestIndex = -1;
+    if (suggestions.length === 0) {
+      qfSuggestBox.classList.add('hidden');
+      return;
+    }
+    qfSuggestBox.innerHTML = '';
+    for (const s of suggestions) {
+      const div = document.createElement('div');
+      div.className = 'suggest-item';
+      div.dataset.text = s.text;
+      div.innerHTML = `${escHtml(s.text)}${s.hint ? `<span class="hint">${escHtml(s.hint)}</span>` : ''}`;
+      div.addEventListener('click', () => applyQfSuggestion(s.text));
+      qfSuggestBox.appendChild(div);
+    }
+    qfSuggestBox.classList.remove('hidden');
+  }
+
+  function applyQfSuggestion(text) {
+    const value = qfInput.value;
+    const cursor = qfInput.selectionStart;
+    const before = value.slice(0, cursor);
+    const after = value.slice(cursor);
+
+    const lastSpace = before.lastIndexOf(' ');
+    const lastEq = Math.max(before.lastIndexOf('='), before.lastIndexOf('('));
+    const replaceFrom = Math.max(lastSpace, lastEq) + 1;
+
+    qfInput.value = before.slice(0, replaceFrom) + text + (after.startsWith(' ') ? after : ' ' + after);
+    qfInput.selectionStart = qfInput.selectionEnd = replaceFrom + text.length + (text.endsWith('=') || text.endsWith(' ') ? 0 : 1);
+    qfInput.focus();
+    qfSuggestBox.classList.add('hidden');
+    qfSuggestIndex = -1;
+  }
+
+  function updateQfHighlight(items) {
+    items.forEach((item, i) => {
+      item.classList.toggle('active', i === qfSuggestIndex);
     });
   }
 }

@@ -402,6 +402,27 @@ Vanilla HTML/CSS/JS. No framework. Single-page app loading `app-data.json` at st
 
 ---
 
+## Quick Filter Insert
+
+A secondary input field below the query bar and filter chips for composing one filter expression at a time, then inserting it into the main query.
+
+**Rationale:** The main query bar gets long and dense. This lets users experiment with adding a filter without editing in the middle of a complex query string.
+
+**UI elements:**
+- Text input with placeholder: `Add filter (e.g. spread>3, tons>50)`
+- ✕ button (clear the field)
+- ➕ button (insert into current query)
+- Same autocomplete/suggestion system as the main query bar
+
+**Behavior:**
+- On insert (click ➕ or press Enter): append the field's text to the main query bar (space-separated), run the query, then blank the insert field.
+- On clear (click ✕): blank the field, no query change.
+- Autocomplete reuses `getSuggestions()` — no duplicate logic.
+
+**Location in DOM:** Below `#filter-chips`, above `#status-bar`.
+
+---
+
 ## Future Possibilities
 
 - **Code consolidation:** Merge dead `executeQuery` path into `runQuery`. Consolidate sort functions.
