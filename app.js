@@ -422,6 +422,24 @@ function getChassisForEra(eraYear, familyMode) {
         }
       }
       
+      // Collect metadata from family members
+      const tonValues = [];
+      const classValues = new Set();
+      let introMin = null;
+      let isIndustrial = false;
+      const techValues = new Set();
+      for (const member of members) {
+        const m = DATA.chassis[member];
+        if (!m) continue;
+        if (m.tons != null) tonValues.push(m.tons);
+        if (m.class) classValues.add(m.class);
+        if (m.intro != null) introMin = introMin == null ? m.intro : Math.min(introMin, m.intro);
+        if (m.industrial) isIndustrial = true;
+        if (m.tech) techValues.add(m.tech);
+      }
+      const tonsMin = tonValues.length ? Math.min(...tonValues) : null;
+      const tonsMax = tonValues.length ? Math.max(...tonValues) : null;
+
       // Use family group name as display name
       const displayName = famName.replace(/ Family$/, '');
       merged[displayName] = {
@@ -429,7 +447,15 @@ function getChassisForEra(eraYear, familyMode) {
         v: Object.keys(mergedVariants).length > 0 ? mergedVariants : undefined,
         mul: Object.keys(hasMul).length > 0 ? hasMul : undefined,
         fam: famName,
-        _members: members
+        _members: members,
+        _meta: {
+          tons: tonsMin,
+          tonsMax: tonsMax,
+          class: classValues.size === 1 ? [...classValues][0] : [...classValues].join('/'),
+          intro: introMin,
+          industrial: isIndustrial,
+          tech: techValues.size === 1 ? [...techValues][0] : [...techValues].join('/')
+        }
       };
     } else if (!famName) {
       merged[chassisName] = data;
@@ -527,7 +553,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   for (const row of rows) {
     const tr = document.createElement('tr');
     let html = `<td class="chassis-name">${escHtml(row.name)}</td>`;
-    html += `<td class="tonnage-col">${row.meta.tons || '?'}t <span class="class-badge class-${row.meta.class || ''}">${row.meta.class || ''}</span></td>`;
+    html += `<td class="tonnage-col">${formatTonnage(row.meta)} <span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>`;
     
     for (const f of scopedFactions) {
       const pref = row.prefs?.[f];
@@ -618,8 +644,8 @@ function renderSingleFaction(rows, faction, eraYear) {
     tr.className = 'faction-roster-row';
     tr.innerHTML = `
       <td class="chassis-name" style="cursor:pointer" data-chassis="${escAttr(row.name)}" data-faction="${faction}">${escHtml(row.name)}</td>
-      <td class="tonnage-col">${row.meta.tons || '?'}t</td>
-      <td><span class="class-badge class-${row.meta.class || ''}">${row.meta.class || ''}</span></td>
+      <td class="tonnage-col">${formatTonnage(row.meta)}</td>
+      <td><span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>
       <td class="stat-col">${w}</td>
       <td><div class="weight-bar-container"><div class="weight-bar" style="width:${pct}%"></div></div></td>
     `;
@@ -650,7 +676,7 @@ function renderMechView(rows, eraYear, chassisName) {
     
     section.innerHTML = `
       <div class="mech-view-title">${escHtml(row.name)}</div>
-      <div class="mech-view-meta">${meta.tons || '?'}t ${meta.class || ''} — Intro: ${meta.intro || 'Unknown'} — ${meta.tech || ''}</div>
+      <div class="mech-view-meta">${formatTonnage(meta)} ${formatClass(meta)} — Intro: ${meta.intro || 'Unknown'} — ${meta.tech || ''}</div>
     `;
     
     // Get all factions sorted by weight
@@ -969,6 +995,21 @@ function removeFieldFromQuery(field) {
 
 // ── HTML Helpers ──
 
+function formatTonnage(meta) {
+  const t = meta.tons;
+  const tMax = meta.tonsMax;
+  const cls = meta.class || '';
+  if (t == null) return '?t';
+  if (tMax != null && tMax !== t) {
+    return `${t}-${tMax}t`;
+  }
+  return `${t}t`;
+}
+
+function formatClass(meta) {
+  return meta.class || '';
+}
+
 function escHtml(s) {
   if (!s) return '';
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -1041,17 +1082,29 @@ function runQuery() {
       if (!matches) continue;
     }
     
-    const meta = DATA.chassis[chassisName] || {};
+    const meta = data._meta || DATA.chassis[chassisName] || {};
     
     if (parsed.class) {
       const classLower = parsed.class.toLowerCase();
-      if (meta.class && meta.class.toLowerCase() !== classLower) continue;
+      if (meta.class && !meta.class.toLowerCase().split('/').some(c => c.trim() === classLower)) continue;
       if (!meta.class) continue;
     }
     
     if (hideIndustrial && meta.industrial) continue;
     if (parsed.year && meta.intro && meta.intro > parsed.year) continue;
-    if (parsed.tons && meta.tons && !compareOp(meta.tons, parsed.tons.op, parsed.tons.val)) continue;
+    if (parsed.tons) {
+      // For families with a tonnage range, use the range for filtering
+      const tMin = meta.tons;
+      const tMax = meta.tonsMax || meta.tons;
+      if (tMin != null) {
+        // Range-aware: a family matches if any tonnage in [min,max] satisfies the filter
+        const op = parsed.tons.op;
+        const val = parsed.tons.val;
+        const passesMin = compareOp(tMin, op, val);
+        const passesMax = compareOp(tMax, op, val);
+        if (!passesMin && !passesMax) continue;
+      }
+    }
     
     let weights = { ...data.w };
     if (modeB) {
