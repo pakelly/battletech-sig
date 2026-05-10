@@ -2057,9 +2057,21 @@ function initQuickFilter() {
   }
 }
 
+let _builtInFamilyNames = null; // set once at init
+
 function applyFamilyOverridesToData() {
   if (!DATA) return;
   const overrides = loadFamilyOverrides();
+
+  // Snapshot built-in family names on first call
+  if (!_builtInFamilyNames) {
+    _builtInFamilyNames = new Set(DATA.families.map(f => f.groupName));
+  }
+
+  // Remove custom families no longer in overrides (built-ins always kept)
+  DATA.families = DATA.families.filter(fam =>
+    _builtInFamilyNames.has(fam.groupName) || overrides[fam.groupName]
+  );
 
   // Update DATA.families in place from defaults + overrides
   for (const fam of DATA.families) {
