@@ -326,19 +326,88 @@ function computeSignature(weights, mulData, factions, allFactionCodes) {
 }
 
 /**
- * Assign a tier (1–5) based on rank position within a sorted list.
- * Quintile bins: tier 5 = top 20%, tier 1 = bottom 20%.
- * rank is 0-indexed (0 = highest score).
+ * Jenks Natural Breaks classification.
+ * Finds breakpoints in sorted data that minimize within-class variance.
+ * Returns array of (numClasses - 1) breakpoint values.
  */
-function assignTier(rank, total) {
-  if (total <= 0) return 5;
-  if (total === 1) return 1;
-  const pct = rank / total;
-  if (pct < 0.2) return 1;  // top 20% — faction-defining
-  if (pct < 0.4) return 2;
-  if (pct < 0.6) return 3;
-  if (pct < 0.8) return 4;
-  return 5;                  // bottom 20% — incidental
+function jenksBreaks(sortedValues, numClasses) {
+  const n = sortedValues.length;
+  if (n <= numClasses) {
+    // Fewer values than classes — each value is its own class
+    return sortedValues.slice(0, n - 1);
+  }
+
+  // GVF (Goodness of Variance Fit) based Jenks implementation
+  // Build matrices for sum of squared deviations
+  const lower = Array.from({ length: n + 1 }, () => new Float64Array(numClasses + 1));
+  const variance = Array.from({ length: n + 1 }, () => new Float64Array(numClasses + 1).fill(Infinity));
+
+  for (let i = 1; i <= numClasses; i++) {
+    lower[1][i] = 1;
+    variance[1][i] = 0;
+  }
+
+  for (let l = 2; l <= n; l++) {
+    let sum = 0, sumSq = 0;
+    for (let m = 1; m <= l; m++) {
+      const idx = l - m; // 0-based index into sortedValues
+      const val = sortedValues[idx];
+      sum += val;
+      sumSq += val * val;
+      const w = m; // count of values in this range
+      const iv = sumSq - (sum * sum) / w;
+
+      if (idx > 0) {
+        for (let j = 2; j <= numClasses; j++) {
+          const test = variance[idx][j - 1] + iv;
+          if (test < variance[l][j]) {
+            lower[l][j] = idx + 1;
+            variance[l][j] = test;
+          }
+        }
+      }
+    }
+    lower[l][1] = 1;
+    variance[l][1] = sumSq - (sum * sum) / l;
+  }
+
+  // Extract break indices
+  const breaks = [];
+  let k = n;
+  for (let j = numClasses; j >= 2; j--) {
+    const breakIdx = lower[k][j] - 1; // 0-based
+    breaks.unshift(sortedValues[breakIdx]);
+    k = lower[k][j] - 1;
+  }
+  return breaks;
+}
+
+/**
+ * Assign tier (1–5) using Jenks Natural Breaks.
+ * Takes a value and the break points array (4 values for 5 classes).
+ * Tier 1 = highest class (faction-defining), Tier 5 = lowest.
+ */
+function assignTier(value, breaks) {
+  // breaks are sorted ascending — values above highest break = tier 1
+  for (let i = breaks.length - 1; i >= 0; i--) {
+    if (value >= breaks[i]) return i + 1 <= breaks.length ? (breaks.length - i) : 1;
+  }
+  return breaks.length + 1; // lowest tier
+}
+
+// Simpler: tier 1 = above breaks[3], tier 2 = above breaks[2], etc.
+function assignTierFromBreaks(value, breaks) {
+  if (breaks.length === 0) return 1;
+  // breaks sorted ascending: [b0, b1, b2, b3] for 5 classes
+  // value >= b3 → tier 1 (highest)
+  // value >= b2 → tier 2
+  // value >= b1 → tier 3
+  // value >= b0 → tier 4
+  // else → tier 5
+  for (let i = breaks.length - 1; i >= 0; i--) {
+    if (value >= breaks[i]) return breaks.length - i;
+  }
+  return breaks.length + 1;
 }
 
 function compareOp(value, op, threshold) {
@@ -1216,17 +1285,16 @@ function runQuery() {
       row.sig = computeSignature(row.weights, row.mul || {}, scopedFactions, allFactionCodes);
     }
     
-    // Compute tiers per faction (quintile bins across all rows)
+    // Compute tiers per faction using Jenks Natural Breaks
     for (const f of scopedFactions) {
       const sigValues = rows.map(r => r.sig?.[f] || 0).filter(v => v > 0);
-      sigValues.sort((a, b) => b - a);
-      const sigRankMap = new Map(sigValues.map((v, i) => [v, i]));
-      const total = sigValues.length;
+      if (sigValues.length === 0) continue;
+      sigValues.sort((a, b) => a - b); // ascending for Jenks
+      const breaks = jenksBreaks(sigValues, 5);
       for (const row of rows) {
         const v = row.sig?.[f] || 0;
         if (v > 0 && row.sig) {
-          const rank = sigRankMap.get(v) ?? total;
-          row.sig[f + '_tier'] = assignTier(rank, total);
+          row.sig[f + '_tier'] = assignTierFromBreaks(v, breaks);
         }
       }
     }

@@ -92,14 +92,14 @@ Where:
 
 The product `weight × z` captures both signals: high weight (the faction fields it a lot) AND high z (the faction stands out from the crowd). A DC-exclusive mech at weight 6 scores high because z ≈ 6. A ubiquitous mech at weight 6 scores low because z ≈ 1.
 
-**Display: Tier 1–5 (quintile bins).** The raw `weight × share` values are binned into quintiles across all chassis the faction fields in the era:
-- **Tier 1** (top 20%) — Faction-defining. The totemic mechs.
-- **Tier 2** (next 20%) — Strong identity markers.
-- **Tier 3** (middle 20%) — Moderate association.
-- **Tier 4** (next 20%) — Weak association.
-- **Tier 5** (bottom 20%) — Incidental. The faction has access but it's not "theirs."
+**Display: Tier 1–5 (Jenks Natural Breaks).** The raw `weight × z-score` values are classified into 5 tiers using the Jenks Natural Breaks algorithm, which finds breakpoints that minimize within-tier variance and maximize between-tier variance:
+- **Tier 1** — Faction-defining. The totemic mechs.
+- **Tier 2** — Strong identity markers.
+- **Tier 3** — Moderate association.
+- **Tier 4** — Weak association.
+- **Tier 5** — Incidental. The faction has access but it's not "theirs."
 
-Tiers are honest about precision — raw scores of 0.54 and 0.56 aren't meaningfully different, and tiers don't pretend they are. The underlying raw value is still used for sorting and filtering.
+Unlike fixed quintiles (20% each), Jenks finds the natural gaps in the data. A faction with 3 clearly iconic mechs and a gradual tail gets 3 in T1, not an arbitrary 20% slice. The underlying raw value is still used for sorting and filtering.
 
 **Global signature is stable regardless of scope.** Adding or removing factions from the query doesn't change any faction's signature scores. It's a global property of the faction's relationship to that chassis.
 

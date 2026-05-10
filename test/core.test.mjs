@@ -53,7 +53,8 @@ before(() => {
         computeSpan,
         computeAvgWeight,
         computeSignature,
-        assignTier,
+        jenksBreaks,
+        assignTierFromBreaks,
         compareOp,
         sortRowsInPlace,
         resolveFaction,
@@ -276,28 +277,41 @@ describe('Global Signature (weight × z-score)', () => {
   });
 });
 
-describe('Signature Tiers', () => {
-  it('assigns tier 1 to top 20% (most iconic)', () => {
-    // 10 items, sorted desc. Top 2 should be tier 1.
-    const values = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
-    assert.strictEqual(F.assignTier(0, values.length), 1);
-    assert.strictEqual(F.assignTier(1, values.length), 1);
+describe('Signature Tiers (Jenks Natural Breaks)', () => {
+  it('finds natural breaks in clustered data', () => {
+    // Two clear clusters: [1,1,2,2] and [8,9,10,10]
+    const values = [1, 1, 2, 2, 8, 9, 10, 10];
+    const breaks = F.jenksBreaks(values, 2);
+    // Break should be between 2 and 8
+    assert.ok(breaks.length === 1, `Expected 1 break, got ${breaks.length}`);
+    assert.ok(breaks[0] > 2 && breaks[0] <= 8, `Break at ${breaks[0]} should be between clusters`);
   });
 
-  it('assigns tier 5 to bottom 20% (incidental)', () => {
-    const values = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
-    assert.strictEqual(F.assignTier(8, values.length), 5);
-    assert.strictEqual(F.assignTier(9, values.length), 5);
+  it('assigns tier 1 to highest cluster', () => {
+    // Clear clusters: low=[1,2,3], mid=[10,11,12], high=[30,31,32]
+    const sorted = [1, 2, 3, 10, 11, 12, 30, 31, 32];
+    const breaks = F.jenksBreaks(sorted, 3);
+    assert.strictEqual(F.assignTierFromBreaks(32, breaks), 1);
+    assert.strictEqual(F.assignTierFromBreaks(31, breaks), 1);
   });
 
-  it('assigns tier 3 to middle', () => {
-    const values = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
-    assert.strictEqual(F.assignTier(4, values.length), 3);
-    assert.strictEqual(F.assignTier(5, values.length), 3);
+  it('assigns lowest tier to bottom cluster', () => {
+    const sorted = [1, 2, 3, 10, 11, 12, 30, 31, 32];
+    const breaks = F.jenksBreaks(sorted, 3);
+    assert.strictEqual(F.assignTierFromBreaks(1, breaks), 3);
   });
 
-  it('handles single item', () => {
-    assert.strictEqual(F.assignTier(0, 1), 1);
+  it('handles single value', () => {
+    const breaks = F.jenksBreaks([5], 5);
+    assert.strictEqual(F.assignTierFromBreaks(5, breaks), 1);
+  });
+
+  it('handles uniform data gracefully', () => {
+    const sorted = [5, 5, 5, 5, 5];
+    const breaks = F.jenksBreaks(sorted, 5);
+    // All same value — should all get the same tier
+    const tier = F.assignTierFromBreaks(5, breaks);
+    assert.ok(tier >= 1 && tier <= 5, `Tier should be valid, got ${tier}`);
   });
 });
 
