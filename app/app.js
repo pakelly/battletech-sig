@@ -2013,8 +2013,42 @@ function initQuickFilter() {
   const qfSuggestBox = document.getElementById('qf-suggest-box');
   let qfSuggestIndex = -1;
 
+  // Known field names that take = values (not sort, not numeric-operator fields used bare)
+  const VALUE_FIELDS = new Set(['faction', 'chassis', 'class', 'year', 'era', 'family', 'industrial', 'mode']);
+  const OPERATOR_FIELDS = new Set(['spread', 'span', 'avg-weight', 'avgweight', 'sig', 'signature', 'weight', 'tons', 'tonnage']);
+
+  function normalizeFilterText(raw) {
+    // "sort by ..." → pass through
+    if (/^\s*sort\s+by\s+/i.test(raw)) return raw;
+
+    // "field value" with no operator → "field=value"
+    // Match: known field name, whitespace, then a value (no =, >, <, ! present)
+    const match = raw.match(/^(\w[\w-]*)\s+(.+)$/);
+    if (match) {
+      const field = match[1].toLowerCase();
+      const value = match[2].trim();
+      if (VALUE_FIELDS.has(field)) {
+        return field + '=' + value;
+      }
+      if (OPERATOR_FIELDS.has(field)) {
+        // If value starts with an operator, join directly: "spread >3" → "spread>3"
+        if (/^[><=!]/.test(value)) return field + value;
+        // If value is just a number, assume >: "spread 3" → "spread>3"
+        if (/^\d/.test(value)) return field + '>' + value;
+        return raw; // don't know what to do, pass through
+      }
+      // Check faction-prefixed fields: "dc-sig 3" → "dc-sig>3", "dc-weight 5" → "dc-weight>5"
+      const prefixMatch = field.match(/^([a-z]+)-(sig|signature|pref|preference|weight)$/);
+      if (prefixMatch) {
+        if (/^[><=!]/.test(value)) return field + value;
+        if (/^\d/.test(value)) return field + '>' + value;
+      }
+    }
+    return raw;
+  }
+
   function insertFilter() {
-    const text = qfInput.value.trim();
+    const text = normalizeFilterText(qfInput.value.trim());
     if (!text) return;
     const bar = document.getElementById('query-bar');
     const current = bar.value.trim();
