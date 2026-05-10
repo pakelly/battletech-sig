@@ -448,6 +448,7 @@ A hamburger menu (☰) attached to the results table that lets users show/hide c
 
 ## Future Possibilities
 
+- **Faction lineage / succession model:** Many factions merge, splinter, rename, or absorb others across eras. Current approach patches this case-by-case (e.g. LC→LA MUL merge). Needs a proper lineage map that understands rename (LC↔LA), merger (FS+LC→FC), splintering (FRR from DC), conquest-then-absorption (FRR→CGB occupation→RD), brief existence (WOB, ROS, SIC), etc. Scoring implications differ: a rename shares the same force pool, a merger combines two, a splinter starts fresh-ish. Key example: FRR goes DC→FRR→CGB/FRR→RD, with mech roster evolving at each transition.
 - **Code consolidation:** Merge dead `executeQuery` path into `runQuery`. Consolidate sort functions.
 - **Collection tracker:** Mark owned minis, recommend next purchases by faction identity gaps.
 - **Force builder integration:** "Build me a 10,000 BV Davion force that maximizes faction identity score."
