@@ -350,7 +350,6 @@
     "groupName": "UrbanMech Family",
     "chassis": [
       "UrbanMech",
-      "UrbanMech IIC",
       "SuburbanMech"
     ],
     "enabled": true,
