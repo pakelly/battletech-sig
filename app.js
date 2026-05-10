@@ -1682,6 +1682,87 @@ function openFamilyEditor(familyName) {
   dialog.querySelector('#fed-cancel').addEventListener('click', () => dialog.remove());
   dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.remove(); });
 
+  // Autocomplete for chassis members field
+  const fedMembers = dialog.querySelector('#fed-members');
+  const suggestDiv = document.createElement('div');
+  suggestDiv.className = 'fed-suggest hidden';
+  fedMembers.parentNode.style.position = 'relative';
+  fedMembers.parentNode.appendChild(suggestDiv);
+  let fedSuggestIdx = -1;
+
+  function getFedSuggestions() {
+    if (!DATA) return [];
+    const val = fedMembers.value;
+    const cursor = fedMembers.selectionStart;
+    const before = val.slice(0, cursor);
+    const lastComma = before.lastIndexOf(',');
+    const partial = before.slice(lastComma + 1).trim().toLowerCase();
+    if (!partial) return [];
+
+    const allChassis = Object.keys(DATA.chassis).sort();
+    const already = val.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    return allChassis
+      .filter(c => c.toLowerCase().includes(partial) && !already.includes(c.toLowerCase()))
+      .slice(0, 8);
+  }
+
+  function renderFedSuggestions(items) {
+    fedSuggestIdx = -1;
+    if (items.length === 0) { suggestDiv.classList.add('hidden'); return; }
+    suggestDiv.innerHTML = '';
+    for (const name of items) {
+      const div = document.createElement('div');
+      div.className = 'suggest-item';
+      div.textContent = name;
+      div.addEventListener('click', () => applyFedSuggestion(name));
+      suggestDiv.appendChild(div);
+    }
+    suggestDiv.classList.remove('hidden');
+  }
+
+  function applyFedSuggestion(name) {
+    const val = fedMembers.value;
+    const cursor = fedMembers.selectionStart;
+    const before = val.slice(0, cursor);
+    const after = val.slice(cursor);
+    const lastComma = before.lastIndexOf(',');
+    const prefix = lastComma >= 0 ? before.slice(0, lastComma + 1) + ' ' : '';
+    const afterTrimmed = after.replace(/^[^,]*/, '');
+    fedMembers.value = prefix + name + (afterTrimmed.startsWith(',') ? afterTrimmed : ', ' + afterTrimmed.replace(/^,?\s*/, ''));
+    // Clean trailing comma/space
+    fedMembers.value = fedMembers.value.replace(/,\s*$/, '');
+    suggestDiv.classList.add('hidden');
+    fedSuggestIdx = -1;
+    fedMembers.focus();
+  }
+
+  fedMembers.addEventListener('input', () => {
+    renderFedSuggestions(getFedSuggestions());
+  });
+
+  fedMembers.addEventListener('keydown', (e) => {
+    const items = suggestDiv.querySelectorAll('.suggest-item');
+    if (e.key === 'ArrowDown' && items.length) {
+      e.preventDefault();
+      fedSuggestIdx = Math.min(fedSuggestIdx + 1, items.length - 1);
+      items.forEach((it, i) => it.classList.toggle('active', i === fedSuggestIdx));
+    } else if (e.key === 'ArrowUp' && items.length) {
+      e.preventDefault();
+      fedSuggestIdx = Math.max(fedSuggestIdx - 1, -1);
+      items.forEach((it, i) => it.classList.toggle('active', i === fedSuggestIdx));
+    } else if (e.key === 'Tab' && items.length > 0) {
+      e.preventDefault();
+      const idx = fedSuggestIdx >= 0 ? fedSuggestIdx : 0;
+      if (items[idx]) applyFedSuggestion(items[idx].textContent);
+    } else if (e.key === 'Enter' && fedSuggestIdx >= 0 && items[fedSuggestIdx]) {
+      e.preventDefault();
+      applyFedSuggestion(items[fedSuggestIdx].textContent);
+    } else if (e.key === 'Escape') {
+      suggestDiv.classList.add('hidden');
+      fedSuggestIdx = -1;
+    }
+  });
+
   dialog.querySelector('#fed-save').addEventListener('click', () => {
     const newName = dialog.querySelector('#fed-name').value.trim();
     const newMembers = dialog.querySelector('#fed-members').value.split(',').map(s => s.trim()).filter(Boolean);
