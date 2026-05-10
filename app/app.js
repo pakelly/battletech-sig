@@ -1106,7 +1106,7 @@ function runQuery() {
   
   const familyMode = parsed.family || 'on';
   const modeB = parsed.mode !== 'A';
-  const hideIndustrial = parsed.industrial === 'hide';
+  const hideIndustrial = parsed.industrial !== 'show'; // hidden by default
   
   const chassisData = getChassisForEra(String(eraYear), familyMode);
   const scopedFactions = parsed.factions;
@@ -1133,6 +1133,7 @@ function runQuery() {
     }
     
     if (hideIndustrial && meta.industrial) continue;
+    if (/\bLAM\b/.test(chassisName)) continue; // LAMs always hidden for now
     if (parsed.year && meta.intro && meta.intro > parsed.year) continue;
     if (parsed.tons) {
       // For families with a tonnage range, use the range for filtering
