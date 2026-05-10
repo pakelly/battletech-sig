@@ -5,7 +5,7 @@
       "Arctic Wolf",
       "Arctic Wolf II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -15,7 +15,7 @@
       "Atlas II",
       "Atlas III"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -24,7 +24,7 @@
       "Catapult",
       "Catapult II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -34,7 +34,7 @@
       "Dragon II",
       "Grand Dragon"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -43,7 +43,7 @@
       "Enforcer",
       "Enforcer III"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -52,7 +52,7 @@
       "Gladiator (Executioner)",
       "Gladiator-B (Executioner-B)"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -61,7 +61,7 @@
       "Grand Crusader",
       "Grand Crusader II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -70,7 +70,7 @@
       "Thor (Summoner)",
       "Thor II (Grand Summoner)"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -85,7 +85,7 @@
       "Hatamoto-Godai",
       "Hatamoto-Kaeru"
     ],
-    "enabled": true
+    "enabled": false
   },
   {
     "groupName": "Hel Family",
@@ -93,7 +93,7 @@
       "Loki (Hellbringer)",
       "Loki Mk II (Hel)"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -102,7 +102,7 @@
       "Hermes",
       "Hermes II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -112,7 +112,7 @@
       "Hollander II",
       "Hollander III"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -121,7 +121,7 @@
       "Icarus",
       "Icarus II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -130,7 +130,7 @@
       "Inquisitor",
       "Inquisitor II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -139,7 +139,7 @@
       "JagerMech",
       "JagerMech III"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -148,7 +148,7 @@
       "Kodiak",
       "Kodiak II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -158,7 +158,7 @@
       "Vulture Mk III (Mad Dog Mk III)",
       "Vulture Mk IV (Mad Dog Mk IV)"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -176,7 +176,7 @@
       "Mercury",
       "Mercury II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -185,7 +185,7 @@
       "Mongoose",
       "Mongoose II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -194,7 +194,7 @@
       "Naga",
       "Naga II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -203,7 +203,7 @@
       "Nexus",
       "Nexus II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -214,7 +214,7 @@
       "Koshi (Mist Lynx)",
       "Koshi (Standard)"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -223,7 +223,7 @@
       "Pack Hunter",
       "Pack Hunter II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -232,7 +232,7 @@
       "Raijin",
       "Raijin II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -241,7 +241,7 @@
       "Raptor",
       "Raptor II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -250,7 +250,7 @@
       "Raven",
       "Raven II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -263,13 +263,13 @@
     "autoDetected": true
   },
   {
-    "groupName": "Savage Wolf Variants",
+    "groupName": "Timber Wolf Family",
     "chassis": [
       "Mad Cat (Timber Wolf)",
       "Mad Cat Mk IV (Savage Wolf)",
       "Mad Cat Mk IV PR (Savage Wolf)"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -279,7 +279,7 @@
       "Shadow Cat II",
       "Shadow Cat III"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -288,7 +288,7 @@
       "Ryoken III (Skinwalker)",
       "Ryoken III-XP (Skinwalker)"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -297,7 +297,7 @@
       "Stag",
       "Stag II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -306,7 +306,7 @@
       "Stalker",
       "Stalker II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -315,7 +315,7 @@
       "Stalking Spider",
       "Stalking Spider II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -324,7 +324,7 @@
       "Templar",
       "Templar III"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -334,7 +334,7 @@
       "Titan",
       "Titan II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -343,7 +343,7 @@
       "Tomahawk",
       "Tomahawk II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -352,7 +352,7 @@
       "UrbanMech",
       "SuburbanMech"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": false
   },
   {
@@ -361,7 +361,7 @@
       "Ursus",
       "Ursus II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   },
   {
@@ -370,7 +370,7 @@
       "Wolverine",
       "Wolverine II"
     ],
-    "enabled": true,
+    "enabled": false,
     "autoDetected": true
   }
 ]
