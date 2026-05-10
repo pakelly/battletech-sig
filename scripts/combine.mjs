@@ -153,6 +153,16 @@ for (const [faction, eraData] of Object.entries(mulRaw)) {
   }
 }
 
+// Merge LC (Lyran Commonwealth) availability into LA (Lyran Alliance)
+// MegaMek uses LA for both eras; MUL treats them as separate factions (IDs 32 vs 60)
+if (mulCumulative['LC']) {
+  if (!mulCumulative['LA']) mulCumulative['LA'] = {};
+  for (const [era, chassisSet] of Object.entries(mulCumulative['LC'])) {
+    if (!mulCumulative['LA'][era]) mulCumulative['LA'][era] = new Set();
+    for (const ch of chassisSet) mulCumulative['LA'][era].add(ch);
+  }
+}
+
 function weightClass(tonnage) {
   if (!tonnage) return null;
   if (tonnage <= 35) return 'Light';
