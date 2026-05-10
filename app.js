@@ -620,6 +620,8 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
     if (!th || !th.dataset.sort) return;
     handleHeaderSort(th, rows, scopedFactions, eraYear, query);
   });
+
+  updateColVisibility();
 }
 
 function renderSingleFaction(rows, faction, eraYear) {
@@ -674,6 +676,8 @@ function renderSingleFaction(rows, faction, eraYear) {
   container.appendChild(wrapper);
   
   table.addEventListener('click', handleCellClick);
+
+  updateColVisibility();
 }
 
 function renderMechView(rows, eraYear, chassisName) {
@@ -726,6 +730,8 @@ function renderMechView(rows, eraYear, chassisName) {
     
     table.addEventListener('click', handleCellClick);
   }
+
+  updateColVisibility();
 }
 
 function renderMechDetail(rows, scopedFactions, eraYear) {
@@ -1056,6 +1062,7 @@ function runQuery() {
   if (!queryStr) {
     landing.style.display = '';
     viewContainer.classList.add('hidden');
+    document.getElementById('col-vis-bar').classList.add('hidden');
     document.getElementById('filter-chips').innerHTML = '';
     statusText.textContent = '';
     return;
@@ -1480,6 +1487,9 @@ async function init() {
   // ── Settings Panel ──
   initSettings();
 
+  // ── Column Visibility ──
+  initColVisibility();
+
   // ── Quick Filter Insert ──
   initQuickFilter();
 
@@ -1708,6 +1718,113 @@ function openFamilyEditor(familyName) {
       runQuery();
     });
   }
+}
+
+// ── Column Visibility ──
+
+const COL_VIS_KEY = 'bt-sig-col-visibility';
+
+function loadColVisibility() {
+  try { return JSON.parse(localStorage.getItem(COL_VIS_KEY) || '{}'); } catch { return {}; }
+}
+
+function saveColVisibility(state) {
+  localStorage.setItem(COL_VIS_KEY, JSON.stringify(state));
+}
+
+function initColVisibility() {
+  const toggle = document.getElementById('col-vis-toggle');
+  const menu = document.getElementById('col-vis-menu');
+
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menu.classList.toggle('hidden');
+  });
+
+  // Close on click-outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#col-vis-bar')) {
+      menu.classList.add('hidden');
+    }
+  });
+}
+
+/**
+ * Called after any table render. Reads headers from the rendered table,
+ * builds the checkbox menu, and applies stored visibility.
+ */
+function updateColVisibility() {
+  const bar = document.getElementById('col-vis-bar');
+  const menu = document.getElementById('col-vis-menu');
+  const table = document.querySelector('#view-container .data-table');
+
+  if (!table) {
+    bar.classList.add('hidden');
+    return;
+  }
+
+  const headers = table.querySelectorAll('thead th');
+  if (headers.length === 0) {
+    bar.classList.add('hidden');
+    return;
+  }
+
+  bar.classList.remove('hidden');
+  const state = loadColVisibility();
+
+  menu.innerHTML = '';
+  headers.forEach((th, idx) => {
+    const name = th.textContent.trim();
+    if (!name) return;
+
+    // Chassis column (index 0) is always visible
+    const isLocked = idx === 0;
+    const isVisible = isLocked || (state[name] !== false); // default visible
+
+    const label = document.createElement('label');
+    label.className = 'col-vis-item';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = isVisible;
+    cb.disabled = isLocked;
+    cb.dataset.colIdx = idx;
+    cb.dataset.colName = name;
+
+    cb.addEventListener('change', () => {
+      const s = loadColVisibility();
+      s[name] = cb.checked;
+      saveColVisibility(s);
+      applyColVisibility();
+    });
+
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(' ' + name));
+    menu.appendChild(label);
+  });
+
+  applyColVisibility();
+}
+
+function applyColVisibility() {
+  const table = document.querySelector('#view-container .data-table');
+  if (!table) return;
+
+  const state = loadColVisibility();
+  const headers = table.querySelectorAll('thead th');
+
+  headers.forEach((th, idx) => {
+    const name = th.textContent.trim();
+    const visible = idx === 0 || state[name] !== false;
+    
+    // Toggle header
+    th.style.display = visible ? '' : 'none';
+    
+    // Toggle all cells in this column
+    table.querySelectorAll(`tbody tr`).forEach(tr => {
+      const td = tr.children[idx];
+      if (td) td.style.display = visible ? '' : 'none';
+    });
+  });
 }
 
 // ── Quick Filter Insert ──
