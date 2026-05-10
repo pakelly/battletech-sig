@@ -1097,12 +1097,21 @@ function runQuery() {
       const tMin = meta.tons;
       const tMax = meta.tonsMax || meta.tons;
       if (tMin != null) {
-        // Range-aware: a family matches if any tonnage in [min,max] satisfies the filter
+        // Range-aware: match if any tonnage in [min,max] could satisfy the filter
         const op = parsed.tons.op;
         const val = parsed.tons.val;
-        const passesMin = compareOp(tMin, op, val);
-        const passesMax = compareOp(tMax, op, val);
-        if (!passesMin && !passesMax) continue;
+        let passes;
+        if (op === '=' || op === '==') {
+          // tons=60 matches if 60 is within [min, max]
+          passes = val >= tMin && val <= tMax;
+        } else if (op === '!=') {
+          // tons!=60 matches if the range isn't exactly [60, 60]
+          passes = tMin !== val || tMax !== val;
+        } else {
+          // For >, >=, <, <=: match if either endpoint satisfies
+          passes = compareOp(tMin, op, val) || compareOp(tMax, op, val);
+        }
+        if (!passes) continue;
       }
     }
     
