@@ -526,6 +526,74 @@ header h1:hover {
 
 #qf-suggest-box.hidden { display: none; }
 
+/* ── Column Visibility ── */
+
+#col-vis-bar {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+#col-vis-bar.hidden { display: none; }
+
+#col-vis-toggle {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+#col-vis-toggle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+#col-vis-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem;
+  z-index: 50;
+  min-width: 160px;
+  max-height: 300px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+#col-vis-menu.hidden { display: none; }
+
+.col-vis-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.3rem;
+  font-size: 0.8rem;
+  color: var(--text);
+  cursor: pointer;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.col-vis-item:hover {
+  background: var(--suggest-hover);
+}
+
+.col-vis-item input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+.col-vis-item input:disabled {
+  opacity: 0.4;
+}
+
 /* ── Status Bar ── */
 
 #status-bar {

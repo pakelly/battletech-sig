@@ -423,6 +423,29 @@ A secondary input field below the query bar and filter chips for composing one f
 
 ---
 
+## Column Visibility
+
+A hamburger menu (☰) attached to the results table that lets users show/hide columns.
+
+**Trigger:** ☰ button in the view title bar area, appears when a table is rendered.
+
+**Panel:** Dropdown/popover with checkboxes for every column in the current table, grouped:
+- **Chassis** — always visible (row identifier, cannot be hidden)
+- **Metadata** — Tons
+- **Faction Preference** — one per scoped faction
+- **Faction Signature** — one per scoped faction sig column
+- **Stats** — Spread, Span, Avg Pref
+
+**Behavior:**
+- Hidden columns get `display:none` on `<th>` and corresponding `<td>` cells. Data stays in DOM.
+- Sorting via query bar is unrestricted regardless of column visibility. Clickable header sort only works on visible columns (because the header isn't rendered).
+- Filtering always works on all data regardless of visibility.
+- Column list rebuilds on each query execution (columns are dynamic based on scoped factions).
+- State persisted in `localStorage` (keyed by column name, global across queries).
+- Panel dismisses on click-outside or clicking ☰ again.
+
+---
+
 ## Future Possibilities
 
 - **Code consolidation:** Merge dead `executeQuery` path into `runQuery`. Consolidate sort functions.
