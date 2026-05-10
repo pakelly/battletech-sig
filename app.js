@@ -64,6 +64,8 @@ function parseQuery(queryStr) {
     era: null,
     family: null,     // 'on' | 'off'
     industrial: null,  // 'show' | 'hide'
+    type: null,        // 'omni' | 'battlemech'
+    tech: null,        // 'clan' | 'is' | 'mixed'
     mode: 'B',
     sort: [],          // [{field, dir}]
     raw: queryStr
@@ -177,6 +179,12 @@ function parseQuery(queryStr) {
         break;
       case 'industrial':
         result.industrial = value.toLowerCase();
+        break;
+      case 'type':
+        result.type = value.toLowerCase();
+        break;
+      case 'tech':
+        result.tech = value.toLowerCase();
         break;
       case 'mode':
         result.mode = value.toUpperCase();
@@ -950,7 +958,7 @@ function handleHeaderSort(th, rows, scopedFactions, eraYear, query) {
 
 // ── Auto-Suggest ──
 
-const FIELD_NAMES = ['faction', 'chassis', 'class', 'spread', 'sig', 'signature', 'weight', 'tons', 'tonnage', 'year', 'era', 'family', 'industrial', 'mode', 'sort'];
+const FIELD_NAMES = ['faction', 'chassis', 'class', 'type', 'tech', 'spread', 'sig', 'signature', 'weight', 'tons', 'tonnage', 'year', 'era', 'family', 'industrial', 'mode', 'sort'];
 
 function getSuggestions(text, cursorPos) {
   if (!DATA) return [];
@@ -967,7 +975,7 @@ function getSuggestions(text, cursorPos) {
   if (spaceMatch) {
     const field = spaceMatch[1].toLowerCase();
     const partial = spaceMatch[2].trim().toLowerCase();
-    const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'year', 'era', 'family', 'industrial', 'mode']);
+    const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'year', 'era', 'family', 'industrial', 'mode']);
     if (VALUE_FIELD_SET.has(field) && partial) {
       // Fake an eq match and fall through to value completion
       return getValueSuggestions(field, partial);
@@ -993,7 +1001,7 @@ function getSuggestions(text, cursorPos) {
   }
 
   // Field name completion
-  const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'year', 'era', 'family', 'industrial', 'mode']);
+  const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'year', 'era', 'family', 'industrial', 'mode']);
   const OPERATOR_FIELD_SET = new Set(['spread', 'sig', 'signature', 'weight', 'tons', 'tonnage']);
 
   if (!lastToken.includes('=') && !lastToken.includes('>') && !lastToken.includes('<')) {
@@ -1079,6 +1087,12 @@ function getValueSuggestions(field, lower) {
       return [{ text: 'A', hint: 'MegaMek Only' }, { text: 'B', hint: 'MegaMek × MUL' }];
     case 'family':
       return [{ text: 'on', hint: 'Merge families' }, { text: 'off', hint: 'Individual chassis' }];
+    case 'type':
+      return [{ text: 'omni', hint: 'OmniMechs only' }, { text: 'battlemech', hint: 'BattleMechs only' }]
+        .filter(i => i.text.startsWith(lower));
+    case 'tech':
+      return [{ text: 'clan', hint: 'Clan tech' }, { text: 'is', hint: 'Inner Sphere' }, { text: 'mixed', hint: 'Mixed tech' }]
+        .filter(i => i.text.startsWith(lower));
     case 'industrial':
       return [{ text: 'show', hint: '' }, { text: 'hide', hint: '' }];
   }
@@ -1100,6 +1114,8 @@ function renderChips(parsed) {
     chips.push({ label: 'chassis=' + parsed.chassis.join(' OR '), field: 'chassis' });
   }
   if (parsed.class) chips.push({ label: 'class=' + parsed.class, field: 'class' });
+  if (parsed.type) chips.push({ label: 'type=' + parsed.type, field: 'type' });
+  if (parsed.tech) chips.push({ label: 'tech=' + parsed.tech, field: 'tech' });
   if (parsed.spread) chips.push({ label: `spread${parsed.spread.op}${parsed.spread.val}`, field: 'spread' });
   if (parsed.span) chips.push({ label: `span${parsed.span.op}${parsed.span.val}`, field: 'span' });
   // avg-weight and span still parseable but no chip/column
@@ -1144,6 +1160,8 @@ function removeFieldFromQuery(field) {
     'faction': /\bfaction\s*=\s*(\([^)]+\)|"[^"]+"|[^\s]+)/gi,
     'chassis': /\bchassis\s*=\s*(\([^)]+\)|"[^"]+"|[^\s]+)/gi,
     'class': /\bclass\s*=\s*\w+/gi,
+    'type': /\btype\s*=\s*\w+/gi,
+    'tech': /\btech\s*=\s*\w+/gi,
     'spread': /\bspread\s*[><=!]+\s*[\d.]+/gi,
     'span': /\bspan\s*[><=!]+\s*[\d.]+/gi,
     'avg-weight': /\bavg-weight\s*[><=!]+\s*[\d.]+/gi,
@@ -1261,6 +1279,14 @@ function runQuery() {
     
     if (hideIndustrial && meta.industrial) continue;
     if (/\bLAM\b/.test(chassisName)) continue; // LAMs always hidden for now
+    if (parsed.type === 'omni' && !meta.omni) continue;
+    if (parsed.type === 'battlemech' && (meta.omni || meta.industrial)) continue;
+    if (parsed.tech) {
+      const t = (meta.tech || '').toLowerCase();
+      if (parsed.tech === 'clan' && !t.includes('clan')) continue;
+      if (parsed.tech === 'is' && t !== 'inner sphere') continue;
+      if (parsed.tech === 'mixed' && t !== 'mixed') continue;
+    }
     if (parsed.year && meta.intro && meta.intro > parsed.year) continue;
     if (parsed.tons) {
       // For families with a tonnage range, use the range for filtering
@@ -2076,7 +2102,7 @@ function initQuickFilter() {
   let qfSuggestIndex = -1;
 
   // Known field names that take = values (not sort, not numeric-operator fields used bare)
-  const VALUE_FIELDS = new Set(['faction', 'chassis', 'class', 'year', 'era', 'family', 'industrial', 'mode']);
+  const VALUE_FIELDS = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'year', 'era', 'family', 'industrial', 'mode']);
   const OPERATOR_FIELDS = new Set(['spread', 'sig', 'signature', 'weight', 'tons', 'tonnage']);
 
   function normalizeFilterText(raw) {
