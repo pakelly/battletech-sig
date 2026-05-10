@@ -74,6 +74,20 @@
     "autoDetected": true
   },
   {
+    "groupName": "Hatamoto Family",
+    "chassis": [
+      "Hatamoto-Chi",
+      "Hatamoto-Hi",
+      "Hatamoto-Kaze",
+      "Hatamoto-Ku",
+      "Hatamoto-Mizo",
+      "Hatamoto-Suna",
+      "Hatamoto-Godai",
+      "Hatamoto-Kaeru"
+    ],
+    "enabled": true
+  },
+  {
     "groupName": "Hel Family",
     "chassis": [
       "Loki (Hellbringer)",
@@ -333,6 +347,16 @@
     "autoDetected": true
   },
   {
+    "groupName": "UrbanMech Family",
+    "chassis": [
+      "UrbanMech",
+      "UrbanMech IIC",
+      "SuburbanMech"
+    ],
+    "enabled": true,
+    "autoDetected": false
+  },
+  {
     "groupName": "Ursus Family",
     "chassis": [
       "Ursus",
@@ -349,19 +373,5 @@
     ],
     "enabled": true,
     "autoDetected": true
-  },
-  {
-    "groupName": "Hatamoto Family",
-    "chassis": [
-      "Hatamoto-Chi",
-      "Hatamoto-Hi",
-      "Hatamoto-Kaze",
-      "Hatamoto-Ku",
-      "Hatamoto-Mizo",
-      "Hatamoto-Suna",
-      "Hatamoto-Godai",
-      "Hatamoto-Kaeru"
-    ],
-    "enabled": true
   }
 ]
