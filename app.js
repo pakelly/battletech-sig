@@ -1623,7 +1623,7 @@ function renderFamiliesList() {
         <input type="checkbox" class="family-enable-cb" data-family="${fam.groupName}" ${fam.enabled ? 'checked' : ''} ${globalOn ? '' : 'disabled'}>
       </label>
       <div class="family-info">
-        <span class="family-name">${displayName}${fam.isOverridden ? ' ✎' : ''}</span>
+        <span class="family-name">${fam.isCustom ? '<span class="family-badge family-badge-user" title="User-created">USER</span>' : '<span class="family-badge family-badge-system" title="System-defined">SYS</span>'} ${displayName}${fam.isOverridden ? ' ✎' : ''}</span>
         <span class="family-members">${membersStr}</span>
       </div>
       <button class="family-edit-btn" data-family="${fam.groupName}" title="Edit family" ${globalOn ? '' : 'disabled'}>✎</button>
