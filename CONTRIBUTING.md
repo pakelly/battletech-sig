@@ -2,6 +2,22 @@
 
 **Established 2026-05-09** after a productive but chaotic cowboy coding session that exposed the cost of skipping process.
 
+## Development Mode
+
+**Current mode: 🟡 EXPLORE**
+
+| Mode | When | What changes |
+|------|------|-------------|
+| 🟢 **YOLO** | Greenfield, nothing works yet | Skip everything. Just build. |
+| 🟡 **EXPLORE** | Early phases, finding the shape | Rules 1, 5, 9 active (document intent, propose before big changes, no duplicate logic). Tests encouraged but not gating. Ship and iterate. |
+| 🔴 **DEFEND** | Working features, real users, tests to protect | All 10 rules active. Full workflow. No exceptions. |
+
+**Mode is set here in this file, not in conversation.** Changing mode requires editing this section and committing. This survives compressions.
+
+Patrick decides when to shift modes. Don't ask "should we switch to DEFEND?" — he'll know when.
+
+---
+
 ## The Rules
 
 ### 1. Document first
