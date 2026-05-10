@@ -215,6 +215,25 @@ header h1:hover {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.family-badge {
+  display: inline-block;
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+  vertical-align: middle;
+  letter-spacing: 0.03em;
+  margin-right: 0.2rem;
+}
+.family-badge-system {
+  background: var(--border);
+  color: var(--text-dim);
+}
+.family-badge-user {
+  background: var(--accent-dim);
+  color: var(--bg);
+}
+
 .family-edit-btn {
   flex-shrink: 0;
   background: none;
