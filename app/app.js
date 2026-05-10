@@ -1624,6 +1624,8 @@ function renderFamiliesList() {
       overrides[name].enabled = cb.checked;
       saveFamilyOverrides(overrides);
       applyFamilyOverridesToData();
+      const fam = DATA.families.find(f => f.groupName === name);
+      console.log('[family toggle]', name, '→ enabled:', fam?.enabled, 'override:', overrides[name]);
       runQuery();
     });
   });
