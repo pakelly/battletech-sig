@@ -382,12 +382,29 @@ function getChassisForEra(eraYear, familyMode) {
   // Merge families (only enabled ones)
   const merged = {};
   const familyMembers = {}; // groupName -> [chassisNames]
+  const disabledFamilies = new Set(); // families explicitly disabled by user
   
   for (const fam of DATA.families) {
-    if (!fam.enabled) continue; // skip disabled families
+    if (!fam.enabled) {
+      disabledFamilies.add(fam.groupName);
+      continue; // skip disabled families
+    }
     for (const ch of fam.chassis) {
       if (!familyMembers[fam.groupName]) familyMembers[fam.groupName] = [];
       familyMembers[fam.groupName].push(ch);
+    }
+  }
+  
+  // Also collect ad-hoc families from eraData fam fields not already in familyMembers
+  // (e.g. IIC families defined only in the raw data, not in DATA.families)
+  for (const [chassisName, data] of Object.entries(eraData)) {
+    const famName = data.fam;
+    if (famName && !disabledFamilies.has(famName)) {
+      if (!familyMembers[famName]) familyMembers[famName] = [];
+      // Add if not already listed (explicit DATA.families entries may overlap)
+      if (!familyMembers[famName].includes(chassisName)) {
+        familyMembers[famName].push(chassisName);
+      }
     }
   }
   
@@ -457,10 +474,11 @@ function getChassisForEra(eraYear, familyMode) {
           tech: techValues.size === 1 ? [...techValues][0] : [...techValues].join('/')
         }
       };
-    } else if (!famName) {
+    } else if (!famName || disabledFamilies.has(famName)) {
+      // No family, or family is disabled — show individually
       merged[chassisName] = data;
     }
-    // Skip if already processed as part of a family
+    // Skip if already processed as part of an enabled family
   }
   
   return merged;
