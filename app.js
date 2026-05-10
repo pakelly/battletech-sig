@@ -627,13 +627,13 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   const thead = document.createElement('thead');
   const hasSig = rows.some(r => r.sig);
   let headerHTML = '<tr><th data-sort="name">Chassis</th><th data-sort="tonnage">Tons</th>';
-  for (const f of scopedFactions) {
-    headerHTML += `<th data-sort="${f}-weight" title="${getFactionFullName(f)}">${getFactionLabel(f)}</th>`;
-  }
   if (hasSig) {
     for (const f of scopedFactions) {
       headerHTML += `<th data-sort="${f}-sig" title="${getFactionFullName(f)} Signature">${getFactionLabel(f)} Sig</th>`;
     }
+  }
+  for (const f of scopedFactions) {
+    headerHTML += `<th data-sort="${f}-weight" title="${getFactionFullName(f)}">${getFactionLabel(f)}</th>`;
   }
   headerHTML += '<th data-sort="spread">Spread</th><th data-sort="span">Span</th><th data-sort="avg-weight">Avg</th></tr>';
   thead.innerHTML = headerHTML;
@@ -645,23 +645,6 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
     const tr = document.createElement('tr');
     let html = `<td class="chassis-name">${escHtml(row.name)}</td>`;
     html += `<td class="tonnage-col">${formatTonnage(row.meta)} <span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>`;
-    
-    for (const f of scopedFactions) {
-      const w = row.weights[f] || 0;
-      const cls = w > 0 ? heatClass(w) : 'no-data';
-      
-      if (w > 0) {
-        html += `<td class="faction-cell ${cls}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
-        html += `<span class="pref-value">${w}</span>`;
-        if (hasSig && row.sig?.[f] > 0) {
-          const tier = row.sig?.[f + '_tier'] || 0;
-          html += `<span class="sig-value">T${tier}</span>`;
-        }
-        html += '</td>';
-      } else {
-        html += '<td class="faction-cell no-data">—</td>';
-      }
-    }
     
     if (hasSig) {
       for (const f of scopedFactions) {
@@ -676,6 +659,23 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
         } else {
           html += '<td class="faction-cell no-data">—</td>';
         }
+      }
+    }
+
+    for (const f of scopedFactions) {
+      const w = row.weights[f] || 0;
+      const cls = w > 0 ? heatClass(w) : 'no-data';
+      
+      if (w > 0) {
+        html += `<td class="faction-cell ${cls}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
+        html += `<span class="pref-value">${w}</span>`;
+        if (hasSig && row.sig?.[f] > 0) {
+          const tier = row.sig?.[f + '_tier'] || 0;
+          html += `<span class="sig-value">T${tier}</span>`;
+        }
+        html += '</td>';
+      } else {
+        html += '<td class="faction-cell no-data">—</td>';
       }
     }
     html += `<td class="stat-col">${row.spread.toFixed(1)}</td>`;
