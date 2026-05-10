@@ -58,28 +58,19 @@ Mode B is the default.
 
 The fundamental data structure is **Factions × Chassis**, evaluated within an **Era** (or target year). Each cell contains the faction's resolved weight for that chassis.
 
-### Two Scoring Metrics
+### Two Display Values
 
-The tool provides two complementary metrics that answer different questions about the same data. Both are computed at runtime from raw weights.
+The tool shows two complementary values for each faction+chassis cell: raw weight and global signature.
 
-#### Scoped Preference (1–10) — The Comparison Lens
+#### Raw Weight — The Usage Signal
 
-**Question:** "Given this mech, which of these factions wants it more?"
+**Question:** "How heavily does this faction field this mech?"
 
-**Direction:** Mech → Faction
+**Values:** Integer 1–10 (from MegaMek force generator data). Higher = more common in that faction's forces.
 
-**Use case:** "I have a Griffin mini — DC or FS?" Scoped preference directly answers this.
+**This is the primary display value in faction cells.** It drives heat map coloring. Weight 1 = coolest, weight 10 = hottest. No normalization — the raw MegaMek weight is the value shown.
 
-**Behavior:**
-- Recalculates every time the user changes the faction scope.
-- Linear min-to-max normalization across the **scoped factions'** weights for this chassis.
-- **Zeros included:** factions that don't field the chassis score as weight 0. This is critical — "you have it and they don't" is the strongest signal.
-- **1** = lowest among scoped factions; **10** = highest.
-- Narrowing the scope magnifies small differences. Widening it compresses them.
-
-**Scoped preference is inherently relative.** The same chassis can score 10 for DC vs FS but 5 for DC vs GreatHouses. This is a feature: it's a lens, not a label.
-
-**This is the primary display value in faction cells.** It drives heat map coloring.
+**Comparison is direct.** "Griffin — DC or FS?" → DC:6, FS:3. No normalization artifacts, no scope-dependent instability.
 
 #### Global Signature — The Identity Checklist
 
@@ -132,10 +123,10 @@ Raw `weight × share` avoids both problems. It stays in meaningful units (weight
 
 | Situation | Use | Why |
 |-----------|-----|-----|
-| "Who should I paint this Griffin for?" | Scoped Preference | You need a head-to-head comparison between specific factions |
-| "What's the most DC mech I don't own yet?" | Global Signature | You need DC's identity ranked by importance |
-| "What makes DC different from FS?" | Scoped Preference + Spread | The comparison lens magnifies differences between these two |
-| "What are DC's top 10 identity mechs?" | Global Signature | Stable ranking, doesn't depend on who you're comparing against |
+| "Who should I paint this Griffin for?" | Raw Weight | Direct comparison: DC:6 vs FS:3 |
+| "What's the most DC mech I don't own yet?" | Global Signature | DC's identity ranked by importance |
+| "What makes DC different from FS?" | Spread (weight) | High spread = one faction uses it much more |
+| "What are DC's top 10 identity mechs?" | Global Signature | Stable ranking, doesn't depend on scope |
 
 ### Derived Filter/Sort Values
 

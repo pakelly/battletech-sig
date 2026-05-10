@@ -49,10 +49,9 @@ before(() => {
       DATA = globals.__APP_DATA__;
       return {
         parseQuery,
-        scopedPref,
         computeSpread,
         computeSpan,
-        computeAvgPref,
+        computeAvgWeight,
         computeSignature,
         assignTier,
         compareOp,
@@ -122,12 +121,12 @@ describe('Query Parser', () => {
     assert.deepStrictEqual(p.tons, { op: '>', val: 50 });
   });
 
-  it('parses faction-specific pref filter', () => {
-    const p = F.parseQuery('DC-pref>8');
-    assert.strictEqual(p.factionPref.length, 1);
-    assert.strictEqual(p.factionPref[0].faction, 'DC');
-    assert.strictEqual(p.factionPref[0].op, '>');
-    assert.strictEqual(p.factionPref[0].val, 8);
+  it('parses faction-specific weight filter', () => {
+    const p = F.parseQuery('DC-weight>8');
+    assert.strictEqual(p.factionWeight.length, 1);
+    assert.strictEqual(p.factionWeight[0].faction, 'DC');
+    assert.strictEqual(p.factionWeight[0].op, '>');
+    assert.strictEqual(p.factionWeight[0].val, 8);
   });
 
   it('parses faction-specific sig filter', () => {
@@ -157,9 +156,9 @@ describe('Query Parser', () => {
     assert.strictEqual(p.sort[0].dir, 'desc');
   });
 
-  it('parses sort by faction preference', () => {
-    const p = F.parseQuery('sort by DC preference desc');
-    assert.strictEqual(p.sort[0].field, 'DC-preference');
+  it('parses sort by faction weight', () => {
+    const p = F.parseQuery('sort by DC weight desc');
+    assert.strictEqual(p.sort[0].field, 'DC-weight');
   });
 
   it('is case-insensitive for factions', () => {
@@ -195,36 +194,7 @@ describe('Query Parser', () => {
 // 2. SCOPED PREFERENCE
 // ════════════════════════════════════════════════════════
 
-describe('Scoped Preference', () => {
-  it('returns 10 for highest, 1 for lowest', () => {
-    const result = F.scopedPref({ DC: 8, FS: 2 }, ['DC', 'FS']);
-    assert.ok(Math.abs(result.DC - 10) < 0.01);
-    assert.ok(Math.abs(result.FS - 1) < 0.01);
-  });
-
-  it('includes zeros — exclusive mech scores 10', () => {
-    const result = F.scopedPref({ DC: 6, FS: 0 }, ['DC', 'FS']);
-    assert.ok(Math.abs(result.DC - 10) < 0.01);
-    assert.ok(Math.abs(result.FS - 1) < 0.01);
-  });
-
-  it('equal weights produce 5.0 for all', () => {
-    const result = F.scopedPref({ DC: 5, FS: 5, FWL: 5 }, ['DC', 'FS', 'FWL']);
-    assert.ok(Math.abs(result.DC - 5) < 0.01);
-    assert.ok(Math.abs(result.FS - 5) < 0.01);
-  });
-
-  it('returns null when no faction has weight', () => {
-    const result = F.scopedPref({ DC: 0, FS: 0 }, ['DC', 'FS']);
-    assert.strictEqual(result, null);
-  });
-
-  it('missing faction treated as zero', () => {
-    const result = F.scopedPref({ DC: 8 }, ['DC', 'FS']);
-    assert.ok(Math.abs(result.DC - 10) < 0.01);
-    assert.ok(Math.abs(result.FS - 1) < 0.01);
-  });
-});
+// Scoped Preference removed — replaced by raw weights (2026-05-10)
 
 // ════════════════════════════════════════════════════════
 // 3. DERIVED VALUES
@@ -239,9 +209,9 @@ describe('Derived Values', () => {
     assert.strictEqual(F.computeSpan({ DC: 8, FS: 0, FWL: 5 }, ['DC', 'FS', 'FWL']), 2);
   });
 
-  it('computeAvgPref averages non-zero preferences', () => {
-    const prefs = { DC: 10, FS: 1, FWL: 4 };
-    const avg = F.computeAvgPref(prefs, ['DC', 'FS', 'FWL']);
+  it('computeAvgWeight averages non-zero weights', () => {
+    const weights = { DC: 8, FS: 2, FWL: 5 };
+    const avg = F.computeAvgWeight(weights, ['DC', 'FS', 'FWL']);
     assert.ok(Math.abs(avg - 5) < 0.01);
   });
 
@@ -390,9 +360,9 @@ describe('Global Signature — Real Data (DC 3039)', () => {
 describe('sortRowsInPlace', () => {
   it('sorts by sig desc', () => {
     const rows = [
-      { name: 'Locust', sig: { DC: 3 }, spread: 0, span: 0, avgPref: 0, meta: {}, weights: {}, prefs: {} },
-      { name: 'Dragon', sig: { DC: 10 }, spread: 0, span: 0, avgPref: 0, meta: {}, weights: {}, prefs: {} },
-      { name: 'Griffin', sig: { DC: 7 }, spread: 0, span: 0, avgPref: 0, meta: {}, weights: {}, prefs: {} },
+      { name: 'Locust', sig: { DC: 3 }, spread: 0, span: 0, avgWeight: 0, meta: {}, weights: {} },
+      { name: 'Dragon', sig: { DC: 10 }, spread: 0, span: 0, avgWeight: 0, meta: {}, weights: {} },
+      { name: 'Griffin', sig: { DC: 7 }, spread: 0, span: 0, avgWeight: 0, meta: {}, weights: {} },
     ];
     F.sortRowsInPlace(rows, [{ field: 'sig', dir: 'desc' }]);
     assert.strictEqual(rows[0].name, 'Dragon');
@@ -402,9 +372,9 @@ describe('sortRowsInPlace', () => {
 
   it('sorts by DC-sig desc', () => {
     const rows = [
-      { name: 'Locust', sig: { DC: 3 }, spread: 0, span: 0, avgPref: 0, meta: {}, weights: {}, prefs: {} },
-      { name: 'Dragon', sig: { DC: 10 }, spread: 0, span: 0, avgPref: 0, meta: {}, weights: {}, prefs: {} },
-      { name: 'Griffin', sig: { DC: 7 }, spread: 0, span: 0, avgPref: 0, meta: {}, weights: {}, prefs: {} },
+      { name: 'Locust', sig: { DC: 3 }, spread: 0, span: 0, avgWeight: 0, meta: {}, weights: {} },
+      { name: 'Dragon', sig: { DC: 10 }, spread: 0, span: 0, avgWeight: 0, meta: {}, weights: {} },
+      { name: 'Griffin', sig: { DC: 7 }, spread: 0, span: 0, avgWeight: 0, meta: {}, weights: {} },
     ];
     F.sortRowsInPlace(rows, [{ field: 'DC-sig', dir: 'desc' }]);
     assert.strictEqual(rows[0].name, 'Dragon');
@@ -413,9 +383,9 @@ describe('sortRowsInPlace', () => {
 
   it('sorts by spread desc', () => {
     const rows = [
-      { name: 'A', spread: 2, sig: null, span: 0, avgPref: 0, meta: {}, weights: {}, prefs: {} },
-      { name: 'B', spread: 8, sig: null, span: 0, avgPref: 0, meta: {}, weights: {}, prefs: {} },
-      { name: 'C', spread: 5, sig: null, span: 0, avgPref: 0, meta: {}, weights: {}, prefs: {} },
+      { name: 'A', spread: 2, sig: null, span: 0, avgWeight: 0, meta: {}, weights: {} },
+      { name: 'B', spread: 8, sig: null, span: 0, avgWeight: 0, meta: {}, weights: {} },
+      { name: 'C', spread: 5, sig: null, span: 0, avgWeight: 0, meta: {}, weights: {} },
     ];
     F.sortRowsInPlace(rows, [{ field: 'spread', dir: 'desc' }]);
     assert.strictEqual(rows[0].name, 'B');
@@ -424,29 +394,29 @@ describe('sortRowsInPlace', () => {
 
   it('sorts by tons asc', () => {
     const rows = [
-      { name: 'Atlas', meta: { tons: 100 }, sig: null, spread: 0, span: 0, avgPref: 0, weights: {}, prefs: {} },
-      { name: 'Locust', meta: { tons: 20 }, sig: null, spread: 0, span: 0, avgPref: 0, weights: {}, prefs: {} },
-      { name: 'Griffin', meta: { tons: 55 }, sig: null, spread: 0, span: 0, avgPref: 0, weights: {}, prefs: {} },
+      { name: 'Atlas', meta: { tons: 100 }, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {} },
+      { name: 'Locust', meta: { tons: 20 }, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {} },
+      { name: 'Griffin', meta: { tons: 55 }, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {} },
     ];
     F.sortRowsInPlace(rows, [{ field: 'tons', dir: 'asc' }]);
     assert.strictEqual(rows[0].name, 'Locust');
     assert.strictEqual(rows[2].name, 'Atlas');
   });
 
-  it('sorts by DC-preference desc', () => {
+  it('sorts by DC-weight desc', () => {
     const rows = [
-      { name: 'A', prefs: { DC: 3 }, sig: null, spread: 0, span: 0, avgPref: 0, meta: {}, weights: {} },
-      { name: 'B', prefs: { DC: 10 }, sig: null, spread: 0, span: 0, avgPref: 0, meta: {}, weights: {} },
-      { name: 'C', prefs: { DC: 7 }, sig: null, spread: 0, span: 0, avgPref: 0, meta: {}, weights: {} },
+      { name: 'A', sig: null, spread: 0, span: 0, avgWeight: 0, meta: {}, weights: { DC: 3 } },
+      { name: 'B', sig: null, spread: 0, span: 0, avgWeight: 0, meta: {}, weights: { DC: 10 } },
+      { name: 'C', sig: null, spread: 0, span: 0, avgWeight: 0, meta: {}, weights: { DC: 7 } },
     ];
-    F.sortRowsInPlace(rows, [{ field: 'DC-preference', dir: 'desc' }]);
+    F.sortRowsInPlace(rows, [{ field: 'DC-weight', dir: 'desc' }]);
     assert.strictEqual(rows[0].name, 'B');
   });
 
   it('handles null sig gracefully', () => {
     const rows = [
-      { name: 'A', sig: null, spread: 0, span: 0, avgPref: 0, meta: {}, weights: {}, prefs: {} },
-      { name: 'B', sig: { DC: 10 }, spread: 0, span: 0, avgPref: 0, meta: {}, weights: {}, prefs: {} },
+      { name: 'A', sig: null, spread: 0, span: 0, avgWeight: 0, meta: {}, weights: {} },
+      { name: 'B', sig: { DC: 10 }, spread: 0, span: 0, avgWeight: 0, meta: {}, weights: {} },
     ];
     F.sortRowsInPlace(rows, [{ field: 'sig', dir: 'desc' }]);
     assert.strictEqual(rows[0].name, 'B');
@@ -489,13 +459,13 @@ describe('MUL Data Integrity', () => {
 // ════════════════════════════════════════════════════════
 
 describe('Filter/Sort Parity', () => {
-  const filterableFields = ['spread', 'span', 'avg-pref', 'weight', 'sig', 'tons'];
+  const filterableFields = ['spread', 'span', 'avg-weight', 'weight', 'sig', 'tons'];
 
   for (const field of filterableFields) {
     it(`${field} works as both filter and sort`, () => {
       // Test filter parsing
       const filterQ = F.parseQuery(`${field}>5`);
-      const filterField = field === 'avg-pref' ? 'avgPref' : field;
+      const filterField = field === 'avg-weight' ? 'avgWeight' : field;
       assert.ok(
         filterQ[filterField] !== null && filterQ[filterField] !== undefined,
         `${field} should parse as filter`
@@ -523,7 +493,7 @@ describe('End-to-End Sort — sig desc produces correct order', () => {
       const w = d.w[faction] || 0;
       if (w === 0) continue;
       const sig = F.computeSignature(d.w, d.mul, [faction]);
-      rows.push({ name, sig, weights: d.w, prefs: {}, spread: 0, span: 0, avgPref: 0, meta: {} });
+      rows.push({ name, sig, weights: d.w, spread: 0, span: 0, avgWeight: 0, meta: {} });
     }
     return rows;
   }

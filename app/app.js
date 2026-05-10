@@ -54,11 +54,11 @@ function parseQuery(queryStr) {
     class: null,
     spread: null,    // {op, val}
     span: null,
-    avgPref: null,
+    avgWeight: null,
     weight: null,
     sig: null,
     tons: null,
-    factionPref: [],  // [{faction, op, val}]
+    factionWeight: [],  // [{faction, op, val}]
     factionSig: [],   // [{faction, op, val}]
     year: null,
     era: null,
@@ -84,9 +84,9 @@ function parseQuery(queryStr) {
       let dir = 'desc';
       
       // Handle "DC preference desc" or "DC sig desc" -> field = DC-preference or DC-sig
-      if (tokens.length >= 2 && (tokens[1].toLowerCase() === 'preference' || tokens[1].toLowerCase() === 'sig' || tokens[1].toLowerCase() === 'signature')) {
+      if (tokens.length >= 2 && (tokens[1].toLowerCase() === 'preference' || tokens[1].toLowerCase() === 'weight' || tokens[1].toLowerCase() === 'sig' || tokens[1].toLowerCase() === 'signature')) {
         const factionCode = resolveFaction(tokens[0]);
-        const metric = tokens[1].toLowerCase() === 'preference' ? 'preference' : 'sig';
+        const metric = (tokens[1].toLowerCase() === 'preference' || tokens[1].toLowerCase() === 'weight') ? 'weight' : 'sig';
         if (factionCode) {
           field = factionCode + '-' + metric;
         } else {
@@ -96,16 +96,17 @@ function parseQuery(queryStr) {
       } else {
         field = tokens[0].toLowerCase();
         // Handle faction-prefixed fields: fs-sig, dc-pref, dc-preference
-        const prefixMatch = field.match(/^([a-z]+)-(sig|signature|pref|preference)$/);
+        const prefixMatch = field.match(/^([a-z]+)-(sig|signature|pref|preference|weight)$/);
         if (prefixMatch) {
           const fCode = resolveFaction(prefixMatch[1]);
-          const metric = prefixMatch[2].startsWith('pref') ? 'preference' : 'sig';
+          const metric = (prefixMatch[2].startsWith('pref') || prefixMatch[2] === 'weight') ? 'weight' : 'sig';
           if (fCode) {
             field = fCode + '-' + metric;
           }
         } else {
           field = field.replace('-', '');
           if (field === 'avgpref') field = 'avg-pref';
+          if (field === 'avgweight') field = 'avg-weight';
         }
         dir = (tokens[1] || 'desc').toLowerCase();
       }
@@ -154,7 +155,9 @@ function parseQuery(queryStr) {
         break;
       case 'avg-pref':
       case 'avgpref':
-        result.avgPref = { op, val: parseFloat(value) };
+      case 'avg-weight':
+      case 'avgweight':
+        result.avgWeight = { op, val: parseFloat(value) };
         break;
       case 'weight':
         result.weight = { op, val: parseFloat(value) };
@@ -184,13 +187,13 @@ function parseQuery(queryStr) {
         break;
       default: {
         // Handle faction-prefixed filters: DC-pref>8, FS-sig>5, etc.
-        const fpMatch = field.match(/^([a-z]+)-(pref|preference|sig|signature)$/);
+        const fpMatch = field.match(/^([a-z]+)-(pref|preference|weight|sig|signature)$/);
         if (fpMatch) {
           const fCode = resolveFaction(fpMatch[1]);
-          const metric = fpMatch[2].startsWith('pref') ? 'pref' : 'sig';
+          const metric = fpMatch[2].startsWith('pref') ? 'weight' : (fpMatch[2].startsWith('w') ? 'weight' : 'sig');
           if (fCode) {
             const entry = { faction: fCode, op, val: parseFloat(value) };
-            if (metric === 'pref') result.factionPref.push(entry);
+            if (metric === 'weight') result.factionWeight.push(entry);
             else result.factionSig.push(entry);
           }
         }
@@ -276,20 +279,6 @@ function resolveChassis(name) {
 
 // ── Scoring Functions (all client-side) ──
 
-function scopedPref(chassisWeights, scopedFactions) {
-  const vals = scopedFactions.map(f => chassisWeights[f] || 0); // ZEROS INCLUDED
-  const max = Math.max(...vals);
-  if (max === 0) return null; // nobody has it at all
-  const min = Math.min(...vals); // will be 0 if any faction doesn't field it
-  if (max === min) return Object.fromEntries(scopedFactions.map(f => [f, 5]));
-  const result = {};
-  for (const f of scopedFactions) {
-    const w = chassisWeights[f] || 0;
-    result[f] = 1 + 9 * (w - min) / (max - min);
-  }
-  return result;
-}
-
 function computeSpread(weights, scopedFactions) {
   const vals = scopedFactions.map(f => weights[f] || 0);
   return Math.max(...vals) - Math.min(...vals);
@@ -299,9 +288,8 @@ function computeSpan(weights, scopedFactions) {
   return scopedFactions.filter(f => (weights[f] || 0) > 0).length;
 }
 
-function computeAvgPref(prefs, scopedFactions) {
-  if (!prefs) return 0;
-  const vals = scopedFactions.map(f => prefs[f] || 0).filter(v => v > 0);
+function computeAvgWeight(weights, scopedFactions) {
+  const vals = scopedFactions.map(f => weights[f] || 0).filter(v => v > 0);
   if (vals.length === 0) return 0;
   return vals.reduce((a, b) => a + b, 0) / vals.length;
 }
@@ -564,14 +552,14 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   const hasSig = rows.some(r => r.sig);
   let headerHTML = '<tr><th data-sort="name">Chassis</th><th data-sort="tonnage">Tons</th>';
   for (const f of scopedFactions) {
-    headerHTML += `<th data-sort="${f}-preference" title="${getFactionFullName(f)}">${getFactionLabel(f)}</th>`;
+    headerHTML += `<th data-sort="${f}-weight" title="${getFactionFullName(f)}">${getFactionLabel(f)}</th>`;
   }
   if (hasSig) {
     for (const f of scopedFactions) {
       headerHTML += `<th data-sort="${f}-sig" title="${getFactionFullName(f)} Signature">${getFactionLabel(f)} Sig</th>`;
     }
   }
-  headerHTML += '<th data-sort="spread">Spread</th><th data-sort="span">Span</th><th data-sort="avg-pref">Avg</th></tr>';
+  headerHTML += '<th data-sort="spread">Spread</th><th data-sort="span">Span</th><th data-sort="avg-weight">Avg</th></tr>';
   thead.innerHTML = headerHTML;
   table.appendChild(thead);
   
@@ -583,19 +571,16 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
     html += `<td class="tonnage-col">${formatTonnage(row.meta)} <span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>`;
     
     for (const f of scopedFactions) {
-      const pref = row.prefs?.[f];
       const w = row.weights[f] || 0;
-      const sig = row.sig?.[f] || 0;
-      const cls = w > 0 ? heatClass(pref) : 'no-data';
+      const cls = w > 0 ? heatClass(w) : 'no-data';
       
-      if (w > 0 && pref) {
+      if (w > 0) {
         html += `<td class="faction-cell ${cls}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
-        html += `<span class="pref-value">${pref.toFixed(1)}</span>`;
-        if (hasSig && sig > 0) {
+        html += `<span class="pref-value">${w}</span>`;
+        if (hasSig && row.sig?.[f] > 0) {
           const tier = row.sig?.[f + '_tier'] || 0;
           html += `<span class="sig-value">T${tier}</span>`;
         }
-        html += `<span class="weight-value">w:${w}</span>`;
         html += '</td>';
       } else {
         html += '<td class="faction-cell no-data">—</td>';
@@ -619,7 +604,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
     }
     html += `<td class="stat-col">${row.spread.toFixed(1)}</td>`;
     html += `<td class="stat-col">${row.span}</td>`;
-    html += `<td class="stat-col">${row.avgPref.toFixed(1)}</td>`;
+    html += `<td class="stat-col">${row.avgWeight.toFixed(1)}</td>`;
     
     tr.innerHTML = html;
     tbody.appendChild(tr);
@@ -881,7 +866,7 @@ function handleHeaderSort(th, rows, scopedFactions, eraYear, query) {
 
 // ── Auto-Suggest ──
 
-const FIELD_NAMES = ['faction', 'chassis', 'class', 'spread', 'span', 'avg-pref', 'sig', 'signature', 'weight', 'tons', 'tonnage', 'year', 'era', 'family', 'industrial', 'mode', 'sort'];
+const FIELD_NAMES = ['faction', 'chassis', 'class', 'spread', 'span', 'avg-weight', 'sig', 'signature', 'weight', 'tons', 'tonnage', 'year', 'era', 'family', 'industrial', 'mode', 'sort'];
 
 function getSuggestions(text, cursorPos) {
   if (!DATA) return [];
@@ -978,12 +963,12 @@ function renderChips(parsed) {
   if (parsed.class) chips.push({ label: 'class=' + parsed.class, field: 'class' });
   if (parsed.spread) chips.push({ label: `spread${parsed.spread.op}${parsed.spread.val}`, field: 'spread' });
   if (parsed.span) chips.push({ label: `span${parsed.span.op}${parsed.span.val}`, field: 'span' });
-  if (parsed.avgPref) chips.push({ label: `avg-pref${parsed.avgPref.op}${parsed.avgPref.val}`, field: 'avg-pref' });
+  if (parsed.avgWeight) chips.push({ label: `avg-weight${parsed.avgWeight.op}${parsed.avgWeight.val}`, field: 'avg-weight' });
   if (parsed.weight) chips.push({ label: `weight${parsed.weight.op}${parsed.weight.val}`, field: 'weight' });
   if (parsed.sig) chips.push({ label: `sig${parsed.sig.op}${parsed.sig.val}`, field: 'sig' });
   if (parsed.tons) chips.push({ label: `tons${parsed.tons.op}${parsed.tons.val}`, field: 'tons' });
-  for (const fp of parsed.factionPref) {
-    chips.push({ label: `${fp.faction}-pref${fp.op}${fp.val}`, field: `${fp.faction}-pref` });
+  for (const fw of parsed.factionWeight) {
+    chips.push({ label: `${fw.faction}-weight${fw.op}${fw.val}`, field: `${fw.faction}-weight` });
   }
   for (const fs of parsed.factionSig) {
     chips.push({ label: `${fs.faction}-sig${fs.op}${fs.val}`, field: `${fs.faction}-sig` });
@@ -1022,7 +1007,7 @@ function removeFieldFromQuery(field) {
     'class': /\bclass\s*=\s*\w+/gi,
     'spread': /\bspread\s*[><=!]+\s*[\d.]+/gi,
     'span': /\bspan\s*[><=!]+\s*[\d.]+/gi,
-    'avg-pref': /\bavg-pref\s*[><=!]+\s*[\d.]+/gi,
+    'avg-weight': /\bavg-weight\s*[><=!]+\s*[\d.]+/gi,
     'weight': /\bweight\s*[><=!]+\s*[\d.]+/gi,
     'year': /\byear\s*=\s*\d+/gi,
     'era': /\bera\s*=\s*\w+/gi,
@@ -1174,24 +1159,23 @@ function runQuery() {
     }
     
     const activeFactions = scopedFactions.length > 0 ? scopedFactions : Object.keys(weights).filter(f => weights[f] > 0);
-    const prefs = scopedFactions.length > 1 ? scopedPref(weights, scopedFactions) : null;
     const spread = scopedFactions.length > 1 ? computeSpread(weights, scopedFactions) : 0;
     const span = computeSpan(weights, activeFactions);
-    const avgPref = prefs ? computeAvgPref(prefs, scopedFactions) : 0;
+    const avgWeight = computeAvgWeight(weights, activeFactions);
     
     // Filters
     if (parsed.spread && !compareOp(spread, parsed.spread.op, parsed.spread.val)) continue;
     if (parsed.span && !compareOp(span, parsed.span.op, parsed.span.val)) continue;
-    if (parsed.avgPref && !compareOp(avgPref, parsed.avgPref.op, parsed.avgPref.val)) continue;
+    if (parsed.avgWeight && !compareOp(avgWeight, parsed.avgWeight.op, parsed.avgWeight.val)) continue;
     if (parsed.weight) {
       const checkFactions = scopedFactions.length > 0 ? scopedFactions : Object.keys(weights);
       const anyPass = checkFactions.some(f => compareOp(weights[f] || 0, parsed.weight.op, parsed.weight.val));
       if (!anyPass) continue;
     }
     
-    // Faction-specific preference filter
-    if (parsed.factionPref.length > 0 && prefs) {
-      if (!parsed.factionPref.every(fp => compareOp(prefs[fp.faction] || 0, fp.op, fp.val))) continue;
+    // Faction-specific weight filter
+    if (parsed.factionWeight.length > 0) {
+      if (!parsed.factionWeight.every(fw => compareOp(weights[fw.faction] || 0, fw.op, fw.val))) continue;
     }
     
     const hasAnyWeight = (scopedFactions.length > 0 ? scopedFactions : Object.keys(weights)).some(f => (weights[f] || 0) > 0);
@@ -1201,10 +1185,9 @@ function runQuery() {
       name: chassisName,
       meta,
       weights,
-      prefs,
       spread,
       span,
-      avgPref,
+      avgWeight,
       sig: null,
       variants: data.v,
       mul: data.mul,
@@ -1305,8 +1288,8 @@ function sortRowsInPlace(rows, sortSpec) {
         va = a.spread; vb = b.spread;
       } else if (field === 'span') {
         va = a.span; vb = b.span;
-      } else if (field === 'avgpref' || field === 'avg-pref') {
-        va = a.avgPref; vb = b.avgPref;
+      } else if (field === 'avgpref' || field === 'avg-pref' || field === 'avgweight' || field === 'avg-weight') {
+        va = a.avgWeight; vb = b.avgWeight;
       } else if (field === 'weight') {
         va = Math.max(0, ...Object.values(a.weights));
         vb = Math.max(0, ...Object.values(b.weights));
@@ -1316,10 +1299,10 @@ function sortRowsInPlace(rows, sortSpec) {
         continue;
       } else if (field === 'tonnage' || field === 'tons') {
         va = a.meta.tons || 0; vb = b.meta.tons || 0;
-      } else if (field.endsWith('-preference')) {
-        const fCode = field.replace('-preference', '');
-        va = a.prefs?.[fCode] || 0;
-        vb = b.prefs?.[fCode] || 0;
+      } else if (field.endsWith('-weight')) {
+        const fCode = field.replace('-weight', '').toUpperCase();
+        va = a.weights?.[fCode] || 0;
+        vb = b.weights?.[fCode] || 0;
       } else if (field.endsWith('-sig') || field.endsWith('-signature')) {
         const fCode = field.replace(/-sig(nature)?$/, '').toUpperCase();
         va = a.sig?.[fCode] || 0;
