@@ -384,6 +384,8 @@ function getChassisForEra(eraYear, familyMode) {
   const familyMembers = {}; // groupName -> [chassisNames]
   const disabledFamilies = new Set(); // families explicitly disabled by user
   
+  const chassisToFamily = {}; // chassisName -> groupName (reverse lookup)
+
   for (const fam of DATA.families) {
     if (!fam.enabled) {
       disabledFamilies.add(fam.groupName);
@@ -392,6 +394,7 @@ function getChassisForEra(eraYear, familyMode) {
     for (const ch of fam.chassis) {
       if (!familyMembers[fam.groupName]) familyMembers[fam.groupName] = [];
       familyMembers[fam.groupName].push(ch);
+      chassisToFamily[ch] = fam.groupName;
     }
   }
   
@@ -411,9 +414,9 @@ function getChassisForEra(eraYear, familyMode) {
   const processedFamilies = new Set();
   
   for (const [chassisName, data] of Object.entries(eraData)) {
-    const famName = data.fam;
+    const famName = data.fam || chassisToFamily[chassisName] || null;
     
-    if (famName && !processedFamilies.has(famName)) {
+    if (famName && !disabledFamilies.has(famName) && !processedFamilies.has(famName)) {
       processedFamilies.add(famName);
       const members = familyMembers[famName] || [chassisName];
       
