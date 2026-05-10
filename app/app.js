@@ -970,12 +970,50 @@ function getSuggestions(text, cursorPos) {
     }
   }
 
+  // Sort context: "sort by <partial>" → suggest sortable fields without operators
+  const sortByMatch = beforeCursor.match(/\bsort\s+by\s+(\S*)$/i);
+  if (sortByMatch) {
+    const partial = sortByMatch[1].toLowerCase();
+    const sortableFields = ['spread', 'sig', 'weight', 'tons', 'name'];
+    // Add faction-prefixed sort fields
+    if (DATA) {
+      for (const code of Object.keys(DATA.factions)) {
+        sortableFields.push(code + '-sig');
+        sortableFields.push(code + '-weight');
+      }
+    }
+    return sortableFields
+      .filter(f => f.toLowerCase().startsWith(partial) && f.toLowerCase() !== partial)
+      .slice(0, 10)
+      .map(f => ({ text: f + ' desc', hint: 'sort' }));
+  }
+
   // Field name completion
+  const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'year', 'era', 'family', 'industrial', 'mode']);
+  const OPERATOR_FIELD_SET = new Set(['spread', 'sig', 'signature', 'weight', 'tons', 'tonnage']);
+
   if (!lastToken.includes('=') && !lastToken.includes('>') && !lastToken.includes('<')) {
     const lower = lastToken.toLowerCase();
     for (const field of FIELD_NAMES) {
       if (field.startsWith(lower) && field !== lower) {
-        suggestions.push({ text: field + '=', hint: 'field' });
+        // Choose appropriate operator suffix
+        if (VALUE_FIELD_SET.has(field)) {
+          suggestions.push({ text: field + '=', hint: 'field' });
+        } else if (OPERATOR_FIELD_SET.has(field)) {
+          suggestions.push({ text: field + '>', hint: 'filter' });
+        } else {
+          suggestions.push({ text: field + '=', hint: 'field' });
+        }
+      }
+    }
+    // Faction-prefixed fields: dc-sig, fs-weight, etc.
+    const fpMatch = lower.match(/^([a-z]+)-(s|si|sig|w|we|wei|weig|weigh|weight)?$/);
+    if (fpMatch && DATA) {
+      const fCode = resolveFaction(fpMatch[1]);
+      if (fCode && DATA.factions[fCode]) {
+        const partial2 = fpMatch[2] || '';
+        if ('sig'.startsWith(partial2)) suggestions.push({ text: fCode + '-sig>', hint: fCode + ' signature' });
+        if ('weight'.startsWith(partial2)) suggestions.push({ text: fCode + '-weight>', hint: fCode + ' weight' });
       }
     }
     // Also suggest "sort by"
