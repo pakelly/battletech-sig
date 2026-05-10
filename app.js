@@ -635,7 +635,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   for (const f of scopedFactions) {
     headerHTML += `<th data-sort="${f}-weight" title="${getFactionFullName(f)}">${getFactionLabel(f)}</th>`;
   }
-  headerHTML += '<th data-sort="spread">Spread</th><th data-sort="span">Span</th><th data-sort="avg-weight">Avg</th></tr>';
+  headerHTML += '<th data-sort="spread">Spread</th></tr>';
   thead.innerHTML = headerHTML;
   table.appendChild(thead);
   
@@ -679,8 +679,6 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
       }
     }
     html += `<td class="stat-col">${row.spread.toFixed(1)}</td>`;
-    html += `<td class="stat-col">${row.span}</td>`;
-    html += `<td class="stat-col">${row.avgWeight.toFixed(1)}</td>`;
     
     tr.innerHTML = html;
     tbody.appendChild(tr);
@@ -948,7 +946,7 @@ function handleHeaderSort(th, rows, scopedFactions, eraYear, query) {
 
 // ── Auto-Suggest ──
 
-const FIELD_NAMES = ['faction', 'chassis', 'class', 'spread', 'span', 'avg-weight', 'sig', 'signature', 'weight', 'tons', 'tonnage', 'year', 'era', 'family', 'industrial', 'mode', 'sort'];
+const FIELD_NAMES = ['faction', 'chassis', 'class', 'spread', 'sig', 'signature', 'weight', 'tons', 'tonnage', 'year', 'era', 'family', 'industrial', 'mode', 'sort'];
 
 function getSuggestions(text, cursorPos) {
   if (!DATA) return [];
@@ -1045,7 +1043,7 @@ function renderChips(parsed) {
   if (parsed.class) chips.push({ label: 'class=' + parsed.class, field: 'class' });
   if (parsed.spread) chips.push({ label: `spread${parsed.spread.op}${parsed.spread.val}`, field: 'spread' });
   if (parsed.span) chips.push({ label: `span${parsed.span.op}${parsed.span.val}`, field: 'span' });
-  if (parsed.avgWeight) chips.push({ label: `avg-weight${parsed.avgWeight.op}${parsed.avgWeight.val}`, field: 'avg-weight' });
+  // avg-weight and span still parseable but no chip/column
   if (parsed.weight) chips.push({ label: `weight${parsed.weight.op}${parsed.weight.val}`, field: 'weight' });
   if (parsed.sig) chips.push({ label: `sig${parsed.sig.op}${parsed.sig.val}`, field: 'sig' });
   if (parsed.tons) chips.push({ label: `tons${parsed.tons.op}${parsed.tons.val}`, field: 'tons' });
@@ -1956,7 +1954,12 @@ function updateColVisibility() {
 
     // Chassis column (index 0) is always visible
     const isLocked = idx === 0;
-    const isVisible = isLocked || (state[name] !== false); // default visible
+    // Weight columns (bare faction code, no "Sig") and Spread default to hidden
+    const isSigCol = name.endsWith(' Sig');
+    const isWeightCol = !isSigCol && DATA?.factions?.[name];
+    const isSpread = name === 'Spread';
+    const defaultHidden = isWeightCol || isSpread;
+    const isVisible = isLocked || (state[name] !== undefined ? state[name] !== false : !defaultHidden);
 
     const label = document.createElement('label');
     label.className = 'col-vis-item';
@@ -2015,7 +2018,7 @@ function initQuickFilter() {
 
   // Known field names that take = values (not sort, not numeric-operator fields used bare)
   const VALUE_FIELDS = new Set(['faction', 'chassis', 'class', 'year', 'era', 'family', 'industrial', 'mode']);
-  const OPERATOR_FIELDS = new Set(['spread', 'span', 'avg-weight', 'avgweight', 'sig', 'signature', 'weight', 'tons', 'tonnage']);
+  const OPERATOR_FIELDS = new Set(['spread', 'sig', 'signature', 'weight', 'tons', 'tonnage']);
 
   function normalizeFilterText(raw) {
     // "sort by ..." → pass through
