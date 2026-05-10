@@ -336,14 +336,14 @@ function computeSignature(weights, mulData, factions) {
  * rank is 0-indexed (0 = highest score).
  */
 function assignTier(rank, total) {
-  if (total <= 0) return 1;
-  if (total === 1) return 5;
+  if (total <= 0) return 5;
+  if (total === 1) return 1;
   const pct = rank / total;
-  if (pct < 0.2) return 5;
-  if (pct < 0.4) return 4;
+  if (pct < 0.2) return 1;  // top 20% — faction-defining
+  if (pct < 0.4) return 2;
   if (pct < 0.6) return 3;
-  if (pct < 0.8) return 2;
-  return 1;
+  if (pct < 0.8) return 4;
+  return 5;                  // bottom 20% — incidental
 }
 
 function compareOp(value, op, threshold) {
@@ -526,6 +526,12 @@ function heatClass(pref) {
   return 'heat-' + Math.round(Math.min(10, Math.max(1, pref)));
 }
 
+function sigTierToHeat(tier) {
+  // T1 (most iconic) = hottest, T5 = coolest
+  const map = { 1: 'heat-10', 2: 'heat-8', 3: 'heat-6', 4: 'heat-3', 5: 'heat-1' };
+  return map[tier] || 'no-data';
+}
+
 function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   const container = document.getElementById('view-container');
   container.innerHTML = '';
@@ -597,7 +603,15 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
       for (const f of scopedFactions) {
         const sigVal = row.sig?.[f] || 0;
         const sigTier = row.sig?.[f + '_tier'] || 0;
-        html += `<td class="stat-col">${sigVal > 0 ? `T${sigTier} <span class="sig-raw">(${sigVal.toFixed(1)})</span>` : '—'}</td>`;
+        if (sigVal > 0) {
+          const sigHeat = sigTierToHeat(sigTier);
+          html += `<td class="faction-cell ${sigHeat}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
+          html += `<span class="pref-value">T${sigTier}</span>`;
+          html += `<span class="sig-raw">${sigVal.toFixed(1)}</span>`;
+          html += '</td>';
+        } else {
+          html += '<td class="faction-cell no-data">—</td>';
+        }
       }
     }
     html += `<td class="stat-col">${row.spread.toFixed(1)}</td>`;
