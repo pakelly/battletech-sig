@@ -245,6 +245,9 @@ function resolveFactionGroup(name) {
   if (lower === 'clans') {
     return DATA?.factionGroups?.Clans || [];
   }
+  if (lower === 'invasionclans' || lower === 'invasion clans') {
+    return ['CW', 'CJF', 'CGB', 'CSJ'];
+  }
   if (lower === 'periphery') {
     return DATA?.factionGroups?.Periphery || [];
   }
@@ -655,6 +658,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
           html += `<td class="faction-cell ${sigHeat}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
           html += `<span class="pref-value">T${sigTier}</span>`;
           html += `<span class="sig-raw">${sigVal.toFixed(1)}</span>`;
+          html += `<span class="weight-value">w:${row.weights[f] || 0}</span>`;
           html += '</td>';
         } else {
           html += '<td class="faction-cell no-data">—</td>';
@@ -1041,6 +1045,7 @@ function getValueSuggestions(field, lower) {
       const items = [
         { text: 'GreatHouses', hint: 'DC, FS, FWL, LA, CC' },
         { text: 'Clans', hint: 'All Clan factions' },
+        { text: 'InvasionClans', hint: 'CW, CJF, CGB, CSJ' },
         { text: 'Periphery', hint: 'TC, MH, OA, MC' },
       ];
       for (const [code, info] of Object.entries(DATA.factions)) {
