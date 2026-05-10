@@ -1562,11 +1562,17 @@ function initSettings() {
   const globalToggle = document.getElementById('families-global-toggle');
   globalToggle.addEventListener('change', () => {
     const bar = document.getElementById('query-bar');
-    const current = bar.value.replace(/\bfamily=(on|off)\b/g, '').trim();
+    const current = bar.value.replace(/\bfamily=(on|off)\b/g, '').replace(/\s+/g, ' ').trim();
     if (!globalToggle.checked) {
-      bar.value = (current + ' family=off').trim();
+      // Insert before sort clause so it doesn't get swallowed
+      const sortMatch = current.match(/^(.*?)(\s+sort\s+by\s+.+)$/i);
+      if (sortMatch) {
+        bar.value = (sortMatch[1].trim() + ' family=off' + sortMatch[2]).trim();
+      } else {
+        bar.value = (current + ' family=off').trim();
+      }
     } else {
-      bar.value = current.replace(/\s+/g, ' ').trim();
+      bar.value = current;
     }
     runQuery();
     renderFamiliesList();
@@ -1576,11 +1582,16 @@ function initSettings() {
   document.querySelectorAll('input[name="data-mode"]').forEach(radio => {
     radio.addEventListener('change', () => {
       const bar = document.getElementById('query-bar');
-      const current = bar.value.replace(/\bmode=[AB]\b/g, '').trim();
+      const current = bar.value.replace(/\bmode=[AB]\b/g, '').replace(/\s+/g, ' ').trim();
       if (radio.value === 'A') {
-        bar.value = (current + ' mode=A').trim();
+        const sortMatch = current.match(/^(.*?)(\s+sort\s+by\s+.+)$/i);
+        if (sortMatch) {
+          bar.value = (sortMatch[1].trim() + ' mode=A' + sortMatch[2]).trim();
+        } else {
+          bar.value = (current + ' mode=A').trim();
+        }
       } else {
-        bar.value = current.replace(/\s+/g, ' ').trim();
+        bar.value = current;
       }
       runQuery();
     });
