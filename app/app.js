@@ -752,13 +752,19 @@ function showVariants(chassisName, faction, eraYear) {
   const eraData = DATA.eraData[String(eraYear)];
   if (!eraData) return;
   
+  // Respect global family mode from current query
+  const bar = document.getElementById('query-bar');
+  const currentQuery = parseQuery(bar?.value || '');
+  const familiesGloballyOff = currentQuery.family === 'off';
+  
   // Check if this is a family display name — if so, collect variants from ALL members
   let variants = null;
   let isFamily = false;
   
   for (const fam of DATA.families) {
-    if (fam.groupName.replace(/ Family$/, '') === chassisName ||
-        fam.groupName === chassisName) {
+    if (!familiesGloballyOff && fam.enabled &&
+        (fam.groupName.replace(/ Family$/, '') === chassisName ||
+        fam.groupName === chassisName)) {
       isFamily = true;
       for (const member of fam.chassis) {
         if (eraData[member]?.v) {
