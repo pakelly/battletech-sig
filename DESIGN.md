@@ -491,6 +491,14 @@ A hamburger menu (☰) attached to the results table that lets users show/hide c
 - **Code consolidation:** Merge dead `executeQuery` path into `runQuery`. Consolidate sort functions.
 - **Collection tracker:** Mark owned minis, recommend next purchases by faction identity gaps.
 - **Force builder integration:** "Build me a 10,000 BV Davion force that maximizes faction identity score."
+- **User-Defined Value Functions / Lance Builder Preferences:** A weighted scoring layer for lance composition that goes beyond raw signature. Users could define faction-flavored preferences:
+  - **Tonnage bias** — e.g., "Steiners run heavy" → penalize lights, reward assaults. Could be auto-derived from faction tonnage distribution in MegaMek weights.
+  - **Role mix** — e.g., "Davions want combined arms" → reward role diversity within a lance. MUL provides Alpha Strike `Role` per variant.
+  - **Range profile** — e.g., "Kurita likes close-in" → weight by weapon range band. MUL Alpha Strike fields: `BFDamageShort`, `BFDamageMedium`, `BFDamageLong`.
+  - **Armor density** — BV/ton as a crude proxy for "thick." MUL has `BFArmor` and `BFStructure`.
+  - **Custom weights** — user dials knobs: `lance_score = Σ(mech) [ w1×signature + w2×tonnage_pref + w3×role_fit + w4×range_fit + ... ]`
+  - Some preferences derivable from existing data (tonnage distribution, role distribution per faction). Others need new data pulled from MUL Alpha Strike stats (already in cache but not yet in app-data.json).
+  - Natural extension of the lance builder / force builder concept.
 - **Vehicles & aerospace:** Same data sources support non-mech unit types.
 - **Community sharing:** Export/import faction palettes and chassis family configs.
 - **Structured form UI:** Dropdowns and sliders layered on top of the query bar, reading/writing the same query syntax.
