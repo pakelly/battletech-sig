@@ -268,11 +268,13 @@ Queries are field expressions joined by implicit `AND`. `OR` supported within fi
 
 ### Fields
 
+All text fields support the `=` and `!=` operators. Multi-value OR is supported via `field=(A OR B)` or repeated field expressions. The `!=` operator excludes matching entries.
+
 | Field | Type | Description | Examples |
 |-------|------|-------------|----------|
 | `faction` | text (multi) | Factions in scope | `faction=DC`, `faction=GreatHouses` |
-| `chassis` | text (multi) | Specific chassis | `chassis=Dragon` |
-| `class` | enum | Weight class | `class=Assault` |
+| `chassis` | text (multi) | Specific chassis | `chassis=Dragon`, `chassis!=Locust` |
+| `class` | enum (multi) | Weight class | `class=Assault`, `class=(Light OR Medium)`, `class!=Assault` |
 | `spread` | numeric | Spread filter/sort | `spread>3` |
 | `span` | numeric | Span filter/sort | `span<4` |
 | `avg-pref` | numeric | Avg preference filter/sort | `avg-pref<6` |

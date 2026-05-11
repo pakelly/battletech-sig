@@ -118,6 +118,22 @@ describe('Query Parser', () => {
     assert.deepStrictEqual(p.sig, { op: '>', val: 8 });
   });
 
+  it('parses class with OR', () => {
+    const p = F.parseQuery('class=(Light OR Medium)');
+    assert.deepStrictEqual(p.class, { op: '=', values: ['light', 'medium'] });
+  });
+
+  it('parses class!=assault (exclusion)', () => {
+    const p = F.parseQuery('class!=Assault');
+    assert.deepStrictEqual(p.class, { op: '!=', values: ['assault'] });
+  });
+
+  it('parses chassis!=Locust (exclusion)', () => {
+    const p = F.parseQuery('chassis!=Locust');
+    assert.strictEqual(p.chassisOp, '!=');
+    assert.ok(p.chassis.includes('Locust'));
+  });
+
   it('parses tons filter', () => {
     const p = F.parseQuery('tons>50');
     assert.deepStrictEqual(p.tons, { op: '>', val: 50 });
@@ -200,7 +216,7 @@ describe('Query Parser', () => {
     assert.strictEqual(p.factions.length, 5);
     assert.strictEqual(p.year, 3039);
     assert.deepStrictEqual(p.spread, { op: '>', val: 2 });
-    assert.strictEqual(p.class, 'heavy');
+    assert.deepStrictEqual(p.class, { op: '=', values: ['heavy'] });
     assert.strictEqual(p.sort[0].field, 'spread');
   });
 });

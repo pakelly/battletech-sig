@@ -51,7 +51,8 @@ function parseQuery(queryStr) {
   const result = {
     factions: [],
     chassis: [],
-    class: null,
+    chassisOp: '=',    // '=' or '!='
+    class: null,       // {op, values: []} or null
     spread: null,    // {op, val}
     span: null,
     avgWeight: null,
@@ -145,11 +146,14 @@ function parseQuery(queryStr) {
       case 'chassis': {
         const chassis = parseValueList(value);
         result.chassis.push(...chassis);
+        result.chassisOp = op;
         break;
       }
-      case 'class':
-        result.class = value.toLowerCase();
+      case 'class': {
+        const classes = parseValueList(value).map(v => v.toLowerCase());
+        result.class = { op, values: classes };
         break;
+      }
       case 'spread':
         result.spread = { op, val: parseFloat(value) };
         break;
@@ -1183,7 +1187,7 @@ function renderChips(parsed) {
   if (parsed.chassis.length > 0) {
     chips.push({ label: 'chassis=' + parsed.chassis.join(' OR '), field: 'chassis' });
   }
-  if (parsed.class) chips.push({ label: 'class=' + parsed.class, field: 'class' });
+  if (parsed.class) chips.push({ label: 'class' + parsed.class.op + parsed.class.values.join(' OR '), field: 'class' });
   if (parsed.type) chips.push({ label: 'type=' + parsed.type, field: 'type' });
   if (parsed.tech) chips.push({ label: 'tech=' + parsed.tech, field: 'tech' });
   if (parsed.spread) chips.push({ label: `spread${parsed.spread.op}${parsed.spread.val}`, field: 'spread' });
@@ -1339,15 +1343,24 @@ function runQuery() {
         const lower = cf.toLowerCase();
         return chassisName.toLowerCase() === lower || chassisName.toLowerCase().includes(lower);
       });
-      if (!matches) continue;
+      if (parsed.chassisOp === '!=') {
+        if (matches) continue;  // Exclude matching chassis
+      } else {
+        if (!matches) continue; // Include only matching chassis
+      }
     }
     
     const meta = data._meta || DATA.chassis[chassisName] || {};
     
     if (parsed.class) {
-      const classLower = parsed.class.toLowerCase();
-      if (meta.class && !meta.class.toLowerCase().split('/').some(c => c.trim() === classLower)) continue;
-      if (!meta.class) continue;
+      const metaClasses = meta.class ? meta.class.toLowerCase().split('/').map(c => c.trim()) : [];
+      const matchesClass = metaClasses.some(c => parsed.class.values.includes(c));
+      if (parsed.class.op === '!=') {
+        if (matchesClass) continue;  // Exclude matching classes
+      } else {
+        if (!matchesClass) continue; // Include only matching classes
+        if (metaClasses.length === 0) continue;
+      }
     }
     
     if (hideIndustrial && meta.industrial) continue;
