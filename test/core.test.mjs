@@ -57,6 +57,7 @@ before(() => {
         assignTierFromBreaks,
         compareOp,
         sortRowsInPlace,
+        computeBVRange,
         resolveFaction,
         resolveFactionGroup,
         resolveChassis,
@@ -120,6 +121,19 @@ describe('Query Parser', () => {
   it('parses tons filter', () => {
     const p = F.parseQuery('tons>50');
     assert.deepStrictEqual(p.tons, { op: '>', val: 50 });
+  });
+
+  it('parses single bv filter', () => {
+    const p = F.parseQuery('bv>1000');
+    assert.strictEqual(p.bv.length, 1);
+    assert.deepStrictEqual(p.bv[0], { op: '>', val: 1000 });
+  });
+
+  it('parses bv range (two conditions)', () => {
+    const p = F.parseQuery('bv>1000 bv<1500');
+    assert.strictEqual(p.bv.length, 2);
+    assert.deepStrictEqual(p.bv[0], { op: '>', val: 1000 });
+    assert.deepStrictEqual(p.bv[1], { op: '<', val: 1500 });
   });
 
   it('parses faction-specific weight filter', () => {
@@ -214,6 +228,46 @@ describe('Derived Values', () => {
     const weights = { DC: 8, FS: 2, FWL: 5 };
     const avg = F.computeAvgWeight(weights, ['DC', 'FS', 'FWL']);
     assert.ok(Math.abs(avg - 5) < 0.01);
+  });
+
+  it('computeBVRange returns min/max from in-scope variants', () => {
+    const variants = {
+      'DRG-1N': { w: { DC: 8 }, bv: 1125, intro: 2754 },
+      'DRG-1C': { w: { DC: 5 }, bv: 1215, intro: 2752 },
+      'DRG-5N': { w: { DC: 5 }, bv: 1223, intro: 3047 },
+    };
+    const range = F.computeBVRange(variants, ['DC'], {}, false, null);
+    assert.strictEqual(range.bvMin, 1125);
+    assert.strictEqual(range.bvMax, 1223);
+    assert.strictEqual(range.bvList.length, 3);
+  });
+
+  it('computeBVRange filters by target year', () => {
+    const variants = {
+      'DRG-1N': { w: { DC: 8 }, bv: 1125, intro: 2754 },
+      'DRG-5N': { w: { DC: 5 }, bv: 1223, intro: 3047 },
+    };
+    const range = F.computeBVRange(variants, ['DC'], {}, false, 3039);
+    assert.strictEqual(range.bvMin, 1125);
+    assert.strictEqual(range.bvMax, 1125);
+    assert.strictEqual(range.bvList.length, 1);
+  });
+
+  it('computeBVRange returns null when no BV data', () => {
+    const variants = { 'DRG-1N': { w: { DC: 8 } } };
+    const range = F.computeBVRange(variants, ['DC'], {}, false, null);
+    assert.strictEqual(range, null);
+  });
+
+  it('computeBVRange respects scoped factions', () => {
+    const variants = {
+      'DRG-1N': { w: { DC: 8, FS: 3 }, bv: 1125, intro: 2754 },
+      'DRG-C': { w: { DC: 5 }, bv: 1322, intro: 3050 },
+    };
+    // Only FS is in scope — DRG-C has no FS weight, should be excluded
+    const range = F.computeBVRange(variants, ['FS'], {}, false, null);
+    assert.strictEqual(range.bvMin, 1125);
+    assert.strictEqual(range.bvMax, 1125);
   });
 
   it('compareOp handles all operators', () => {

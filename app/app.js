@@ -58,6 +58,7 @@ function parseQuery(queryStr) {
     weight: null,
     sig: null,
     tons: null,
+    bv: [],          // [{op, val}] — multiple allowed (bv>1000 bv<1500)
     factionWeight: [],  // [{faction, op, val}]
     factionSig: [],   // [{faction, op, val}]
     year: null,
@@ -193,6 +194,10 @@ function parseQuery(queryStr) {
       case 'tonnage':
         result.tons = { op, val: parseFloat(value) };
         break;
+      case 'bv':
+      case 'battlevalue':
+        result.bv.push({ op, val: parseFloat(value) });
+        break;
       default: {
         // Handle faction-prefixed filters: DC-pref>8, FS-sig>5, etc.
         const fpMatch = field.match(/^([a-z]+)-(pref|preference|weight|sig|signature)$/);
@@ -303,6 +308,34 @@ function computeAvgWeight(weights, scopedFactions) {
   const vals = scopedFactions.map(f => weights[f] || 0).filter(v => v > 0);
   if (vals.length === 0) return 0;
   return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+/**
+ * Compute BV range from in-scope variants.
+ * Considers only variants that:
+ *   - Have weight > 0 for at least one scoped faction
+ *   - Are MUL-confirmed (in Mode B) for a scoped faction
+ *   - Have intro year <= target year (if year filtering active)
+ *   - Have BV data
+ * Returns { bvMin, bvMax, bvList } or null if no BV data.
+ */
+function computeBVRange(variants, scopedFactions, mul, modeB, targetYear) {
+  if (!variants) return null;
+  const bvValues = [];
+  for (const [varName, varData] of Object.entries(variants)) {
+    const vWeights = varData.w || varData;
+    const bv = varData.bv;
+    const intro = varData.intro;
+    if (bv == null) continue;
+    if (targetYear && intro && intro > targetYear) continue;
+    // Check if any scoped faction has weight > 0 for this variant
+    const factions = scopedFactions.length > 0 ? scopedFactions : Object.keys(vWeights);
+    const hasFaction = factions.some(f => (vWeights[f] || 0) > 0);
+    if (!hasFaction) continue;
+    bvValues.push(bv);
+  }
+  if (bvValues.length === 0) return null;
+  return { bvMin: Math.min(...bvValues), bvMax: Math.max(...bvValues), bvList: bvValues };
 }
 
 /**
@@ -637,7 +670,9 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   // Header
   const thead = document.createElement('thead');
   const hasSig = rows.some(r => r.sig);
+  const hasBV = rows.some(r => r.bvRange);
   let headerHTML = '<tr><th data-sort="name">Chassis</th><th data-sort="tonnage">Tons</th>';
+  if (hasBV) headerHTML += '<th data-sort="bv">BV</th>';
   if (hasSig) {
     for (const f of scopedFactions) {
       headerHTML += `<th data-sort="${f}-sig" title="${getFactionFullName(f)} Signature">${getFactionLabel(f)} Sig</th>`;
@@ -656,6 +691,16 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
     const tr = document.createElement('tr');
     let html = `<td class="chassis-name">${escHtml(row.name)}</td>`;
     html += `<td class="tonnage-col">${formatTonnage(row.meta)} <span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>`;
+    if (hasBV) {
+      if (row.bvRange) {
+        const bvStr = row.bvRange.bvMin === row.bvRange.bvMax
+          ? String(row.bvRange.bvMin)
+          : `${row.bvRange.bvMin}–${row.bvRange.bvMax}`;
+        html += `<td class="stat-col bv-col">${bvStr}</td>`;
+      } else {
+        html += '<td class="stat-col bv-col">—</td>';
+      }
+    }
     
     if (hasSig) {
       for (const f of scopedFactions) {
@@ -739,7 +784,8 @@ function renderSingleFaction(rows, faction, eraYear) {
   table.className = 'data-table';
   
   const thead = document.createElement('thead');
-  thead.innerHTML = '<tr><th>Chassis</th><th>Tons</th><th>Class</th><th>Weight</th><th>Usage</th></tr>';
+  const singleHasBV = rows.some(r => r.bvRange);
+  thead.innerHTML = `<tr><th>Chassis</th><th>Tons</th><th>Class</th>${singleHasBV ? '<th>BV</th>' : ''}<th>Weight</th><th>Usage</th></tr>`;
   table.appendChild(thead);
   
   const tbody = document.createElement('tbody');
@@ -748,12 +794,25 @@ function renderSingleFaction(rows, faction, eraYear) {
     if (w <= 0) continue;
     const pct = maxWeight > 0 ? (w / maxWeight * 100) : 0;
     
+    let bvCell = '';
+    if (singleHasBV) {
+      if (row.bvRange) {
+        const bvStr = row.bvRange.bvMin === row.bvRange.bvMax
+          ? String(row.bvRange.bvMin)
+          : `${row.bvRange.bvMin}–${row.bvRange.bvMax}`;
+        bvCell = `<td class="stat-col bv-col">${bvStr}</td>`;
+      } else {
+        bvCell = '<td class="stat-col bv-col">—</td>';
+      }
+    }
+    
     const tr = document.createElement('tr');
     tr.className = 'faction-roster-row';
     tr.innerHTML = `
       <td class="chassis-name" style="cursor:pointer" data-chassis="${escAttr(row.name)}" data-faction="${faction}">${escHtml(row.name)}</td>
       <td class="tonnage-col">${formatTonnage(row.meta)}</td>
       <td><span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>
+      ${bvCell}
       <td class="stat-col">${w}</td>
       <td><div class="weight-bar-container"><div class="weight-bar" style="width:${pct}%"></div></div></td>
     `;
@@ -885,13 +944,20 @@ function showVariants(chassisName, faction, eraYear) {
   }
   
   // Calculate variant percentages for this faction
+  // Variants can be either new format { w: {...}, bv, intro } or legacy { faction: weight }
   const variantWeights = {};
+  const variantBV = {};
+  const variantIntro = {};
   let total = 0;
-  for (const [varName, varFactions] of Object.entries(variants)) {
-    const w = varFactions[faction] || 0;
+  for (const [varName, varData] of Object.entries(variants)) {
+    // Handle both new { w: {...}, bv, intro } and legacy { faction: weight } format
+    const factionWeights = varData.w || varData;
+    const w = factionWeights[faction] || 0;
     if (w > 0) {
       variantWeights[varName] = w;
       total += w;
+      if (varData.bv != null) variantBV[varName] = varData.bv;
+      if (varData.intro != null) variantIntro[varName] = varData.intro;
     }
   }
   
@@ -910,9 +976,13 @@ function showVariants(chassisName, faction, eraYear) {
   let html = '';
   for (const [varName, w] of sorted) {
     const pct = (w / total * 100).toFixed(1);
+    const bvStr = variantBV[varName] != null ? `<span class="variant-bv">BV ${variantBV[varName]}</span>` : '';
+    const introStr = variantIntro[varName] != null ? `<span class="variant-intro">${variantIntro[varName]}</span>` : '';
+    const metaStr = (bvStr || introStr) ? `<span class="variant-meta">${bvStr}${introStr}</span>` : '';
     html += `
       <div class="variant-row">
         <span class="variant-name">${escHtml(varName)}</span>
+        ${metaStr}
         <div class="variant-bar-container">
           <div class="variant-bar" style="width:${pct}%"></div>
         </div>
@@ -958,7 +1028,7 @@ function handleHeaderSort(th, rows, scopedFactions, eraYear, query) {
 
 // ── Auto-Suggest ──
 
-const FIELD_NAMES = ['faction', 'chassis', 'class', 'type', 'tech', 'spread', 'sig', 'signature', 'weight', 'tons', 'tonnage', 'year', 'era', 'family', 'industrial', 'mode', 'sort'];
+const FIELD_NAMES = ['faction', 'chassis', 'class', 'type', 'tech', 'spread', 'sig', 'signature', 'weight', 'tons', 'tonnage', 'bv', 'year', 'era', 'family', 'industrial', 'mode', 'sort'];
 
 function getSuggestions(text, cursorPos) {
   if (!DATA) return [];
@@ -986,7 +1056,7 @@ function getSuggestions(text, cursorPos) {
   const sortByMatch = beforeCursor.match(/\bsort\s+by\s+(\S*)$/i);
   if (sortByMatch) {
     const partial = sortByMatch[1].toLowerCase();
-    const sortableFields = ['spread', 'sig', 'weight', 'tons', 'name'];
+    const sortableFields = ['spread', 'sig', 'weight', 'tons', 'bv', 'name'];
     // Add faction-prefixed sort fields
     if (DATA) {
       for (const code of Object.keys(DATA.factions)) {
@@ -1002,7 +1072,7 @@ function getSuggestions(text, cursorPos) {
 
   // Field name completion
   const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'year', 'era', 'family', 'industrial', 'mode']);
-  const OPERATOR_FIELD_SET = new Set(['spread', 'sig', 'signature', 'weight', 'tons', 'tonnage']);
+  const OPERATOR_FIELD_SET = new Set(['spread', 'sig', 'signature', 'weight', 'tons', 'tonnage', 'bv', 'battlevalue']);
 
   if (!lastToken.includes('=') && !lastToken.includes('>') && !lastToken.includes('<')) {
     const lower = lastToken.toLowerCase();
@@ -1122,6 +1192,9 @@ function renderChips(parsed) {
   if (parsed.weight) chips.push({ label: `weight${parsed.weight.op}${parsed.weight.val}`, field: 'weight' });
   if (parsed.sig) chips.push({ label: `sig${parsed.sig.op}${parsed.sig.val}`, field: 'sig' });
   if (parsed.tons) chips.push({ label: `tons${parsed.tons.op}${parsed.tons.val}`, field: 'tons' });
+  for (const bvCond of parsed.bv) {
+    chips.push({ label: `bv${bvCond.op}${bvCond.val}`, field: 'bv' });
+  }
   for (const fw of parsed.factionWeight) {
     chips.push({ label: `${fw.faction}-weight${fw.op}${fw.val}`, field: `${fw.faction}-weight` });
   }
@@ -1346,6 +1419,20 @@ function runQuery() {
     const hasAnyWeight = (scopedFactions.length > 0 ? scopedFactions : Object.keys(weights)).some(f => (weights[f] || 0) > 0);
     if (!hasAnyWeight) continue;
     
+    // Compute BV range from in-scope variants
+    const bvRange = computeBVRange(data.v, scopedFactions, data.mul, modeB, parsed.year);
+    
+    // BV filter: chassis passes if any single in-scope variant satisfies ALL bv conditions
+    if (parsed.bv.length > 0 && bvRange) {
+      // Check if any individual BV value in the range satisfies all conditions
+      const bvPass = bvRange.bvList.some(bv =>
+        parsed.bv.every(cond => compareOp(bv, cond.op, cond.val))
+      );
+      if (!bvPass) continue;
+    } else if (parsed.bv.length > 0 && !bvRange) {
+      continue; // No BV data, can't pass a BV filter
+    }
+    
     rows.push({
       name: chassisName,
       meta,
@@ -1354,6 +1441,7 @@ function runQuery() {
       span,
       avgWeight,
       sig: null,
+      bvRange,
       variants: data.v,
       mul: data.mul,
       family: data.fam,
@@ -1464,6 +1552,13 @@ function sortRowsInPlace(rows, sortSpec) {
         continue;
       } else if (field === 'tonnage' || field === 'tons') {
         va = a.meta.tons || 0; vb = b.meta.tons || 0;
+      } else if (field === 'bv' || field === 'battlevalue') {
+        // asc sorts by bvMin (cheapest first), desc sorts by bvMax (biggest first)
+        if (dir === 'asc') {
+          va = a.bvRange?.bvMin || 0; vb = b.bvRange?.bvMin || 0;
+        } else {
+          va = a.bvRange?.bvMax || 0; vb = b.bvRange?.bvMax || 0;
+        }
       } else if (field.endsWith('-weight')) {
         const fCode = field.replace('-weight', '').toUpperCase();
         va = a.weights?.[fCode] || 0;

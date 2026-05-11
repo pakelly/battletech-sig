@@ -145,6 +145,7 @@ All of these work as both filters (`field>value`) and sort targets (`sort by fie
 | **sig-tier** | Signature tier (1=most iconic, 5=incidental). | `sig-tier<3` |
 | **DC-pref** | Faction-specific scoped preference. | `DC-pref>8` |
 | **DC-sig** | Faction-specific global signature raw score. | `DC-sig>3` |
+| **bv** | Battle Value range filter (variant-level). | `bv>1000`, `bv<1500` |
 
 **All fields that can be filtered can also be sorted, and vice versa.** This is a design invariant.
 
@@ -200,6 +201,48 @@ effective_variant_weight = inherited_variant_weight × (faction_chassis_weight /
 Some chassis are closely related (Dragon/Grand Dragon, Atlas/Atlas II). When family grouping is enabled (default), member chassis weights are summed and scored as a single entry.
 
 Configuration in `config/chassis-families.json`. Auto-detected from naming patterns, user-editable. A chassis can belong to at most one family.
+
+---
+
+## Variant Metadata
+
+Each variant in the MUL cache carries per-variant metadata: **BattleValue** and **DateIntroduced**. These are propagated into `app-data.json` alongside variant weights.
+
+### Variant-Level Fields in app-data.json
+
+The `v` (variant) object within each era+chassis entry is extended from weight-only to include metadata:
+
+```
+"DRG-1N": {
+  "w": { "DC": 8, "FRR": 8, "MERC": 8 },   // weights per faction (existing)
+  "bv": 1125,                                 // Battle Value (from MUL)
+  "intro": 2754                                // Introduction year (from MUL)
+}
+```
+
+If a variant has no MUL match, `bv` and `intro` are null/omitted.
+
+### BV Filtering
+
+**BV is a variant-level field.** A chassis passes a `bv` filter if **any** of its in-scope variants qualify. "In scope" means:
+1. The variant has weight > 0 for at least one scoped faction
+2. The variant is MUL-confirmed for that faction (in Mode B)
+3. The variant's intro year ≤ the target year (if year filtering is active)
+4. The variant's BV falls within the filter range
+
+**`bv>1000`** — chassis passes if any scoped variant has BV > 1000.
+**`bv<1500`** — chassis passes if any scoped variant has BV < 1500.
+**`bv>1000 bv<1500`** — chassis passes if any single scoped variant has BV in (1000, 1500).
+
+### BV Display
+
+- **Chassis row:** Shows BV range (min–max) of the chassis's in-scope variants. E.g., "1125–1567".
+- **Variant drill-down:** Shows BV per variant alongside the weight distribution.
+
+### BV Sorting
+
+`sort by bv asc` sorts by the **minimum** in-scope variant BV (useful for "cheapest mechs first").
+`sort by bv desc` sorts by the **maximum** in-scope variant BV (useful for "biggest hitters first").
 
 ---
 
@@ -274,6 +317,8 @@ All string matching is case-insensitive with partial match support. Faction code
 | `faction=GreatHouses chassis=Griffin` | How each Great House uses the Griffin |
 | `faction=DC,FS year=3039 sig>8` | Only the top-tier identity mechs for DC and FS |
 | `faction=GreatHouses tons>75 sort by DC-pref desc` | Heavy/assault mechs DC prefers most vs other houses |
+| `faction=DC year=3039 bv>1000 bv<1500 sort by bv asc` | DC mechs in the 1000–1500 BV sweet spot, cheapest first |
+| `faction=GreatHouses bv<900 sort by sig desc` | Budget BV mechs with the most faction identity |
 
 ### View Routing
 
@@ -349,7 +394,7 @@ MUL ingestion pulls per-faction data AND the three general pools (IS General, Cl
     year: {
       chassisName: {
         w: { factionCode: weight },     // raw weights
-        v: { variantName: { factionCode: weight } },  // variant weights
+        v: { variantName: { w: { factionCode: weight }, bv: number|null, intro: number|null } },  // variant data
         mul: { factionCode: 1 },         // MUL confirmation flags
         fam: "familyGroupName"           // if part of a family
       }

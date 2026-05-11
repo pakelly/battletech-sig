@@ -97,6 +97,10 @@ const modelPrefixes = {};
 const mulCacheDir = join(ROOT, 'data/mul-cache');
 const mulFiles = readdirSync(mulCacheDir);
 
+// Variant metadata index: { "DRG-1N": { bv: 1125, intro: 2754 }, ... }
+// Keyed by variant designation. First non-null value wins (same variant across files).
+const variantMeta = {};
+
 for (const file of mulFiles) {
   if (!file.endsWith('.json')) continue;
   const match = file.match(/^([^-]+)-(.+)\.json$/);
@@ -128,12 +132,29 @@ for (const file of mulFiles) {
       }
     }
     
-    // Extract model prefix
+    // Extract model prefix + variant metadata (BV, intro)
     if (entry.Variant) {
-      const prefix = entry.Variant.split('-')[0];
+      const variant = entry.Variant.trim();
+      const prefix = variant.split('-')[0];
       if (prefix && prefix.length >= 2 && prefix.length <= 5) {
         if (!modelPrefixes[prefix] || modelPrefixes[prefix] === chassis) {
           modelPrefixes[prefix] = chassis;
+        }
+      }
+      
+      // Index variant BV and intro year
+      if (!variantMeta[variant]) {
+        variantMeta[variant] = {
+          bv: entry.BattleValue || null,
+          intro: entry.DateIntroduced ? parseInt(entry.DateIntroduced) : null
+        };
+      } else {
+        // Fill in missing fields from other cache entries for same variant
+        if (!variantMeta[variant].bv && entry.BattleValue) {
+          variantMeta[variant].bv = entry.BattleValue;
+        }
+        if (!variantMeta[variant].intro && entry.DateIntroduced) {
+          variantMeta[variant].intro = parseInt(entry.DateIntroduced);
         }
       }
     }
@@ -251,7 +272,16 @@ for (const [eraYear, chassisEntries] of Object.entries(scores.eras)) {
     const entry = { w: data.weights };
     
     if (data.variants && Object.keys(data.variants).length > 0) {
-      entry.v = data.variants;
+      const vOut = {};
+      for (const [varName, factionWeights] of Object.entries(data.variants)) {
+        const meta = variantMeta[varName];
+        vOut[varName] = {
+          w: factionWeights,
+          ...(meta?.bv != null ? { bv: meta.bv } : {}),
+          ...(meta?.intro != null ? { intro: meta.intro } : {})
+        };
+      }
+      entry.v = vOut;
     }
     
     // MUL availability per faction (cumulative)
