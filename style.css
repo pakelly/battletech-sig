@@ -931,6 +931,28 @@ header h1:hover {
   text-align: right;
 }
 
+.variant-meta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  min-width: 100px;
+}
+
+.variant-bv {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.variant-intro {
+  color: var(--text-dim);
+}
+
+.bv-col {
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
 /* ── Responsive ── */
 
 @media (max-width: 768px) {
