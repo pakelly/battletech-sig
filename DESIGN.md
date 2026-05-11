@@ -490,6 +490,7 @@ A hamburger menu (☰) attached to the results table that lets users show/hide c
 ## Future Possibilities
 
 - **Faction lineage / succession model:** Many factions merge, splinter, rename, or absorb others across eras. Current approach patches this case-by-case (e.g. LA/LC MUL merge → canonical LC). Needs a proper lineage map that understands rename (LC↔LA), merger (FS+LC→FC), splintering (FRR from DC), conquest-then-absorption (FRR→CGB occupation→RD), brief existence (WOB, ROS, SIC), etc. Scoring implications differ: a rename shares the same force pool, a merger combines two, a splinter starts fresh-ish. Key example: FRR goes DC→FRR→CGB/FRR→RD, with mech roster evolving at each transition.
+- **Boolean query language (Level 3):** Replace the regex-based parser with a proper tokenizer + AST parser supporting full boolean logic: `(faction=DC AND class=Heavy) OR (faction=FS AND class=Light)`. Would require: tokenizer → recursive descent parser → AST → evaluator per row. Current parser handles AND implicitly (multiple fields) and OR within fields (`class=(Light OR Medium)`), plus `NOT`/`!=` negation. Cross-field OR and parenthetical grouping need AST evaluation. Big lift but would make the query bar a real query language.
 - **Code consolidation:** Merge dead `executeQuery` path into `runQuery`. Consolidate sort functions.
 - **Collection tracker:** Mark owned minis, recommend next purchases by faction identity gaps.
 - **Force builder integration:** "Build me a 10,000 BV Davion force that maximizes faction identity score."
