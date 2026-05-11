@@ -7,8 +7,8 @@ const FACTION_ALIASES = {
   'dc': 'DC', 'draconis': 'DC', 'draconis combine': 'DC', 'kurita': 'DC',
   'fs': 'FS', 'fedsuns': 'FS', 'federated suns': 'FS', 'davion': 'FS',
   'fwl': 'FWL', 'free worlds': 'FWL', 'free worlds league': 'FWL', 'marik': 'FWL',
-  'la': 'LA', 'lyran': 'LA', 'lyran commonwealth': 'LA', 'lyran alliance': 'LA', 'steiner': 'LA',
-  'lc': 'LA', // Map LC to LA since they're the same faction in different eras
+  'lc': 'LC', 'lyran': 'LC', 'lyran commonwealth': 'LC', 'lyran alliance': 'LC', 'steiner': 'LC',
+  'la': 'LC', // Map LA (Lyran Alliance) to LC — Commonwealth is the canonical name
   'cc': 'CC', 'capellan': 'CC', 'capellan confederation': 'CC', 'liao': 'CC',
   'fc': 'FC', 'fedcom': 'FC', 'federated commonwealth': 'FC',
   'frr': 'FRR', 'rasalhague': 'FRR', 'free rasalhague republic': 'FRR',
@@ -253,7 +253,7 @@ function resolveFactionGroup(name) {
   
   // Check faction groups first
   if (lower === 'greathouses' || lower === 'great houses') {
-    return DATA?.factionGroups?.GreatHouses || ['DC', 'FS', 'FWL', 'LA', 'CC'];
+    return DATA?.factionGroups?.GreatHouses || ['DC', 'FS', 'FWL', 'LC', 'CC'];
   }
   if (lower === 'clans') {
     return DATA?.factionGroups?.Clans || [];
@@ -1121,7 +1121,7 @@ function getValueSuggestions(field, lower) {
   switch (field) {
     case 'faction': {
       const items = [
-        { text: 'GreatHouses', hint: 'DC, FS, FWL, LA, CC' },
+        { text: 'GreatHouses', hint: 'DC, FS, FWL, LC, CC' },
         { text: 'Clans', hint: 'All Clan factions' },
         { text: 'InvasionClans', hint: 'CW, CJF, CGB, CSJ' },
         { text: 'Periphery', hint: 'TC, MH, OA, MC' },

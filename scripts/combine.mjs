@@ -174,14 +174,21 @@ for (const [faction, eraData] of Object.entries(mulRaw)) {
   }
 }
 
-// Merge LC (Lyran Commonwealth) availability into LA (Lyran Alliance)
-// MegaMek uses LA for both eras; MUL treats them as separate factions (IDs 32 vs 60)
-if (mulCumulative['LC']) {
-  if (!mulCumulative['LA']) mulCumulative['LA'] = {};
-  for (const [era, chassisSet] of Object.entries(mulCumulative['LC'])) {
-    if (!mulCumulative['LA'][era]) mulCumulative['LA'][era] = new Set();
-    for (const ch of chassisSet) mulCumulative['LA'][era].add(ch);
+// Merge MUL availability: LA (Lyran Alliance) + LC (Lyran Commonwealth) → LC
+// MegaMek uses LA internally; MUL treats them as separate factions (IDs 32 vs 60).
+// We canonicalize on LC (Lyran Commonwealth) as the primary code.
+if (mulCumulative['LA'] || mulCumulative['LC']) {
+  if (!mulCumulative['LC']) mulCumulative['LC'] = {};
+  // Merge LA data into LC
+  if (mulCumulative['LA']) {
+    for (const [era, chassisSet] of Object.entries(mulCumulative['LA'])) {
+      if (!mulCumulative['LC'][era]) mulCumulative['LC'][era] = new Set();
+      for (const ch of chassisSet) mulCumulative['LC'][era].add(ch);
+    }
   }
+  // Also copy LC back to LA key so hasMulAvail works during combine
+  // (MegaMek weights reference LA, which we'll remap to LC in output)
+  mulCumulative['LA'] = mulCumulative['LC'];
 }
 
 function weightClass(tonnage) {
@@ -194,7 +201,7 @@ function weightClass(tonnage) {
 
 // ── Faction groups ──
 const FACTION_GROUPS = {
-  GreatHouses: ['DC', 'FS', 'FWL', 'LA', 'CC'],
+  GreatHouses: ['DC', 'FS', 'FWL', 'LC', 'CC'],
   Clans: ['CW', 'CJF', 'CGB', 'CSJ', 'CHH', 'CNC', 'CSV', 'CDS', 'CSR', 'CBS', 'CCO', 'CFM', 'CGS', 'CIH', 'CSA'],
   Periphery: ['TC', 'MH', 'OA', 'MC']
 };
@@ -203,7 +210,7 @@ const FACTION_GROUPS = {
 // IS General covers all IS factions (Great Houses + ComStar + FRR + misc IS)
 // CLAN covers all Clan factions; PERI covers periphery states
 const IS_FACTIONS = new Set([
-  ...FACTION_GROUPS.GreatHouses, 'LC', 'FC', 'FRR', 'CS', 'WOB', 'SIC', 'ROS',
+  ...FACTION_GROUPS.GreatHouses, 'LA', 'FC', 'FRR', 'CS', 'WOB', 'SIC', 'ROS',
   'MERC', 'KH', 'WD', 'SL', 'SLR', 'TH'
 ]);
 const CLAN_FACTIONS = new Set(FACTION_GROUPS.Clans);
@@ -225,10 +232,36 @@ function hasMulAvail(factionCode, mulEra, chassisName) {
   return false;
 }
 
+// ── Faction code remapping ──
+// MegaMek uses LA (Lyran Alliance) internally; we canonicalize to LC (Lyran Commonwealth)
+const FACTION_REMAP = { 'LA': 'LC' };
+
+function remapFactionCode(code) {
+  return FACTION_REMAP[code] || code;
+}
+
+// Remap faction keys in an object { factionCode: value } → { remappedCode: value }
+function remapFactionKeys(obj) {
+  if (!obj) return obj;
+  const result = {};
+  for (const [k, v] of Object.entries(obj)) {
+    const newKey = remapFactionCode(k);
+    // If remapped key already exists, keep the higher value (merge)
+    if (result[newKey] !== undefined && typeof v === 'number') {
+      result[newKey] = Math.max(result[newKey], v);
+    } else {
+      result[newKey] = v;
+    }
+  }
+  return result;
+}
+
 // ── Faction display info ──
 const FACTION_INFO = {};
 for (const [code, meta] of Object.entries(scores.factionMeta)) {
-  FACTION_INFO[code] = {
+  const outCode = remapFactionCode(code);
+  if (FACTION_INFO[outCode]) continue; // skip if already mapped (e.g. LA after LC)
+  FACTION_INFO[outCode] = {
     name: meta.name,
     clan: meta.clan,
     periphery: meta.periphery,
@@ -269,14 +302,14 @@ for (const [eraYear, chassisEntries] of Object.entries(scores.eras)) {
   for (const [chassisName, data] of Object.entries(chassisEntries)) {
     allChassis.add(chassisName);
     
-    const entry = { w: data.weights };
+    const entry = { w: remapFactionKeys(data.weights) };
     
     if (data.variants && Object.keys(data.variants).length > 0) {
       const vOut = {};
       for (const [varName, factionWeights] of Object.entries(data.variants)) {
         const meta = variantMeta[varName];
         vOut[varName] = {
-          w: factionWeights,
+          w: remapFactionKeys(factionWeights),
           ...(meta?.bv != null ? { bv: meta.bv } : {}),
           ...(meta?.intro != null ? { intro: meta.intro } : {})
         };
@@ -289,7 +322,7 @@ for (const [eraYear, chassisEntries] of Object.entries(scores.eras)) {
       const mul = {};
       for (const faction of Object.keys(data.weights)) {
         if (hasMulAvail(faction, mulEra, chassisName)) {
-          mul[faction] = 1;
+          mul[remapFactionCode(faction)] = 1;
         }
       }
       if (Object.keys(mul).length > 0) {

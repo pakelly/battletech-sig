@@ -20,7 +20,7 @@ A tool for BattleTech hobbyists to explore faction identity through mech usage d
 - **Source:** `MegaMek/mm-data` GitHub repo, `data/forcegenerator/`
 - **Content:** 40 era XML files (2398–3160) + `factions.xml`
 - **What it provides:** Weighted availability of chassis and variants per faction per era. Numeric weights represent relative likelihood of a faction fielding that chassis. Higher = more common in that faction's forces.
-- **Faction inheritance:** Child factions (e.g., DC, FS, LA) inherit from parent factions (e.g., IS) when no explicit entry exists. Must be resolved at parse time.
+- **Faction inheritance:** Child factions (e.g., DC, FS, LC) inherit from parent factions (e.g., IS) when no explicit entry exists. Must be resolved at parse time.
 - **License:** CC BY-NC-SA 4.0
 
 ### Master Unit List / MUL (Supplementary)
@@ -153,7 +153,7 @@ All of these work as both filters (`field>value`) and sort targets (`sort by fie
 
 "Workhorses" are mechs where scoped factions all use them at similar rates (Marauder, Archer, Warhammer, etc.).
 
-Min-to-max normalization amplifies tiny differences: Marauder at DC:4, FS:4, LA:4, CC:4, FWL:3 maps to DC preference 10 — technically correct but meaningless.
+Min-to-max normalization amplifies tiny differences: Marauder at DC:4, FS:4, LC:4, CC:4, FWL:3 maps to DC preference 10 — technically correct but meaningless.
 
 **Solution:** Combine filters:
 - `span<4` — not everyone has this
@@ -294,7 +294,7 @@ All string matching is case-insensitive with partial match support. Faction code
 
 | Shortcut | Expands to |
 |----------|-----------|
-| `faction=GreatHouses` | DC, FS, FWL, LA, CC |
+| `faction=GreatHouses` | DC, FS, FWL, LC, CC |
 | `faction=Clans` | All Clan factions |
 | `faction=Periphery` | All periphery factions |
 
@@ -437,6 +437,7 @@ Vanilla HTML/CSS/JS. No framework. Single-page app loading `app-data.json` at st
 8. **Chassis families on by default.** Stronger faction identity signal.
 9. **Mode B default.** MUL-confirmed availability is the safer, canon-filtered default.
 10. **MUL general pools as fallback.** The IS/CLAN/PERI general pools supplement per-faction MUL data to prevent false negatives (e.g., Griffin missing from DC's MUL listing).
+11. **LC is the canonical Lyran code.** MegaMek uses LA (Lyran Alliance) internally; we remap to LC (Lyran Commonwealth) in the output. The Commonwealth is the default/historical faction name spanning most of the timeline. `LA`, `LC`, `lyran`, `steiner` all resolve to `LC`.
 
 ---
 
@@ -486,7 +487,7 @@ A hamburger menu (☰) attached to the results table that lets users show/hide c
 
 ## Future Possibilities
 
-- **Faction lineage / succession model:** Many factions merge, splinter, rename, or absorb others across eras. Current approach patches this case-by-case (e.g. LC→LA MUL merge). Needs a proper lineage map that understands rename (LC↔LA), merger (FS+LC→FC), splintering (FRR from DC), conquest-then-absorption (FRR→CGB occupation→RD), brief existence (WOB, ROS, SIC), etc. Scoring implications differ: a rename shares the same force pool, a merger combines two, a splinter starts fresh-ish. Key example: FRR goes DC→FRR→CGB/FRR→RD, with mech roster evolving at each transition.
+- **Faction lineage / succession model:** Many factions merge, splinter, rename, or absorb others across eras. Current approach patches this case-by-case (e.g. LA/LC MUL merge → canonical LC). Needs a proper lineage map that understands rename (LC↔LA), merger (FS+LC→FC), splintering (FRR from DC), conquest-then-absorption (FRR→CGB occupation→RD), brief existence (WOB, ROS, SIC), etc. Scoring implications differ: a rename shares the same force pool, a merger combines two, a splinter starts fresh-ish. Key example: FRR goes DC→FRR→CGB/FRR→RD, with mech roster evolving at each transition.
 - **Code consolidation:** Merge dead `executeQuery` path into `runQuery`. Consolidate sort functions.
 - **Collection tracker:** Mark owned minis, recommend next purchases by faction identity gaps.
 - **Force builder integration:** "Build me a 10,000 BV Davion force that maximizes faction identity score."

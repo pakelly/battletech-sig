@@ -98,7 +98,7 @@ describe('Query Parser', () => {
     assert.ok(p.factions.includes('DC'));
     assert.ok(p.factions.includes('FS'));
     assert.ok(p.factions.includes('FWL'));
-    assert.ok(p.factions.includes('LA'));
+    assert.ok(p.factions.includes('LC'));
     assert.ok(p.factions.includes('CC'));
     assert.strictEqual(p.factions.length, 5);
   });
@@ -205,6 +205,30 @@ describe('Query Parser', () => {
   });
 });
 
+describe('Faction Aliases', () => {
+  it('resolves LA to LC (Lyran Commonwealth canonical)', () => {
+    assert.strictEqual(F.resolveFaction('la'), 'LC');
+    assert.strictEqual(F.resolveFaction('LA'), 'LC');
+  });
+
+  it('resolves LC to LC', () => {
+    assert.strictEqual(F.resolveFaction('lc'), 'LC');
+  });
+
+  it('resolves lyran aliases to LC', () => {
+    assert.strictEqual(F.resolveFaction('lyran'), 'LC');
+    assert.strictEqual(F.resolveFaction('steiner'), 'LC');
+    assert.strictEqual(F.resolveFaction('lyran alliance'), 'LC');
+    assert.strictEqual(F.resolveFaction('lyran commonwealth'), 'LC');
+  });
+
+  it('faction=LA parses to LC', () => {
+    const p = F.parseQuery('faction=LA');
+    assert.ok(p.factions.includes('LC'));
+    assert.ok(!p.factions.includes('LA'));
+  });
+});
+
 // ════════════════════════════════════════════════════════
 // 2. SCOPED PREFERENCE
 // ════════════════════════════════════════════════════════
@@ -286,7 +310,7 @@ describe('Derived Values', () => {
 
 describe('Global Signature (weight × z-score)', () => {
   // Standard faction pool for tests — 10 factions gives clean math
-  const ALL = ['DC', 'FS', 'FWL', 'LA', 'CC', 'FRR', 'CS', 'MERC', 'TC', 'MH'];
+  const ALL = ['DC', 'FS', 'FWL', 'LC', 'CC', 'FRR', 'CS', 'MERC', 'TC', 'MH'];
 
   it('exclusive mech: high z-score from zeros', () => {
     // Only DC has it at weight 6, 9 others at 0
