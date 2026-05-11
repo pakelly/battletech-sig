@@ -119,6 +119,9 @@ function parseQuery(queryStr) {
     }
   }
 
+  // Normalize NOT prefix: "NOT field=value" → "field!=value"
+  q = q.replace(/\bNOT\s+(\w[\w-]*)\s*=/gi, '$1!=');
+
   // Parse individual field expressions
   // Tokenize: handle parenthesized OR groups
   const fieldRegex = /(\w[\w-]*)\s*(=|!=|>=|<=|>|<)\s*(\([^)]+\)|"[^"]+"|[^\s]+)/gi;
@@ -218,9 +221,6 @@ function parseQuery(queryStr) {
       }
     }
   }
-
-  // Handle bare NOT prefix
-  // (for now, simple implementation)
 
   return result;
 }

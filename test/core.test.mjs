@@ -128,6 +128,17 @@ describe('Query Parser', () => {
     assert.deepStrictEqual(p.class, { op: '!=', values: ['assault'] });
   });
 
+  it('parses NOT class=Assault as class!=Assault', () => {
+    const p = F.parseQuery('NOT class=Assault');
+    assert.deepStrictEqual(p.class, { op: '!=', values: ['assault'] });
+  });
+
+  it('parses NOT chassis=Locust as exclusion', () => {
+    const p = F.parseQuery('NOT chassis=Locust');
+    assert.strictEqual(p.chassisOp, '!=');
+    assert.ok(p.chassis.includes('Locust'));
+  });
+
   it('parses chassis!=Locust (exclusion)', () => {
     const p = F.parseQuery('chassis!=Locust');
     assert.strictEqual(p.chassisOp, '!=');
