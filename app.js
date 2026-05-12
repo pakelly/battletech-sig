@@ -689,64 +689,77 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   thead.innerHTML = headerHTML;
   table.appendChild(thead);
   
-  // Body
+  // Body — paginated
   const tbody = document.createElement('tbody');
-  for (const row of rows) {
-    const tr = document.createElement('tr');
-    let html = `<td class="chassis-name">${escHtml(row.name)}</td>`;
-    html += `<td class="tonnage-col">${formatTonnage(row.meta)} <span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>`;
-    if (hasBV) {
-      if (row.bvRange) {
-        const bvStr = row.bvRange.bvMin === row.bvRange.bvMax
-          ? String(row.bvRange.bvMin)
-          : `${row.bvRange.bvMin}–${row.bvRange.bvMax}`;
-        html += `<td class="stat-col bv-col">${bvStr}</td>`;
-      } else {
-        html += '<td class="stat-col bv-col">—</td>';
-      }
-    }
+  table.appendChild(tbody);
+  wrapper.appendChild(table);
+  container.appendChild(wrapper);
+  
+  function renderPage(page) {
+    const pageSize = getPageSize();
+    const { pageRows, totalPages, page: safePage } = paginateRows(rows, page, pageSize);
+    currentPage = safePage;
     
-    if (hasSig) {
+    tbody.innerHTML = '';
+    for (const row of pageRows) {
+      const tr = document.createElement('tr');
+      let html = `<td class="chassis-name">${escHtml(row.name)}</td>`;
+      html += `<td class="tonnage-col">${formatTonnage(row.meta)} <span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>`;
+      if (hasBV) {
+        if (row.bvRange) {
+          const bvStr = row.bvRange.bvMin === row.bvRange.bvMax
+            ? String(row.bvRange.bvMin)
+            : `${row.bvRange.bvMin}–${row.bvRange.bvMax}`;
+          html += `<td class="stat-col bv-col">${bvStr}</td>`;
+        } else {
+          html += '<td class="stat-col bv-col">—</td>';
+        }
+      }
+      
+      if (hasSig) {
+        for (const f of scopedFactions) {
+          const sigVal = row.sig?.[f] || 0;
+          const sigTier = row.sig?.[f + '_tier'] || 0;
+          if (sigVal > 0) {
+            const sigHeat = sigTierToHeat(sigTier);
+            html += `<td class="faction-cell ${sigHeat}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
+            html += `<span class="pref-value">T${sigTier}</span>`;
+            html += `<span class="sig-raw">${sigVal.toFixed(1)}</span>`;
+            html += `<span class="weight-value">w:${row.weights[f] || 0}</span>`;
+            html += '</td>';
+          } else {
+            html += '<td class="faction-cell no-data">—</td>';
+          }
+        }
+      }
+
       for (const f of scopedFactions) {
-        const sigVal = row.sig?.[f] || 0;
-        const sigTier = row.sig?.[f + '_tier'] || 0;
-        if (sigVal > 0) {
-          const sigHeat = sigTierToHeat(sigTier);
-          html += `<td class="faction-cell ${sigHeat}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
-          html += `<span class="pref-value">T${sigTier}</span>`;
-          html += `<span class="sig-raw">${sigVal.toFixed(1)}</span>`;
-          html += `<span class="weight-value">w:${row.weights[f] || 0}</span>`;
+        const w = row.weights[f] || 0;
+        const cls = w > 0 ? heatClass(w) : 'no-data';
+        
+        if (w > 0) {
+          html += `<td class="faction-cell ${cls}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
+          html += `<span class="pref-value">${w}</span>`;
+          if (hasSig && row.sig?.[f] > 0) {
+            const tier = row.sig?.[f + '_tier'] || 0;
+            html += `<span class="sig-value">T${tier}</span>`;
+          }
           html += '</td>';
         } else {
           html += '<td class="faction-cell no-data">—</td>';
         }
       }
-    }
-
-    for (const f of scopedFactions) {
-      const w = row.weights[f] || 0;
-      const cls = w > 0 ? heatClass(w) : 'no-data';
+      html += `<td class="stat-col">${row.spread.toFixed(1)}</td>`;
       
-      if (w > 0) {
-        html += `<td class="faction-cell ${cls}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
-        html += `<span class="pref-value">${w}</span>`;
-        if (hasSig && row.sig?.[f] > 0) {
-          const tier = row.sig?.[f + '_tier'] || 0;
-          html += `<span class="sig-value">T${tier}</span>`;
-        }
-        html += '</td>';
-      } else {
-        html += '<td class="faction-cell no-data">—</td>';
-      }
+      tr.innerHTML = html;
+      tbody.appendChild(tr);
     }
-    html += `<td class="stat-col">${row.spread.toFixed(1)}</td>`;
     
-    tr.innerHTML = html;
-    tbody.appendChild(tr);
+    renderPagination(container, rows.length, safePage, totalPages, renderPage);
+    applyColVisibility();
   }
-  table.appendChild(tbody);
-  wrapper.appendChild(table);
-  container.appendChild(wrapper);
+  
+  renderPage(currentPage);
   
   // Click handler for faction cells
   table.addEventListener('click', handleCellClick);
@@ -792,39 +805,53 @@ function renderSingleFaction(rows, faction, eraYear) {
   thead.innerHTML = `<tr><th>Chassis</th><th>Tons</th><th>Class</th>${singleHasBV ? '<th>BV</th>' : ''}<th>Weight</th><th>Usage</th></tr>`;
   table.appendChild(thead);
   
+  // Filter to rows with weight > 0
+  const activeRows = rows.filter(r => (r.weights[faction] || 0) > 0);
+
   const tbody = document.createElement('tbody');
-  for (const row of rows) {
-    const w = row.weights[faction] || 0;
-    if (w <= 0) continue;
-    const pct = maxWeight > 0 ? (w / maxWeight * 100) : 0;
-    
-    let bvCell = '';
-    if (singleHasBV) {
-      if (row.bvRange) {
-        const bvStr = row.bvRange.bvMin === row.bvRange.bvMax
-          ? String(row.bvRange.bvMin)
-          : `${row.bvRange.bvMin}–${row.bvRange.bvMax}`;
-        bvCell = `<td class="stat-col bv-col">${bvStr}</td>`;
-      } else {
-        bvCell = '<td class="stat-col bv-col">—</td>';
-      }
-    }
-    
-    const tr = document.createElement('tr');
-    tr.className = 'faction-roster-row';
-    tr.innerHTML = `
-      <td class="chassis-name" style="cursor:pointer" data-chassis="${escAttr(row.name)}" data-faction="${faction}">${escHtml(row.name)}</td>
-      <td class="tonnage-col">${formatTonnage(row.meta)}</td>
-      <td><span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>
-      ${bvCell}
-      <td class="stat-col">${w}</td>
-      <td><div class="weight-bar-container"><div class="weight-bar" style="width:${pct}%"></div></div></td>
-    `;
-    tbody.appendChild(tr);
-  }
   table.appendChild(tbody);
   wrapper.appendChild(table);
   container.appendChild(wrapper);
+  
+  function renderPage(page) {
+    const pageSize = getPageSize();
+    const { pageRows, totalPages, page: safePage } = paginateRows(activeRows, page, pageSize);
+    currentPage = safePage;
+    
+    tbody.innerHTML = '';
+    for (const row of pageRows) {
+      const w = row.weights[faction] || 0;
+      const pct = maxWeight > 0 ? (w / maxWeight * 100) : 0;
+      
+      let bvCell = '';
+      if (singleHasBV) {
+        if (row.bvRange) {
+          const bvStr = row.bvRange.bvMin === row.bvRange.bvMax
+            ? String(row.bvRange.bvMin)
+            : `${row.bvRange.bvMin}–${row.bvRange.bvMax}`;
+          bvCell = `<td class="stat-col bv-col">${bvStr}</td>`;
+        } else {
+          bvCell = '<td class="stat-col bv-col">—</td>';
+        }
+      }
+      
+      const tr = document.createElement('tr');
+      tr.className = 'faction-roster-row';
+      tr.innerHTML = `
+        <td class="chassis-name" style="cursor:pointer" data-chassis="${escAttr(row.name)}" data-faction="${faction}">${escHtml(row.name)}</td>
+        <td class="tonnage-col">${formatTonnage(row.meta)}</td>
+        <td><span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>
+        ${bvCell}
+        <td class="stat-col">${w}</td>
+        <td><div class="weight-bar-container"><div class="weight-bar" style="width:${pct}%"></div></div></td>
+      `;
+      tbody.appendChild(tr);
+    }
+    
+    renderPagination(container, activeRows.length, safePage, totalPages, renderPage);
+  }
+  
+  renderPage(currentPage);
   
   table.addEventListener('click', handleCellClick);
 
@@ -1305,8 +1332,87 @@ function escAttr(s) {
 // ── Main Execution ──
 
 let currentEraYear = 3049;
+let currentPage = 0;
+const PAGE_SIZES = [25, 50, 100, 0]; // 0 = all
+const PAGE_SIZE_KEY = 'bt-sig-page-size';
+
+function getPageSize() {
+  const saved = localStorage.getItem(PAGE_SIZE_KEY);
+  return saved ? parseInt(saved) : 50;
+}
+
+function setPageSize(size) {
+  localStorage.setItem(PAGE_SIZE_KEY, String(size));
+}
+
+function paginateRows(rows, page, pageSize) {
+  if (!pageSize || pageSize <= 0) return { pageRows: rows, totalPages: 1, page: 0 };
+  const totalPages = Math.ceil(rows.length / pageSize);
+  const safePage = Math.min(page, totalPages - 1);
+  const start = safePage * pageSize;
+  return { pageRows: rows.slice(start, start + pageSize), totalPages, page: safePage };
+}
+
+function renderPagination(container, totalRows, currentPg, totalPages, onPageChange) {
+  const pageSize = getPageSize();
+  
+  // Remove existing pagination bar if present
+  const existing = container.querySelector('.pagination-bar');
+  if (existing) existing.remove();
+  
+  if (totalRows <= 25) return; // No pagination needed for small results
+  
+  const bar = document.createElement('div');
+  bar.className = 'pagination-bar';
+  
+  // Page size selector
+  let html = '<span class="page-size-select">Show: ';
+  for (const size of PAGE_SIZES) {
+    const label = size === 0 ? 'All' : String(size);
+    const active = (size === pageSize) || (size === 0 && pageSize === 0);
+    html += `<button class="page-size-btn${active ? ' active' : ''}" data-size="${size}">${label}</button>`;
+  }
+  html += '</span>';
+  
+  // Page info + nav
+  if (pageSize > 0 && totalPages > 1) {
+    const start = currentPg * pageSize + 1;
+    const end = Math.min((currentPg + 1) * pageSize, totalRows);
+    html += `<span class="page-info">${start}–${end} of ${totalRows}</span>`;
+    html += `<span class="page-nav">`;
+    html += `<button class="page-btn" data-page="0" ${currentPg === 0 ? 'disabled' : ''}>«</button>`;
+    html += `<button class="page-btn" data-page="${currentPg - 1}" ${currentPg === 0 ? 'disabled' : ''}>‹</button>`;
+    html += `<button class="page-btn" data-page="${currentPg + 1}" ${currentPg >= totalPages - 1 ? 'disabled' : ''}>›</button>`;
+    html += `<button class="page-btn" data-page="${totalPages - 1}" ${currentPg >= totalPages - 1 ? 'disabled' : ''}>»</button>`;
+    html += `</span>`;
+  } else {
+    html += `<span class="page-info">${totalRows} results</span>`;
+  }
+  
+  bar.innerHTML = html;
+  container.appendChild(bar);
+  
+  // Event handlers
+  bar.addEventListener('click', (e) => {
+    const sizeBtn = e.target.closest('.page-size-btn');
+    if (sizeBtn) {
+      const newSize = parseInt(sizeBtn.dataset.size);
+      setPageSize(newSize);
+      currentPage = 0;
+      onPageChange(0);
+      return;
+    }
+    const pageBtn = e.target.closest('.page-btn');
+    if (pageBtn && !pageBtn.disabled) {
+      const newPage = parseInt(pageBtn.dataset.page);
+      currentPage = newPage;
+      onPageChange(newPage);
+    }
+  });
+}
 
 function runQuery() {
+  currentPage = 0; // Reset pagination on new query
   const bar = document.getElementById('query-bar');
   const queryStr = bar.value.trim();
   
