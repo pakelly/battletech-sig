@@ -952,12 +952,15 @@ function showVariants(chassisName, faction, eraYear) {
   const variantWeights = {};
   const variantBV = {};
   const variantIntro = {};
+  const targetYear = currentQuery.year || null;
   let total = 0;
   for (const [varName, varData] of Object.entries(variants)) {
     // Handle both new { w: {...}, bv, intro } and legacy { faction: weight } format
     const factionWeights = varData.w || varData;
     const w = factionWeights[faction] || 0;
     if (w > 0) {
+      // Filter out variants introduced after the target year
+      if (targetYear && varData.intro && varData.intro > targetYear) continue;
       variantWeights[varName] = w;
       total += w;
       if (varData.bv != null) variantBV[varName] = varData.bv;
