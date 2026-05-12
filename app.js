@@ -2205,19 +2205,23 @@ function applyColVisibility() {
   const state = loadColVisibility();
   const headers = table.querySelectorAll('thead th');
 
+  // Pre-compute visibility array for all columns
+  const colVisible = [];
   headers.forEach((th, idx) => {
     const name = th.textContent.trim();
     const visible = idx === 0 || state[name] !== false;
-    
-    // Toggle header
+    colVisible.push(visible);
     th.style.display = visible ? '' : 'none';
-    
-    // Toggle all cells in this column
-    table.querySelectorAll(`tbody tr`).forEach(tr => {
-      const td = tr.children[idx];
-      if (td) td.style.display = visible ? '' : 'none';
-    });
   });
+
+  // Single pass over rows (instead of one querySelectorAll per column)
+  const rows = table.querySelectorAll('tbody tr');
+  for (const tr of rows) {
+    const cells = tr.children;
+    for (let idx = 0; idx < cells.length && idx < colVisible.length; idx++) {
+      cells[idx].style.display = colVisible[idx] ? '' : 'none';
+    }
+  }
 }
 
 // ── Quick Filter Insert ──
