@@ -162,15 +162,6 @@
     "autoDetected": true
   },
   {
-    "groupName": "Marauder Family",
-    "chassis": [
-      "Marauder",
-      "Marauder II"
-    ],
-    "enabled": false,
-    "autoDetected": true
-  },
-  {
     "groupName": "Mercury Family",
     "chassis": [
       "Mercury",

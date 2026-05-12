@@ -1452,7 +1452,7 @@ function runQuery() {
   if (!eraYear) eraYear = 3049;
   currentEraYear = eraYear;
   
-  const familyMode = parsed.family || 'on';
+  const familyMode = parsed.family || 'off';
   const modeB = parsed.mode !== 'A';
   const hideIndustrial = parsed.industrial !== 'show'; // hidden by default
   
