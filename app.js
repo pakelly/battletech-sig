@@ -952,7 +952,9 @@ function showVariants(chassisName, faction, eraYear) {
   const variantWeights = {};
   const variantBV = {};
   const variantIntro = {};
-  const targetYear = currentQuery.year || null;
+  // Use exact year if specified, otherwise fall back to the era bucket year
+  // (eraYear param comes from currentEraYear, resolved from year= or era= in runQuery)
+  const targetYear = currentQuery.year || eraYear;
   let total = 0;
   for (const [varName, varData] of Object.entries(variants)) {
     // Handle both new { w: {...}, bv, intro } and legacy { faction: weight } format
