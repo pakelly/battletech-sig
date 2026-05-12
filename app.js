@@ -1238,21 +1238,36 @@ function removeFieldFromQuery(field) {
   let q = bar.value;
   
   // Simple removal - strip the field expression
+  // Patterns handle both = and != operators, and optional NOT prefix
   const patterns = {
-    'faction': /\bfaction\s*=\s*(\([^)]+\)|"[^"]+"|[^\s]+)/gi,
-    'chassis': /\bchassis\s*=\s*(\([^)]+\)|"[^"]+"|[^\s]+)/gi,
-    'class': /\bclass\s*=\s*\w+/gi,
-    'type': /\btype\s*=\s*\w+/gi,
-    'tech': /\btech\s*=\s*\w+/gi,
+    'faction': /\b(?:NOT\s+)?faction\s*[!=]=?\s*(\([^)]+\)|"[^"]+"|[^\s]+)/gi,
+    'chassis': /\b(?:NOT\s+)?chassis\s*[!=]=?\s*(\([^)]+\)|"[^"]+"|[^\s]+)/gi,
+    'class': /\b(?:NOT\s+)?class\s*[!=]=?\s*(\([^)]+\)|"[^"]+"|[^\s]+)/gi,
+    'type': /\b(?:NOT\s+)?type\s*[!=]=?\s*\w+/gi,
+    'tech': /\b(?:NOT\s+)?tech\s*[!=]=?\s*\w+/gi,
     'spread': /\bspread\s*[><=!]+\s*[\d.]+/gi,
     'span': /\bspan\s*[><=!]+\s*[\d.]+/gi,
     'avg-weight': /\bavg-weight\s*[><=!]+\s*[\d.]+/gi,
-    'weight': /\bweight\s*[><=!]+\s*[\d.]+/gi,
+    'weight': /\b(?<![-\w])weight\s*[><=!]+\s*[\d.]+/gi,
+    'sig': /\b(?<![-\w])sig(?:nature)?\s*[><=!]+\s*[\d.]+/gi,
+    'tons': /\b(?:tons|tonnage)\s*[><=!]+\s*[\d.]+/gi,
+    'bv': /\b(?:bv|battlevalue)\s*[><=!]+\s*[\d.]+/gi,
     'year': /\byear\s*=\s*\d+/gi,
     'era': /\bera\s*=\s*\w+/gi,
     'mode': /\bmode\s*=\s*\w+/gi,
     'sort': /\bsort\s+by\s+.+$/gi,
   };
+  
+  // Handle faction-specific weight/sig filters (e.g. DC-weight>5, FS-sig>3)
+  const factionFieldMatch = field.match(/^([A-Z]+)-(weight|sig)$/);
+  if (factionFieldMatch) {
+    const [, fCode, metric] = factionFieldMatch;
+    const factionPattern = new RegExp(`\\b${fCode}[-\\s](?:${metric}|pref|preference|signature)\\s*[><=!]+\\s*[\\d.]+`, 'gi');
+    q = q.replace(factionPattern, '').replace(/\s+/g, ' ').trim();
+    bar.value = q;
+    runQuery();
+    return;
+  }
   
   if (patterns[field]) {
     q = q.replace(patterns[field], '').replace(/\s+/g, ' ').trim();
