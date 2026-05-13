@@ -240,15 +240,25 @@ function remapFactionCode(code) {
   return FACTION_REMAP[code] || code;
 }
 
+// Helper: extract peak weight from a parsed availability entry
+function peakWeight(entry) {
+  if (Array.isArray(entry)) return entry[0]; // [base, modifier]
+  if (typeof entry === 'object' && entry !== null) return Math.max(...Object.values(entry), 0); // explicit levels
+  return entry; // plain number
+}
+
 // Remap faction keys in an object { factionCode: value } → { remappedCode: value }
+// Values can be numbers, [base, mod] arrays, or {level: weight} objects
 function remapFactionKeys(obj) {
   if (!obj) return obj;
   const result = {};
   for (const [k, v] of Object.entries(obj)) {
     const newKey = remapFactionCode(k);
-    // If remapped key already exists, keep the higher value (merge)
-    if (result[newKey] !== undefined && typeof v === 'number') {
-      result[newKey] = Math.max(result[newKey], v);
+    // If remapped key already exists, keep the higher peak value (merge LA+LC)
+    if (result[newKey] !== undefined) {
+      if (peakWeight(v) > peakWeight(result[newKey])) {
+        result[newKey] = v;
+      }
     } else {
       result[newKey] = v;
     }
@@ -256,16 +266,18 @@ function remapFactionKeys(obj) {
   return result;
 }
 
-// ── Faction display info ──
+// ── Faction display info + weight class distributions ──
 const FACTION_INFO = {};
 for (const [code, meta] of Object.entries(scores.factionMeta)) {
   const outCode = remapFactionCode(code);
   if (FACTION_INFO[outCode]) continue; // skip if already mapped (e.g. LA after LC)
+  const wcd = scores.weightClassDistributions?.[code];
   FACTION_INFO[outCode] = {
     name: meta.name,
     clan: meta.clan,
     periphery: meta.periphery,
-    minor: meta.minor
+    minor: meta.minor,
+    ...(wcd && Object.keys(wcd).length > 0 ? { wcd } : {})
   };
 }
 

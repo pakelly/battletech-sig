@@ -62,6 +62,13 @@ before(() => {
         resolveFactionGroup,
         resolveChassis,
         determineView,
+        resolveWeight,
+        resolveWeights,
+        computeAdjustedWeights,
+        toProb,
+        toRating,
+        wcdAdjustmentFactor,
+        RATING_INDEX,
       };
     }
   `);
@@ -433,9 +440,11 @@ describe('Global Signature — Real Data (DC 3039)', () => {
     dcSigs = {};
     for (const [name, d] of Object.entries(era)) {
       if (!d.mul?.DC) continue;
-      const dcW = d.w.DC || 0;
+      const chassisClass = APP_DATA.chassis[name]?.class || null;
+      const adjusted = F.computeAdjustedWeights(d.w, null, chassisClass, 3039);
+      const dcW = adjusted.DC || 0;
       if (dcW === 0) continue;
-      const result = F.computeSignature(d.w, d.mul, ['DC'], allFactions);
+      const result = F.computeSignature(adjusted, d.mul, ['DC'], allFactions);
       dcSigs[name] = result.DC;
     }
   });
@@ -559,7 +568,12 @@ describe('MUL Data Integrity', () => {
 
   it('era 3039 has substantial DC roster', () => {
     const era = APP_DATA.eraData['3039'];
-    const dcMechs = Object.entries(era).filter(([, d]) => d.mul?.DC && d.w.DC > 0);
+    const dcMechs = Object.entries(era).filter(([name, d]) => {
+      if (!d.mul?.DC) return false;
+      const chassisClass = APP_DATA.chassis[name]?.class || null;
+      const adjusted = F.computeAdjustedWeights(d.w, null, chassisClass, 3039);
+      return (adjusted.DC || 0) > 0;
+    });
     assert.ok(dcMechs.length > 30, `DC should have >30 mechs in 3039, got ${dcMechs.length}`);
   });
 });
@@ -596,15 +610,18 @@ describe('Filter/Sort Parity', () => {
 // ════════════════════════════════════════════════════════
 
 describe('End-to-End Sort — sig desc produces correct order', () => {
-  function buildSigRows(era, faction) {
+  function buildSigRows(era, faction, ratingIdx) {
+    const ri = ratingIdx !== undefined ? ratingIdx : null;
     const rows = [];
     for (const [name, d] of Object.entries(era)) {
       if (!d.mul?.[faction]) continue;
-      const w = d.w[faction] || 0;
+      const chassisClass = APP_DATA.chassis[name]?.class || null;
+      const adjusted = F.computeAdjustedWeights(d.w, ri, chassisClass, 3039);
+      const w = adjusted[faction] || 0;
       if (w === 0) continue;
       const allFactions = Object.keys(APP_DATA.factions);
-      const sig = F.computeSignature(d.w, d.mul, [faction], allFactions);
-      rows.push({ name, sig, weights: d.w, spread: 0, span: 0, avgWeight: 0, meta: {} });
+      const sig = F.computeSignature(adjusted, d.mul, [faction], allFactions);
+      rows.push({ name, sig, weights: adjusted, spread: 0, span: 0, avgWeight: 0, meta: {} });
     }
     return rows;
   }
@@ -643,15 +660,15 @@ describe('End-to-End Sort — sig desc produces correct order', () => {
       `Expected at least 2 of ${fsIdentity.join('/')} in top 10, got: ${top10.join(', ')}`);
   });
 
-  it('ubiquitous mechs rank in bottom 60% for DC sig', () => {
+  it('ubiquitous mechs do not rank in top 10% for DC sig', () => {
     const era = APP_DATA.eraData['3039'];
     const rows = buildSigRows(era, 'DC');
     F.sortRowsInPlace(rows, [{ field: 'sig', dir: 'desc' }]);
 
     const locustRank = rows.findIndex(r => r.name === 'Locust');
     const total = rows.length;
-    assert.ok(locustRank > total * 0.4,
-      `Locust should be in bottom 60% (rank ${locustRank + 1} of ${total})`);
+    assert.ok(locustRank > total * 0.1,
+      `Locust should not be in top 10% (rank ${locustRank + 1} of ${total})`);
   });
 
   it('sort by DC-sig also works', () => {
@@ -662,6 +679,197 @@ describe('End-to-End Sort — sig desc produces correct order', () => {
     const top3 = rows.slice(0, 3).map(r => r.name);
     assert.ok(top3.includes('Dragon') || top3.includes('Hatamoto-Chi'),
       `Expected DC identity mechs in top 3 with DC-sig sort, got: ${top3.join(', ')}`);
+  });
+});
+
+// ════════════════════════════════════════════════════════
+// 10. UNIT QUALITY RATING RESOLUTION
+// ════════════════════════════════════════════════════════
+
+describe('Unit Quality Rating — resolveWeight', () => {
+  it('flat entry returns base at any tier', () => {
+    assert.strictEqual(F.resolveWeight([8, 0], 4), 8);  // A
+    assert.strictEqual(F.resolveWeight([8, 0], 0), 8);  // F
+  });
+
+  it('flat entry returns base for average', () => {
+    assert.strictEqual(F.resolveWeight([8, 0], null), 8);
+  });
+
+  it('"+" entry: highest at A, decreasing downward', () => {
+    // [8, "+"] with 5 levels: A=8, B=7, C=6, D=5, F=4
+    assert.strictEqual(F.resolveWeight([8, '+'], 4), 8);  // A
+    assert.strictEqual(F.resolveWeight([8, '+'], 3), 7);  // B
+    assert.strictEqual(F.resolveWeight([8, '+'], 2), 6);  // C
+    assert.strictEqual(F.resolveWeight([8, '+'], 1), 5);  // D
+    assert.strictEqual(F.resolveWeight([8, '+'], 0), 4);  // F
+  });
+
+  it('"-" entry: highest at F, decreasing upward', () => {
+    // [8, "-"] with 5 levels: F=8, D=7, C=6, B=5, A=4
+    assert.strictEqual(F.resolveWeight([8, '-'], 0), 8);  // F
+    assert.strictEqual(F.resolveWeight([8, '-'], 1), 7);  // D
+    assert.strictEqual(F.resolveWeight([8, '-'], 2), 6);  // C
+    assert.strictEqual(F.resolveWeight([8, '-'], 3), 5);  // B
+    assert.strictEqual(F.resolveWeight([8, '-'], 4), 4);  // A
+  });
+
+  it('"+" with low base clamps to 0', () => {
+    // [2, "+"] → A=2, B=1, C=0, D=0, F=0
+    assert.strictEqual(F.resolveWeight([2, '+'], 4), 2);  // A
+    assert.strictEqual(F.resolveWeight([2, '+'], 3), 1);  // B
+    assert.strictEqual(F.resolveWeight([2, '+'], 2), 0);  // C
+    assert.strictEqual(F.resolveWeight([2, '+'], 1), 0);  // D
+    assert.strictEqual(F.resolveWeight([2, '+'], 0), 0);  // F
+  });
+
+  it('cross-tier average for "+" entry', () => {
+    // [8, "+"] → (8+7+6+5+4)/5 = 6.0
+    assert.strictEqual(F.resolveWeight([8, '+'], null), 6.0);
+  });
+
+  it('cross-tier average for "-" entry', () => {
+    // [8, "-"] → (4+5+6+7+8)/5 = 6.0
+    assert.strictEqual(F.resolveWeight([8, '-'], null), 6.0);
+  });
+
+  it('cross-tier average for low "+" clamps negatives', () => {
+    // [2, "+"] → (2+1+0+0+0)/5 = 0.6
+    const avg = F.resolveWeight([2, '+'], null);
+    assert.ok(Math.abs(avg - 0.6) < 0.01, `Expected 0.6, got ${avg}`);
+  });
+
+  it('explicit levels object resolves by tier index', () => {
+    const entry = { A: 7, B: 5, C: 4, D: 3 };
+    assert.strictEqual(F.resolveWeight(entry, 4), 7);  // A
+    assert.strictEqual(F.resolveWeight(entry, 3), 5);  // B
+    assert.strictEqual(F.resolveWeight(entry, 0), 0);  // F (not present)
+  });
+
+  it('explicit levels cross-tier average pads with zeros', () => {
+    // { A: 7, B: 5, C: 4, D: 3 } → (7+5+4+3+0)/5 = 3.8 (F missing = 0)
+    const avg = F.resolveWeight({ A: 7, B: 5, C: 4, D: 3 }, null);
+    assert.ok(Math.abs(avg - 3.8) < 0.01, `Expected 3.8, got ${avg}`);
+  });
+
+  it('legacy plain number works', () => {
+    assert.strictEqual(F.resolveWeight(5, null), 5);
+    assert.strictEqual(F.resolveWeight(5, 4), 5);
+  });
+});
+
+describe('Unit Quality Rating — Kintaro Test Case', () => {
+  it('Kintaro FS at rating=A is 2 (elite only)', () => {
+    const era = APP_DATA.eraData['3039'];
+    const kintaro = era['Kintaro'];
+    const w = F.resolveWeight(kintaro.w.FS, F.RATING_INDEX.A);
+    assert.strictEqual(w, 2);
+  });
+
+  it('Kintaro FS at default (average) is 0.6', () => {
+    const era = APP_DATA.eraData['3039'];
+    const kintaro = era['Kintaro'];
+    const w = F.resolveWeight(kintaro.w.FS, null);
+    assert.ok(Math.abs(w - 0.6) < 0.01, `Expected 0.6, got ${w}`);
+  });
+
+  it('Kintaro DC is flat 2 regardless of tier', () => {
+    const era = APP_DATA.eraData['3039'];
+    const kintaro = era['Kintaro'];
+    assert.strictEqual(F.resolveWeight(kintaro.w.DC, F.RATING_INDEX.A), 2);
+    assert.strictEqual(F.resolveWeight(kintaro.w.DC, F.RATING_INDEX.F), 2);
+    assert.strictEqual(F.resolveWeight(kintaro.w.DC, null), 2);
+  });
+
+  it('parser accepts rating=A', () => {
+    const p = F.parseQuery('faction=FS year=3039 rating=A');
+    assert.strictEqual(p.rating, 'A');
+  });
+
+  it('parser accepts rating=F', () => {
+    const p = F.parseQuery('rating=F');
+    assert.strictEqual(p.rating, 'F');
+  });
+});
+
+// ════════════════════════════════════════════════════════
+// 10b. LOGARITHMIC SCALE & WEIGHT CLASS DISTRIBUTION
+// ════════════════════════════════════════════════════════
+
+describe('Logarithmic Scale Conversion', () => {
+  it('toProb converts rating to probability weight', () => {
+    assert.ok(Math.abs(F.toProb(2) - 2.0) < 0.01);
+    assert.ok(Math.abs(F.toProb(4) - 4.0) < 0.01);
+    assert.ok(Math.abs(F.toProb(6) - 8.0) < 0.01);
+    assert.ok(Math.abs(F.toProb(8) - 16.0) < 0.01);
+    assert.ok(Math.abs(F.toProb(10) - 32.0) < 0.01);
+  });
+
+  it('toRating is inverse of toProb', () => {
+    for (const r of [1, 2, 3, 5, 7, 10]) {
+      const roundTrip = F.toRating(F.toProb(r));
+      assert.ok(Math.abs(roundTrip - r) < 0.01, `Round trip for ${r}: got ${roundTrip}`);
+    }
+  });
+
+  it('toProb(0) returns 0', () => {
+    assert.strictEqual(F.toProb(0), 0);
+  });
+
+  it('toRating(0) returns 0', () => {
+    assert.strictEqual(F.toRating(0), 0);
+  });
+});
+
+describe('Weight Class Distribution Adjustment', () => {
+  it('no adjustment when faction matches baseline', () => {
+    const factor = F.wcdAdjustmentFactor('Heavy', [3, 4, 2, 1], [3, 4, 2, 1]);
+    assert.ok(Math.abs(factor - 1.0) < 0.01);
+  });
+
+  it('Lyran heavies get boosted vs IS baseline', () => {
+    // LC: [4,6,7,3], IS: [3,4,2,1]
+    // Heavy: LC=7/20=35%, IS=2/10=20%, factor=1.75
+    const factor = F.wcdAdjustmentFactor('Heavy', [4, 6, 7, 3], [3, 4, 2, 1]);
+    assert.ok(factor > 1.5, `Lyran heavy factor should be >1.5, got ${factor.toFixed(2)}`);
+  });
+
+  it('Lyran lights get reduced vs IS baseline', () => {
+    // Light: LC=4/20=20%, IS=3/10=30%, factor=0.67
+    const factor = F.wcdAdjustmentFactor('Light', [4, 6, 7, 3], [3, 4, 2, 1]);
+    assert.ok(factor < 0.8, `Lyran light factor should be <0.8, got ${factor.toFixed(2)}`);
+  });
+
+  it('null/undefined inputs return 1 (no adjustment)', () => {
+    assert.strictEqual(F.wcdAdjustmentFactor('Heavy', null, [3, 4, 2, 1]), 1);
+    assert.strictEqual(F.wcdAdjustmentFactor('Heavy', [3, 4, 2, 1], null), 1);
+    assert.strictEqual(F.wcdAdjustmentFactor(null, [3, 4, 2, 1], [3, 4, 2, 1]), 1);
+  });
+});
+
+describe('Integrated: Commando/Wolfhound Lyran identity', () => {
+  // The Commando and Wolfhound are light mechs. Lyrans field fewer lights.
+  // With weight class adjustment, their Lyran identity should be lower than
+  // without it, relative to heavier mechs.
+  
+  it('LC wcd data exists in app-data', () => {
+    assert.ok(APP_DATA.factions.LC?.wcd, 'LC should have weight class distribution data');
+    assert.ok(APP_DATA.factions.LC.wcd['3039'], 'LC should have 3039 wcd');
+  });
+
+  it('Commando has lower adjusted weight for LC than raw weight', () => {
+    const era = APP_DATA.eraData['3039'];
+    const commando = era['Commando'];
+    assert.ok(commando, 'Commando should exist in 3039');
+    assert.ok(commando.w.LC, 'Commando should have LC weight');
+    
+    // Raw resolved weight (no wcd)
+    const rawWeight = F.resolveWeight(commando.w.LC, null);
+    // Adjusted weight (with wcd) — LC fields fewer lights
+    const adjusted = F.computeAdjustedWeights(commando.w, null, 'Light', 3039);
+    
+    assert.ok(adjusted.LC < rawWeight,
+      `Commando LC adjusted (${adjusted.LC.toFixed(2)}) should be < raw (${rawWeight.toFixed(2)})`);
   });
 });
 

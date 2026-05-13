@@ -76,14 +76,21 @@ function getAncestors(fkey) {
 // ── 2. Parse availability strings ──────────────────────────────────────────
 // Format: "DC:7+,FRR:5+,MERC:4+,Periphery.DD:3+"
 // The ! separates rating-level weights: "CLAN!Keshik:2!Front Line:1!Second Line:1"
-// The + or - after the number is an era modifier (introduced/phasing out)
-// We take the base numeric weight, ignoring rating levels (use max across levels)
+// The + after the number means: stated weight applies to highest equipment rating,
+//   decreasing by 1 per tier down (elite-skewed).
+// The - after the number means: stated weight applies to lowest equipment rating,
+//   decreasing by 1 per tier up (garrison-skewed).
+// No modifier means flat across all tiers.
+//
+// Output format:
+//   Simple entries: { factionKey: [baseWeight, modifier] }
+//     where modifier is "+", "-", or 0 (flat)
+//   Explicit rating entries: { factionKey: { levelName: weight, ... } }
+//     e.g. { CGB: { Keshik: 4, "Front Line": 3, "Second Line": 1, Solahma: 1 } }
 
 function parseAvailability(avail) {
   if (!avail) return {};
   const result = {};
-  // Split on commas, but need to handle rating-level entries like "CLAN!Keshik:2!Front Line:1"
-  // Strategy: split on comma, then for each entry parse faction:weight pairs
   const entries = String(avail).split(',');
   
   for (const entry of entries) {
@@ -96,42 +103,57 @@ function parseAvailability(avail) {
     const firstMatch = parts[0].match(/^([^:]+):(\d+)([+-]?)(?::(\d+))?$/);
     
     if (!firstMatch) {
-      // Could be just a faction key without weight in this part
+      // Explicit rating levels without base weight
       // e.g., "CLAN!Solahma:1!Provisional Garrison:1" — faction is CLAN, no base weight
       const factionKey = parts[0].trim();
-      let maxWeight = 0;
-      for (let i = 1; i < parts.length; i++) {
-        const rm = parts[i].match(/([^:]+):(\d+)([+-]?)/);
-        if (rm) {
-          const w = parseInt(rm[2]);
-          if (w > maxWeight) maxWeight = w;
+      if (parts.length > 1) {
+        const levels = {};
+        for (let i = 1; i < parts.length; i++) {
+          const rm = parts[i].match(/([^:]+):(\d+)/);
+          if (rm) {
+            levels[rm[1].trim()] = parseInt(rm[2]);
+          }
         }
-      }
-      if (maxWeight > 0) {
-        result[factionKey] = maxWeight;
+        if (Object.keys(levels).length > 0) {
+          result[factionKey] = levels;
+        }
       }
       continue;
     }
     
     const factionKey = firstMatch[1];
     const baseWeight = parseInt(firstMatch[2]);
-    // introYear from :YYYY suffix  
-    // const introYear = firstMatch[4] ? parseInt(firstMatch[4]) : null;
+    const modifier = firstMatch[3] || 0; // "+", "-", or "" → 0
     
-    let maxWeight = baseWeight;
-    // Check rating-level entries for higher weights
-    for (let i = 1; i < parts.length; i++) {
-      const rm = parts[i].match(/([^:]+):(\d+)([+-]?)/);
-      if (rm) {
-        const w = parseInt(rm[2]);
-        if (w > maxWeight) maxWeight = w;
+    if (parts.length > 1) {
+      // Has explicit rating-level overrides after the base
+      // e.g., "DC:8+!A:10!B:7" — explicit levels take precedence
+      const levels = {};
+      for (let i = 1; i < parts.length; i++) {
+        const rm = parts[i].match(/([^:]+):(\d+)/);
+        if (rm) {
+          levels[rm[1].trim()] = parseInt(rm[2]);
+        }
       }
+      if (Object.keys(levels).length > 0) {
+        result[factionKey] = levels;
+      } else {
+        result[factionKey] = [baseWeight, modifier || 0];
+      }
+    } else {
+      result[factionKey] = [baseWeight, modifier || 0];
     }
-    
-    result[factionKey] = maxWeight;
   }
   
   return result;
+}
+
+// Helper: extract the peak weight from a parsed availability entry
+// (used during inheritance resolution where we need a single number)
+function peakWeight(entry) {
+  if (Array.isArray(entry)) return entry[0]; // [base, modifier] — base IS the peak
+  if (typeof entry === 'object') return Math.max(...Object.values(entry), 0); // explicit levels
+  return entry; // legacy number
 }
 
 // ── 3. Parse era XMLs ──────────────────────────────────────────────────────
@@ -151,6 +173,8 @@ const eraParser = new XMLParser({
 
 // Result: { era: { chassis: { factions: {fkey: weight}, variants: {modelName: {fkey: weight}}, unitType } } }
 const rawData = {};
+// Weight class distributions: { factionKey: { era: [L, M, H, A] } }
+const rawWcd = {};
 
 for (const eraFile of eraFiles) {
   const era = parseInt(eraFile);
@@ -163,7 +187,46 @@ for (const eraFile of eraFiles) {
     continue;
   }
   
-  // Chassis are under ratgen.units.chassis
+  // ── Parse faction data (weight class distributions) ──
+  let factionNodes = [];
+  if (ratgen.factions && ratgen.factions.faction) {
+    factionNodes = Array.isArray(ratgen.factions.faction) ? ratgen.factions.faction : [ratgen.factions.faction];
+  }
+  
+  for (const fNode of factionNodes) {
+    const fkey = fNode['@_key'];
+    if (!fkey) continue;
+    
+    // Parse weightDistribution for Mek unit type
+    const wdNodes = fNode.weightDistribution
+      ? (Array.isArray(fNode.weightDistribution) ? fNode.weightDistribution : [fNode.weightDistribution])
+      : [];
+    
+    for (const wd of wdNodes) {
+      // weightDistribution can be a string "3,4,2,1" or an object with #text and attributes
+      let unitType, values;
+      if (typeof wd === 'string') {
+        unitType = 'Mek'; // default
+        values = wd;
+      } else if (wd && typeof wd === 'object') {
+        unitType = wd['@_unitType'] || 'Mek';
+        values = wd['#text'] || wd;
+      } else {
+        continue;
+      }
+      
+      // Only care about Mek distributions
+      if (unitType !== 'Mek') continue;
+      
+      const nums = String(values).split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v));
+      if (nums.length === 4) {
+        if (!rawWcd[fkey]) rawWcd[fkey] = {};
+        rawWcd[fkey][era] = nums; // [Light, Medium, Heavy, Assault]
+      }
+    }
+  }
+  
+  // ── Parse chassis data ──
   let chassisList = [];
   const units = ratgen.units;
   if (units && units.chassis) {
@@ -248,9 +311,9 @@ for (const era of Object.keys(rawData)) {
   resolved[era] = {};
   
   for (const [chassisName, chassisData] of Object.entries(rawData[era])) {
-    const explicitFactions = chassisData.factions; // {fkey: weight}
+    const explicitFactions = chassisData.factions; // {fkey: [base, mod] | {levels} }
     const resolvedFactions = {};
-    const resolvedVariants = {}; // {modelName: {fkey: weight}}
+    const resolvedVariants = {}; // {modelName: {fkey: [base, mod] | {levels} | number}}
     
     // For each faction we want to resolve
     for (const fkey of factionsToResolve) {
@@ -264,6 +327,7 @@ for (const era of Object.keys(rawData)) {
       const ancestors = getAncestors(fkey);
       for (const ancestor of ancestors) {
         if (explicitFactions[ancestor] !== undefined) {
+          // Inherit parent's entry (preserving modifier info)
           resolvedFactions[fkey] = explicitFactions[ancestor];
           break;
         }
@@ -274,6 +338,7 @@ for (const era of Object.keys(rawData)) {
     if (Object.keys(resolvedFactions).length === 0) continue;
     
     // Resolve variant weights with inheritance + scaling
+    // Variant scaling produces plain numbers (approximations), not modifier-encoded values
     for (const [modelName, modelFactions] of Object.entries(chassisData.variants)) {
       resolvedVariants[modelName] = {};
       
@@ -284,18 +349,14 @@ for (const era of Object.keys(rawData)) {
           continue;
         }
         
+        // For variant scaling, use peakWeight for arithmetic
+        const factionChassisW = peakWeight(resolvedFactions[fkey]);
+        
         // Check "General" — a catch-all for variant distribution
         if (modelFactions['General'] !== undefined) {
-          // Scale General weight by faction's chassis affinity ratio
-          const factionChassisWeight = resolvedFactions[fkey];
-          // Find the reference weight: use the faction that "General" represents
-          // General is basically the base/default, treat as parent weight
-          // We scale: effective = General_weight × (faction_chassis / reference_chassis)
-          // Reference = we need to find what General maps to. Use the max explicit parent weight.
-          // Actually, "General" in variant context means "all factions get this variant at this base weight"
-          // We should scale it by faction's chassis affinity relative to a baseline
+          const generalW = peakWeight(modelFactions['General']);
           
-          // For simplicity and accuracy: find the parent faction weight for chassis
+          // Find the parent faction weight for chassis
           const ancestors = getAncestors(fkey);
           let parentChassisWeight = null;
           let parentVariantWeight = null;
@@ -303,19 +364,17 @@ for (const era of Object.keys(rawData)) {
           // First check if any ancestor has explicit variant weight
           for (const anc of ancestors) {
             if (modelFactions[anc] !== undefined) {
-              parentVariantWeight = modelFactions[anc];
-              parentChassisWeight = explicitFactions[anc] !== undefined ? explicitFactions[anc] : null;
+              parentVariantWeight = peakWeight(modelFactions[anc]);
+              parentChassisWeight = explicitFactions[anc] !== undefined ? peakWeight(explicitFactions[anc]) : null;
               break;
             }
           }
           
           if (parentVariantWeight !== null && parentChassisWeight !== null && parentChassisWeight > 0) {
-            // Scale by chassis affinity ratio
-            resolvedVariants[modelName][fkey] = parentVariantWeight * (factionChassisWeight / parentChassisWeight);
+            resolvedVariants[modelName][fkey] = parentVariantWeight * (factionChassisW / parentChassisWeight);
           } else {
-            // Fall back to General with scaling
-            // Use "General" weight scaled by faction weight / average chassis weight
-            resolvedVariants[modelName][fkey] = modelFactions['General'] * (factionChassisWeight / Math.max(...Object.values(explicitFactions).filter(v => v > 0), 1));
+            const maxExplicit = Math.max(...Object.values(explicitFactions).map(v => peakWeight(v)).filter(v => v > 0), 1);
+            resolvedVariants[modelName][fkey] = generalW * (factionChassisW / maxExplicit);
           }
           continue;
         }
@@ -325,12 +384,11 @@ for (const era of Object.keys(rawData)) {
         let inherited = false;
         for (const anc of ancestors) {
           if (modelFactions[anc] !== undefined) {
-            const parentVariantWeight = modelFactions[anc];
-            const parentChassisWeight = explicitFactions[anc] !== undefined ? explicitFactions[anc] : resolvedFactions[anc];
-            const factionChassisWeight = resolvedFactions[fkey];
+            const parentVariantWeight = peakWeight(modelFactions[anc]);
+            const parentChassisW = explicitFactions[anc] !== undefined ? peakWeight(explicitFactions[anc]) : peakWeight(resolvedFactions[anc]);
             
-            if (parentChassisWeight && parentChassisWeight > 0) {
-              resolvedVariants[modelName][fkey] = parentVariantWeight * (factionChassisWeight / parentChassisWeight);
+            if (parentChassisW && parentChassisW > 0) {
+              resolvedVariants[modelName][fkey] = parentVariantWeight * (factionChassisW / parentChassisW);
             } else {
               resolvedVariants[modelName][fkey] = parentVariantWeight;
             }
@@ -341,7 +399,7 @@ for (const era of Object.keys(rawData)) {
         
         // If still no variant weight, check General as last resort
         if (!inherited && modelFactions['General'] !== undefined) {
-          resolvedVariants[modelName][fkey] = modelFactions['General'];
+          resolvedVariants[modelName][fkey] = peakWeight(modelFactions['General']);
         }
       }
     }
@@ -359,6 +417,32 @@ for (const era of Object.keys(rawData)) {
 
 // ── 5. Write output ────────────────────────────────────────────────────────
 
+// ── 5b. Resolve weight class distribution inheritance ──────────────────────
+// Factions without explicit wcd inherit from parent
+const resolvedWcd = {};
+function resolveWcd(fkey, era) {
+  if (rawWcd[fkey]?.[era]) return rawWcd[fkey][era];
+  const ancestors = getAncestors(fkey);
+  for (const anc of ancestors) {
+    if (rawWcd[anc]?.[era]) return rawWcd[anc][era];
+  }
+  return null;
+}
+
+// Build resolved wcd for all major factions across all eras
+for (const fkey of Object.keys(factionMeta)) {
+  const factionWcd = {};
+  for (const era of Object.keys(resolved).map(Number)) {
+    const wcd = resolveWcd(fkey, era);
+    if (wcd) factionWcd[era] = wcd;
+  }
+  if (Object.keys(factionWcd).length > 0) {
+    resolvedWcd[fkey] = factionWcd;
+  }
+}
+
+console.log(`Weight class distributions: ${Object.keys(rawWcd).length} factions with explicit data, ${Object.keys(resolvedWcd).length} after inheritance`);
+
 const output = {
   _meta: {
     generated: new Date().toISOString(),
@@ -367,6 +451,7 @@ const output = {
     factionCount: Object.keys(factionMeta).length,
   },
   factionMeta,
+  weightClassDistributions: resolvedWcd,
   eras: resolved,
 };
 

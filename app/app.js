@@ -45,6 +45,206 @@ const FACTION_ALIASES = {
   'th': 'TH', 'terran hegemony': 'TH',
 };
 
+// ── Unit Quality Rating Resolution ──
+// MegaMek weights encode unit quality via [base, modifier]:
+//   [8, "+"] → elite-skewed: A=8, B=7, C=6, D=5, F=4
+//   [8, "-"] → garrison-skewed: F=8, D=7, C=6, B=5, A=4
+//   [8, 0]   → flat across all tiers
+//   { A: 7, B: 5, C: 4, D: 3 } → explicit per-level
+// Rating indices: F=0, D=1, C=2, B=3, A=4 (IS) / PGC=0, Sol=1, SL=2, FL=3, K=4 (Clan)
+
+const RATING_LEVELS = ['F', 'D', 'C', 'B', 'A'];
+const RATING_INDEX = { F: 0, D: 1, C: 2, B: 3, A: 4 };
+const NUM_LEVELS = 5;
+
+// Map explicit Clan level names to tier indices
+const CLAN_LEVEL_INDEX = {
+  'PGC': 0, 'Provisional Garrison': 0,
+  'Solahma': 1, 'Sol': 1,
+  'Second Line': 2, 'SL': 2,
+  'Front Line': 3, 'FL': 3,
+  'Keshik': 4, 'K': 4
+};
+
+/**
+ * Resolve a weight entry to a single numeric value for a given rating tier.
+ * @param {Array|Object|number} entry - [base, mod], {level: weight}, or plain number
+ * @param {number|null} ratingIdx - 0-4 tier index, or null for cross-tier average
+ * @returns {number} resolved weight (may be fractional for averages)
+ */
+function resolveWeight(entry, ratingIdx) {
+  if (typeof entry === 'number') return entry; // legacy plain number
+
+  if (Array.isArray(entry)) {
+    const [base, mod] = entry;
+    if (mod === 0 || mod === '0' || !mod) {
+      return base; // flat — same at all tiers
+    }
+    if (ratingIdx !== null && ratingIdx !== undefined) {
+      // Resolve for specific tier
+      let val;
+      if (mod === '+') {
+        val = base - (NUM_LEVELS - 1 - ratingIdx);
+      } else { // '-'
+        val = base - ratingIdx;
+      }
+      return Math.max(0, val);
+    }
+    // Cross-tier average (default)
+    let sum = 0;
+    for (let i = 0; i < NUM_LEVELS; i++) {
+      let val;
+      if (mod === '+') {
+        val = base - (NUM_LEVELS - 1 - i);
+      } else { // '-'
+        val = base - i;
+      }
+      sum += Math.max(0, val);
+    }
+    return sum / NUM_LEVELS;
+  }
+
+  if (typeof entry === 'object' && entry !== null) {
+    // Explicit per-level: { A: 7, B: 5, ... } or { Keshik: 4, "Front Line": 3, ... }
+    if (ratingIdx !== null && ratingIdx !== undefined) {
+      // Try IS level name first, then Clan level names
+      const isLevel = RATING_LEVELS[ratingIdx];
+      if (entry[isLevel] !== undefined) return entry[isLevel];
+      // Try Clan level names for this index
+      for (const [name, idx] of Object.entries(CLAN_LEVEL_INDEX)) {
+        if (idx === ratingIdx && entry[name] !== undefined) return entry[name];
+      }
+      return 0; // tier not present = extinct
+    }
+    // Cross-tier average: average all level values, pad with zeros for missing levels
+    const values = Object.values(entry);
+    if (values.length === 0) return 0;
+    // Pad to NUM_LEVELS (missing tiers = 0)
+    const sum = values.reduce((a, b) => a + Math.max(0, b), 0);
+    return sum / NUM_LEVELS;
+  }
+
+  return 0;
+}
+
+/**
+ * Resolve all faction weights in a weights object.
+ * @param {Object} weights - { factionCode: [base, mod] | {levels} | number }
+ * @param {number|null} ratingIdx - tier index or null for average
+ * @returns {Object} { factionCode: number }
+ */
+function resolveWeights(weights, ratingIdx) {
+  const result = {};
+  for (const [f, entry] of Object.entries(weights)) {
+    result[f] = resolveWeight(entry, ratingIdx);
+  }
+  return result;
+}
+
+// ── Logarithmic Scale Conversion ──
+// MegaMek availability ratings use a base-2 log scale: probability_weight = 2^(rating/2)
+function toProb(rating) {
+  if (rating <= 0) return 0;
+  return Math.pow(2, rating / 2);
+}
+
+function toRating(prob) {
+  if (prob <= 0) return 0;
+  return 2 * Math.log2(prob);
+}
+
+// ── Weight Class Distribution Adjustment ──
+// Adjusts probability weights by faction's tonnage bias relative to a baseline.
+// chassisClass: 'Light'|'Medium'|'Heavy'|'Assault'
+// factionWcd: [L,M,H,A] array (raw weights, not percentages)
+// baselineWcd: [L,M,H,A] array (IS or CLAN default)
+
+const WCD_CLASS_INDEX = { Light: 0, Medium: 1, Heavy: 2, Assault: 3 };
+
+function getBaselineWcd(factionCode) {
+  // Clan factions use CLAN baseline, everyone else uses IS
+  if (DATA && DATA.factions[factionCode]?.clan) {
+    return DATA.factions['CW']?.wcd || null; // CW inherits CLAN baseline
+  }
+  return null; // will use IS default in the caller
+}
+
+function wcdAdjustmentFactor(chassisClass, factionWcd, baselineWcd) {
+  if (!factionWcd || !baselineWcd || !chassisClass) return 1;
+  const idx = WCD_CLASS_INDEX[chassisClass];
+  if (idx === undefined) return 1;
+  
+  const factionTotal = factionWcd.reduce((a, b) => a + b, 0);
+  const baselineTotal = baselineWcd.reduce((a, b) => a + b, 0);
+  if (factionTotal === 0 || baselineTotal === 0) return 1;
+  
+  const factionPct = factionWcd[idx] / factionTotal;
+  const baselinePct = baselineWcd[idx] / baselineTotal;
+  if (baselinePct === 0) return 1;
+  
+  return factionPct / baselinePct;
+}
+
+/**
+ * Get the weight class distribution for a faction in a given era.
+ * Falls back through era years (closest earlier era).
+ */
+function getFactionWcd(factionCode, eraYear) {
+  if (!DATA) return null;
+  const wcd = DATA.factions[factionCode]?.wcd;
+  if (!wcd) return null;
+  
+  // Exact match
+  if (wcd[eraYear]) return wcd[eraYear];
+  
+  // Find closest earlier era
+  const years = Object.keys(wcd).map(Number).sort((a, b) => a - b);
+  let best = null;
+  for (const y of years) {
+    if (y <= eraYear) best = wcd[y];
+  }
+  return best;
+}
+
+/**
+ * Get the baseline (IS or CLAN) weight class distribution for a given era.
+ */
+function getBaselineWcdForEra(factionCode, eraYear) {
+  if (!DATA) return null;
+  const isClan = DATA.factions[factionCode]?.clan;
+  // Find any Clan faction's wcd as baseline (they all inherit CLAN)
+  // or use IS-inheriting factions for IS baseline
+  const baselineCode = isClan ? 'CW' : 'FS'; // These inherit from CLAN/IS defaults
+  return getFactionWcd(baselineCode, eraYear);
+}
+
+/**
+ * Apply full weight pipeline: resolve quality → log convert → weight class adjust → back to rating.
+ * Returns { factionCode: adjustedRating } 
+ */
+function computeAdjustedWeights(rawWeights, ratingIdx, chassisClass, eraYear) {
+  const resolved = resolveWeights(rawWeights, ratingIdx);
+  const result = {};
+  
+  for (const [f, rating] of Object.entries(resolved)) {
+    if (rating <= 0) { result[f] = 0; continue; }
+    
+    // Convert to probability space
+    let prob = toProb(rating);
+    
+    // Apply weight class distribution adjustment
+    const factionWcd = getFactionWcd(f, eraYear);
+    const baselineWcd = getBaselineWcdForEra(f, eraYear);
+    const factor = wcdAdjustmentFactor(chassisClass, factionWcd, baselineWcd);
+    prob *= factor;
+    
+    // Convert back to rating scale
+    result[f] = Math.max(0, toRating(prob));
+  }
+  
+  return result;
+}
+
 // ── Query Parser ──
 
 function parseQuery(queryStr) {
@@ -64,6 +264,7 @@ function parseQuery(queryStr) {
     factionSig: [],   // [{faction, op, val}]
     year: null,
     era: null,
+    rating: null,     // 'A'|'B'|'C'|'D'|'F' or null (cross-tier average)
     family: null,     // 'on' | 'off'
     industrial: null,  // 'show' | 'hide'
     type: null,        // 'omni' | 'battlemech'
@@ -196,6 +397,12 @@ function parseQuery(queryStr) {
         break;
       case 'mode':
         result.mode = value.toUpperCase();
+        break;
+      case 'rating':
+        const rVal = value.toUpperCase();
+        if (RATING_INDEX[rVal] !== undefined) {
+          result.rating = rVal;
+        }
         break;
       case 'tons':
       case 'tonnage':
@@ -725,7 +932,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
             html += `<td class="faction-cell ${sigHeat}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
             html += `<span class="pref-value">T${sigTier}</span>`;
             html += `<span class="sig-raw">${sigVal.toFixed(1)}</span>`;
-            html += `<span class="weight-value">w:${row.weights[f] || 0}</span>`;
+            html += `<span class="weight-value">w:${(row.weights[f] || 0).toFixed(1)}</span>`;
             html += '</td>';
           } else {
             html += '<td class="faction-cell no-data">—</td>';
@@ -1064,7 +1271,7 @@ function handleHeaderSort(th, rows, scopedFactions, eraYear, query) {
 
 // ── Auto-Suggest ──
 
-const FIELD_NAMES = ['faction', 'chassis', 'class', 'type', 'tech', 'spread', 'sig', 'signature', 'weight', 'tons', 'tonnage', 'bv', 'year', 'era', 'family', 'industrial', 'mode', 'sort'];
+const FIELD_NAMES = ['faction', 'chassis', 'class', 'type', 'tech', 'spread', 'sig', 'signature', 'weight', 'tons', 'tonnage', 'bv', 'year', 'era', 'rating', 'family', 'industrial', 'mode', 'sort'];
 
 function getSuggestions(text, cursorPos) {
   if (!DATA) return [];
@@ -1081,7 +1288,7 @@ function getSuggestions(text, cursorPos) {
   if (spaceMatch) {
     const field = spaceMatch[1].toLowerCase();
     const partial = spaceMatch[2].trim().toLowerCase();
-    const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'year', 'era', 'family', 'industrial', 'mode']);
+    const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'year', 'era', 'rating', 'family', 'industrial', 'mode']);
     if (VALUE_FIELD_SET.has(field) && partial) {
       // Fake an eq match and fall through to value completion
       return getValueSuggestions(field, partial);
@@ -1107,7 +1314,7 @@ function getSuggestions(text, cursorPos) {
   }
 
   // Field name completion
-  const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'year', 'era', 'family', 'industrial', 'mode']);
+  const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'year', 'era', 'rating', 'family', 'industrial', 'mode']);
   const OPERATOR_FIELD_SET = new Set(['spread', 'sig', 'signature', 'weight', 'tons', 'tonnage', 'bv', 'battlevalue']);
 
   if (!lastToken.includes('=') && !lastToken.includes('>') && !lastToken.includes('<')) {
@@ -1189,6 +1396,14 @@ function getValueSuggestions(field, lower) {
         .filter(e => e.mulEra.toLowerCase().includes(lower) || e.label.toLowerCase().includes(lower))
         .slice(0, 10)
         .map(e => ({ text: e.mulEra, hint: e.label }));
+    case 'rating':
+      return [
+        { text: 'A', hint: 'Elite / Keshik' },
+        { text: 'B', hint: 'Veteran / Front Line' },
+        { text: 'C', hint: 'Regular / Second Line' },
+        { text: 'D', hint: 'Green / Solahma' },
+        { text: 'F', hint: 'Garrison / PGC' }
+      ].filter(i => i.text.toLowerCase().startsWith(lower));
     case 'mode':
       return [{ text: 'A', hint: 'MegaMek Only' }, { text: 'B', hint: 'MegaMek × MUL' }];
     case 'family':
@@ -1239,6 +1454,7 @@ function renderChips(parsed) {
   }
   if (parsed.year) chips.push({ label: 'year=' + parsed.year, field: 'year' });
   if (parsed.era) chips.push({ label: 'era=' + parsed.era, field: 'era' });
+  if (parsed.rating) chips.push({ label: 'rating=' + parsed.rating, field: 'rating' });
   if (parsed.mode !== 'B') chips.push({ label: 'mode=' + parsed.mode, field: 'mode' });
   if (parsed.sort.length > 0) {
     chips.push({ label: 'sort by ' + parsed.sort.map(s => s.field + ' ' + s.dir).join(', '), field: 'sort' });
@@ -1281,6 +1497,7 @@ function removeFieldFromQuery(field) {
     'bv': /\b(?:bv|battlevalue)\s*[><=!]+\s*[\d.]+/gi,
     'year': /\byear\s*=\s*\d+/gi,
     'era': /\bera\s*=\s*\w+/gi,
+    'rating': /\brating\s*=\s*\w+/gi,
     'mode': /\bmode\s*=\s*\w+/gi,
     'sort': /\bsort\s+by\s+.+$/gi,
   };
@@ -1523,7 +1740,9 @@ function runQuery() {
       }
     }
     
-    let weights = { ...data.w };
+    // Resolve unit quality rating + log-scale weight class adjustment
+    const ratingIdx = parsed.rating ? RATING_INDEX[parsed.rating] : null;
+    let weights = computeAdjustedWeights(data.w, ratingIdx, meta.class, eraYear);
     if (modeB) {
       for (const f of Object.keys(weights)) {
         if (data.mul && !data.mul[f]) {
@@ -2340,7 +2559,7 @@ function initQuickFilter() {
   let qfSuggestIndex = -1;
 
   // Known field names that take = values (not sort, not numeric-operator fields used bare)
-  const VALUE_FIELDS = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'year', 'era', 'family', 'industrial', 'mode']);
+  const VALUE_FIELDS = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'year', 'era', 'rating', 'family', 'industrial', 'mode']);
   const OPERATOR_FIELDS = new Set(['spread', 'sig', 'signature', 'weight', 'tons', 'tonnage']);
 
   function normalizeFilterText(raw) {

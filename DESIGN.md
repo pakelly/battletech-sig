@@ -1,6 +1,6 @@
 # BattleTech Faction Signatures — Design Document
 
-**v1.0 — 2026-05-09**
+**v1.1 — 2026-05-13** (added Unit Quality Rating)
 
 ---
 
@@ -66,11 +66,18 @@ The tool shows two complementary values for each faction+chassis cell: raw weigh
 
 **Question:** "How heavily does this faction field this mech?"
 
-**Values:** Integer 1–10 (from MegaMek force generator data). Higher = more common in that faction's forces.
+**Values:** 0–10 scale (derived from MegaMek force generator data). Higher = more common in that faction's forces.
 
-**This is the primary display value in faction cells.** It drives heat map coloring. Weight 1 = coolest, weight 10 = hottest. No normalization — the raw MegaMek weight is the value shown.
+**This is the primary display value in faction cells.** It drives heat map coloring. Weight 1 = coolest, weight 10 = hottest.
 
-**Comparison is direct.** "Griffin — DC or FS?" → DC:6, FS:3. No normalization artifacts, no scope-dependent instability.
+**Computation:** The displayed weight incorporates three adjustments from MegaMek source data:
+1. **Unit quality rating** — `+`/`-` modifiers expand to per-tier values; default is cross-tier average
+2. **Logarithmic conversion** — math is done in probability space (`2^(n/2)`)
+3. **Weight class distribution** — faction's tonnage bias adjusts the probability, then converts back to the 1–10 scale
+
+The result may be fractional (e.g., 5.3). Values are still on the MegaMek 1–10 log scale, preserving the source's intended semantics.
+
+**Comparison is direct.** "Griffin — DC or FS?" → DC:6.2, FS:3.1. No normalization artifacts, no scope-dependent instability.
 
 #### Global Signature — The Identity Checklist
 
@@ -246,6 +253,253 @@ If a variant has no MUL match, `bv` and `intro` are null/omitted.
 
 ---
 
+## Unit Quality Rating
+
+### Background
+
+MegaMek's force generator encodes a **unit quality dimension** that we previously discarded. The availability strings use three formats to express how a chassis's prevalence varies by equipment rating (unit quality tier):
+
+- **`DC:8+`** — The stated weight applies to the highest equipment rating (A / Keshik). It decreases by 1 per tier down. `DC:8+` with 5 IS tiers (A/B/C/D/F) → A:8, B:7, C:6, D:5, F:4.
+- **`DC:8-`** — The stated weight applies to the lowest equipment rating (F / PGC). It decreases by 1 per tier up. `DC:8-` → F:8, D:7, C:6, B:5, A:4.
+- **`CGB!Keshik:4!Front Line:3!Second Line:1!Solahma:1`** — Explicit weight per named rating level. No interpolation.
+- **`DC:8`** (no modifier) — Flat across all tiers. Every rating level gets 8.
+
+This data is sourced directly from MegaMek's `AvailabilityRating.java`. The `+`/`-` modifiers use `adjustForRating(equipRating, numLevels)`:
+- `+`: `availability - (numLevels - 1 - equipRating)` (drops for lower ratings)
+- `-`: `availability - equipRating` (drops for higher ratings)
+
+Negative results are clamped to 0 (effectively extinct at that tier).
+
+**Rating level systems vary by faction type:**
+- **Inner Sphere:** A, B, C, D, F (5 levels, index 4=A down to 0=F)
+- **Clans:** Keshik, Front Line, Second Line, Solahma, PGC (5 levels, index 4=Keshik down to 0=PGC)
+
+### MegaMek's Logarithmic Scale
+
+MegaMek's availability ratings are on a **base-2 logarithmic scale**, not linear. The conversion from rating to probability weight is:
+
+```
+probability_weight = 2^(rating / 2)
+```
+
+| Rating | Probability Weight | MegaMek Label |
+|:------:|:-----------------:|:-------------|
+| 0      | 1.0               | Extinct       |
+| 1–2    | 1.4–2.0           | Very Rare     |
+| 3–4    | 2.8–4.0           | Rare          |
+| 5–6    | 5.7–8.0           | Uncommon      |
+| 7–8    | 11.3–16.0         | Common        |
+| 9–10   | 22.6–32.0         | Ubiquitous    |
+
+A weight-8 chassis is **8× more likely** to appear than a weight-2 chassis, not 4×. This has implications for how we interpret and display raw weights. (See "Rarity Labels" below.)
+
+**Current approach:** We display the raw integer ratings (1–10) directly. This is faithful to the source data and keeps values intuitive. The logarithmic relationship is inherent in the MegaMek data and doesn't need to be applied — users comparing "DC:8 vs FS:3" are already comparing on the log scale that MegaMek's authors intended.
+
+### Default Behavior (No Rating Filter)
+
+When no `rating=` filter is set, weights are the **mean across all rating levels**, clamping negatives to 0 before averaging.
+
+Examples with 5 IS tiers:
+- `DC:8` (flat) → (8+8+8+8+8)/5 = **8.0**
+- `DC:8+` → (8+7+6+5+4)/5 = **6.0**
+- `DC:8-` → (4+5+6+7+8)/5 = **6.0**
+- `FS:2+` → (2+1+0+0+0)/5 = **0.6**
+
+This means:
+- **Broadly-fielded mechs** (no modifier) retain their full weight — they define the faction at every quality level.
+- **Elite-skewed** (`+`) and **garrison-skewed** (`-`) mechs are discounted — they define a slice of the faction, not the whole.
+- **Low-weight `+` mechs** (like `FS:2+`) become near-zero — most of the faction literally never sees them.
+
+This changes the default identity picture from "what does the faction's best look like?" to "what does the faction look like overall?" — a better default for painting decisions.
+
+### Rating Filter
+
+The `rating=` filter selects a specific equipment quality tier. When set, all weights are resolved to that tier's value instead of averaged.
+
+| Filter | IS Tier | Clan Tier |
+|--------|---------|-----------|
+| `rating=A` | A (index 4) | Keshik |
+| `rating=B` | B (index 3) | Front Line |
+| `rating=C` | C (index 2) | Second Line |
+| `rating=D` | D (index 1) | Solahma |
+| `rating=F` | F (index 0) | PGC |
+
+For `!`-format entries (explicit per-level), the filter maps to the named level directly.
+
+**Interaction with scoring:** The rating filter adjusts weights *before* all downstream computation. Scoped preference, global signature, z-scores, Jenks tiers, spread, span — everything recomputes on the adjusted weights. This means `rating=A` and `rating=F` can produce meaningfully different faction identity rankings:
+- At `rating=A`, prestige mechs (`+` modifier) retain full weight while garrison mechs (`-`) diminish. Elite identity emerges.
+- At `rating=F`, the reverse: garrison/militia identity. The workhorse mechs that define the faction's bottom tier.
+- The roster also shrinks at extreme tiers (many mechs go to 0), concentrating identity signal among fewer chassis.
+
+### Rarity Labels
+
+An optional display mode mapping raw weights to MegaMek's official rarity labels (see table above). Applied after rating adjustment. Available as a UI toggle, not a filter — it's a display format, not a data transformation.
+
+### Data Format Changes
+
+#### app-data.json
+
+Chassis weight entries change from flat integers to objects encoding the modifier:
+
+**Before:**
+```
+w: { DC: 8, FS: 3 }
+```
+
+**After:**
+```
+w: { DC: [8, "+"], FS: [3, 0] }
+```
+
+Encoding: `[baseWeight, modifier]` where modifier is `"+"`, `"-"`, or `0` (flat/no modifier).
+
+For `!`-format entries (explicit per-level weights), the encoding is:
+```
+w: { CGB: { K: 4, FL: 3, SL: 1, Sol: 1 } }
+```
+
+Object form = explicit levels. Array form = base + modifier (expandable at runtime).
+
+Variant weights use the same encoding.
+
+#### Runtime Expansion
+
+The UI expands modifiers to per-tier weights at query time using the MegaMek formula:
+- `+`: tier weight = `base - (numLevels - 1 - tierIndex)`, clamped ≥ 0
+- `-`: tier weight = `base - tierIndex`, clamped ≥ 0
+- flat: all tiers = base
+- explicit: use stored per-level values directly
+
+---
+
+## Weight Class Distribution
+
+### Background
+
+MegaMek's force generator includes per-faction, per-era **weight class distribution** data — relative weights for Light, Medium, Heavy, and Assault class selection. This data lives in `<faction>` nodes within the era XMLs:
+
+```xml
+<faction key='LA'>
+    <weightDistribution era='3039' unitType='Mek'>4,6,7,3</weightDistribution>
+</faction>
+```
+
+The four values are relative weights for **Light, Medium, Heavy, Assault**. Converted to percentages for 3039:
+
+| Faction | Light | Medium | Heavy | Assault | Character |
+|---------|:-----:|:------:|:-----:|:-------:|-----------|
+| IS (default) | 30% | 40% | 20% | 10% | Baseline |
+| LA (Lyran) | 20% | 30% | 35% | 15% | Heavy-skewed |
+| DC (Kurita) | 40% | 20% | 30% | 10% | Light+heavy, medium gap |
+| FS (Davion) | 31% | 38% | 23% | 8% | Near-baseline |
+| CC (Capellan) | 22% | 33% | 33% | 11% | Heavy-leaning |
+| CLAN (default) | 22% | 33% | 33% | 11% | Heavy-leaning |
+
+### Why It Matters for Faction Identity
+
+Without weight class distribution, a Commando (light mech) with Lyran weight 5 and a Zeus (assault mech) with Lyran weight 5 appear equally "Lyran." But Lyrans field fewer lights and more assaults — the Commando is **over-represented** in our raw data relative to how often it actually appears in a Lyran force.
+
+Weight class distribution is a **multiplier** on chassis weight. It answers: "Given that this faction even rolled this weight class, how likely is this chassis?" The faction's weight class bias changes the denominator.
+
+### How It Works
+
+The weight class distribution adjusts chassis weights by the faction's tonnage bias:
+
+1. **Look up chassis weight class** (Light/Medium/Heavy/Assault from tonnage)
+2. **Look up faction's distribution** for that era (the 4-value array)
+3. **Compute adjustment factor**: `faction_class_weight / baseline_class_weight`
+4. **Apply**: `adjusted_weight = raw_weight × adjustment_factor`
+
+This is done in **probability space** (after log conversion — see below), not on the raw 1-10 ratings.
+
+**Example — Commando (Light, 25 tons) for Lyrans vs baseline:**
+- Baseline Light weight: 3/10 = 30%
+- Lyran Light weight: 4/20 = 20%  
+- Adjustment: 20%/30% = 0.67×
+- A Lyran Commando at raw weight 5 gets adjusted down — lights are rarer in Lyran forces.
+
+**Example — Zeus (Assault, 80 tons) for Lyrans vs baseline:**
+- Baseline Assault weight: 1/10 = 10%
+- Lyran Assault weight: 3/20 = 15%
+- Adjustment: 15%/10% = 1.5×
+- A Lyran Zeus at raw weight 5 gets adjusted up — assaults are more common in Lyran forces.
+
+### Inheritance
+
+Factions without explicit `weightDistribution` data inherit from their parent faction. The IS default (`3,4,2,1`) serves as the Inner Sphere baseline. The CLAN default serves as the Clan baseline.
+
+### Data Format
+
+Weight class distributions are stored in app-data.json at the faction level:
+
+```
+factions: {
+  DC: { name: "Draconis Combine", ..., wcd: { "3039": [4,2,3,1], "3049": [3,3,3,1] } },
+  ...
+}
+```
+
+`wcd` = weight class distribution, keyed by era year. Array is `[Light, Medium, Heavy, Assault]`.
+
+---
+
+## Logarithmic Weight Computation
+
+### The Problem
+
+MegaMek's 1-10 availability ratings are on a **logarithmic scale**: each +2 rating doubles the probability. Treating them as linear values distorts comparisons — a weight-8 chassis isn't "4× more likely" than weight-2, it's **8× more likely**.
+
+The conversion formula (from MegaMek's `AvailabilityRating.calcWeight`):
+
+```
+probability_weight = 2^(rating / 2)
+```
+
+| Rating | Probability Weight |
+|:------:|:-----------------:|
+| 1 | 1.4 |
+| 2 | 2.0 |
+| 3 | 2.8 |
+| 4 | 4.0 |
+| 5 | 5.7 |
+| 6 | 8.0 |
+| 7 | 11.3 |
+| 8 | 16.0 |
+| 9 | 22.6 |
+| 10 | 32.0 |
+
+### Where It's Applied
+
+All mathematical operations on weights must happen in probability space:
+
+1. **Rating → probability**: `2^(rating/2)` before any multiplication or averaging
+2. **Apply weight class adjustment**: multiply probability weights by distribution factor
+3. **Compute signature z-scores**: on probability weights, not raw ratings
+4. **Display**: convert back to a 1-10 scale via `2 × log2(probability_weight)` for the raw weight display, or use the probability weight directly for scoring
+
+### Impact on Existing Computations
+
+- **Global Signature (weight × z-score)**: z-scores should be computed on probability weights. This makes the spread between exclusive and ubiquitous mechs more dramatic — matching reality.
+- **Scoped preference, spread, span**: Operate on the adjusted probability-space values.
+- **Cross-tier averaging**: Average in probability space, then convert back. `avg_prob = mean(2^(r_i/2))` then `display = 2 × log2(avg_prob)`.
+
+### Rarity Labels (Display Option)
+
+Mapping from the final adjusted weight to MegaMek's official rarity labels:
+
+| Rating | Label |
+|:------:|:------|
+| 0 | Extinct |
+| 1–2 | Very Rare |
+| 3–4 | Rare |
+| 5–6 | Uncommon |
+| 7–8 | Common |
+| 9–10 | Ubiquitous |
+
+These are applied after all adjustments (quality rating + weight class) and can be shown as an optional display layer alongside the numeric values.
+
+---
+
 ## Era & Year Selection
 
 ### Target Year
@@ -287,6 +541,7 @@ All text fields support the `=` and `!=` operators. Multi-value OR is supported 
 | `year` | numeric | Target year | `year=3039` |
 | `era` | text | Era name | `era=ClanInvasion` |
 | `family` | toggle | Family grouping | `family=on` |
+| `rating` | enum | Unit quality tier (A/B/C/D/F). Adjusts weights before scoring. Omit for cross-tier average. | `rating=A`, `rating=F` |
 | `industrial` | toggle | IndustrialMech visibility | `industrial=hide` |
 | `mode` | enum | Data mode | `mode=A` |
 
@@ -321,6 +576,9 @@ All string matching is case-insensitive with partial match support. Faction code
 | `faction=GreatHouses tons>75 sort by DC-pref desc` | Heavy/assault mechs DC prefers most vs other houses |
 | `faction=DC year=3039 bv>1000 bv<1500 sort by bv asc` | DC mechs in the 1000–1500 BV sweet spot, cheapest first |
 | `faction=GreatHouses bv<900 sort by sig desc` | Budget BV mechs with the most faction identity |
+| `faction=DC year=3039 rating=A sort by sig desc` | What defines DC's elite units? |
+| `faction=DC year=3039 rating=F sort by sig desc` | What defines DC's garrison/militia? |
+| `faction=GreatHouses rating=A spread>3 sort by spread desc` | Mechs where elite roster differs most across Houses |
 
 ### View Routing
 
@@ -386,7 +644,7 @@ MUL ingestion pulls per-faction data AND the three general pools (IS General, Cl
 ```
 {
   _meta: { generated, description },
-  factions: { code: { name, clan, periphery, minor } },
+  factions: { code: { name, clan, periphery, minor, wcd: { year: [L,M,H,A] } } },
   factionGroups: { GreatHouses: [...], Clans: [...], Periphery: [...] },
   eras: [{ year, label, mulEra }],
   families: [{ groupName, chassis, enabled }],
@@ -408,14 +666,18 @@ MUL ingestion pulls per-faction data AND the three general pools (IS General, Cl
 ### Scoring Computation
 
 **Precomputed (in app-data.json):**
-- Resolved weights per faction per chassis per era
+- Raw weights per faction per chassis per era (with `+`/`-`/`!` modifier encoding)
+- Weight class distribution per faction per era
 - MUL confirmation flags
-- Chassis and faction metadata
+- Chassis and faction metadata (including tonnage → weight class)
 
 **Computed at runtime (in the UI):**
-- Scoped preference — recalculated on every scope change
-- Global signature — computed from all-era-faction context
-- Spread, span, avg-pref — derived from scoped preference
+1. **Resolve unit quality** — expand `[base, mod]` per rating filter (or cross-tier average)
+2. **Convert to probability space** — `2^(rating/2)` for all weights
+3. **Apply weight class adjustment** — multiply by `faction_class_pct / baseline_class_pct`
+4. **Compute signature** — z-scores and `weight × z` in probability space
+5. **Convert back for display** — `2 × log2(prob_weight)` → 1-10 scale
+6. Spread, span, avg-weight — derived from adjusted weights
 
 ### UI Technology
 
@@ -440,6 +702,10 @@ Vanilla HTML/CSS/JS. No framework. Single-page app loading `app-data.json` at st
 9. **Mode B default.** MUL-confirmed availability is the safer, canon-filtered default.
 10. **MUL general pools as fallback.** The IS/CLAN/PERI general pools supplement per-faction MUL data to prevent false negatives (e.g., Griffin missing from DC's MUL listing).
 11. **LC is the canonical Lyran code.** MegaMek uses LA (Lyran Alliance) internally; we remap to LC (Lyran Commonwealth) in the output. The Commonwealth is the default/historical faction name spanning most of the timeline. `LA`, `LC`, `lyran`, `steiner` all resolve to `LC`.
+12. **Unit quality default is cross-tier average.** When no `rating=` filter is set, weights are the mean across all equipment rating levels (clamping negatives to 0). This makes broadly-fielded mechs (no `+`/`-` modifier) naturally prominent, while niche elite or garrison mechs are appropriately discounted. Specific tiers available via `rating=A` through `rating=F`.
+13. **MegaMek weights are logarithmic.** The 1–10 scale represents `2^(n/2)` probability weight internally. All mathematical operations (averaging, weight class adjustment, z-score computation) happen in probability space. Display values are converted back to the 1–10 scale.
+14. **Weight class distribution adjusts chassis weights.** Per-faction, per-era tonnage bias from MegaMek's force generator is applied as a multiplier in probability space. This ensures that a light mech in a heavy-skewing faction (e.g., Commando for Lyrans) is appropriately discounted, and vice versa.
+15. **Salvage is excluded.** MegaMek encodes salvage allocation (e.g., DC capturing FedSuns mechs). We deliberately omit this — salvage muddies faction identity rather than defining it. A captured mech isn't "theirs."
 
 ---
 

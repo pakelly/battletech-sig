@@ -51,6 +51,7 @@ const output = {
     eraYears: resolved._meta.eras
   },
   factionMeta: {},
+  weightClassDistributions: {},
   eras: {}
 };
 
@@ -58,6 +59,13 @@ const output = {
 for (const [code, meta] of Object.entries(resolved.factionMeta)) {
   if (majorFactions.has(code)) {
     output.factionMeta[code] = meta;
+  }
+}
+
+// Copy weight class distributions for major factions
+for (const [code, wcd] of Object.entries(resolved.weightClassDistributions || {})) {
+  if (majorFactions.has(code)) {
+    output.weightClassDistributions[code] = wcd;
   }
 }
 
