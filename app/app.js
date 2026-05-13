@@ -540,8 +540,13 @@ function computeBVRange(variants, scopedFactions, mul, modeB, targetYear) {
     if (bv == null) continue;
     if (targetYear && intro && intro > targetYear) continue;
     // Check if any scoped faction has weight > 0 for this variant
+    // Variant weights may be [base, mod], {levels}, or plain numbers — resolve them
     const factions = scopedFactions.length > 0 ? scopedFactions : Object.keys(vWeights);
-    const hasFaction = factions.some(f => (vWeights[f] || 0) > 0);
+    const hasFaction = factions.some(f => {
+      const raw = vWeights[f];
+      if (raw === undefined || raw === null) return false;
+      return resolveWeight(raw, null) > 0;
+    });
     if (!hasFaction) continue;
     bvValues.push(bv);
   }
@@ -946,7 +951,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
         
         if (w > 0) {
           html += `<td class="faction-cell ${cls}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
-          html += `<span class="pref-value">${w}</span>`;
+          html += `<span class="pref-value">${w.toFixed(1)}</span>`;
           if (hasSig && row.sig?.[f] > 0) {
             const tier = row.sig?.[f + '_tier'] || 0;
             html += `<span class="sig-value">T${tier}</span>`;
@@ -1049,7 +1054,7 @@ function renderSingleFaction(rows, faction, eraYear) {
         <td class="tonnage-col">${formatTonnage(row.meta)}</td>
         <td><span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>
         ${bvCell}
-        <td class="stat-col">${w}</td>
+        <td class="stat-col">${w.toFixed(1)}</td>
         <td><div class="weight-bar-container"><div class="weight-bar" style="width:${pct}%"></div></div></td>
       `;
       tbody.appendChild(tr);
@@ -1104,7 +1109,7 @@ function renderMechView(rows, eraYear, chassisName) {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="cursor:pointer" data-chassis="${escAttr(row.name)}" data-faction="${f}"><strong>${escHtml(f)}</strong> <span style="color:var(--text-dim)">${escHtml(fName)}</span></td>
-        <td class="stat-col">${w}</td>
+        <td class="stat-col">${w.toFixed(1)}</td>
         <td><div class="weight-bar-container"><div class="weight-bar" style="width:${pct}%"></div></div></td>
       `;
       tbody.appendChild(tr);
@@ -1192,8 +1197,10 @@ function showVariants(chassisName, faction, eraYear) {
   let total = 0;
   for (const [varName, varData] of Object.entries(variants)) {
     // Handle both new { w: {...}, bv, intro } and legacy { faction: weight } format
+    // Variant weights may be [base, mod], {levels}, or plain numbers — resolve them
     const factionWeights = varData.w || varData;
-    const w = factionWeights[faction] || 0;
+    const rawW = factionWeights[faction];
+    const w = rawW !== undefined && rawW !== null ? resolveWeight(rawW, null) : 0;
     if (w > 0) {
       // Filter out variants introduced after the target year
       if (targetYear && varData.intro && varData.intro > targetYear) continue;
