@@ -10,7 +10,7 @@
 |------|------|-------------|
 | 🟢 **YOLO** | Greenfield, nothing works yet | Skip everything. Just build. |
 | 🟡 **EXPLORE** | Early phases, finding the shape | Rules 1, 5, 9 active (document intent, propose before big changes, no duplicate logic). Tests encouraged but not gating. Ship and iterate. |
-| 🔴 **DEFEND** | Working features, real users, tests to protect | All 10 rules active. Full workflow. No exceptions. |
+| 🔴 **DEFEND** | Working features, real users, tests to protect | All 10 rules active. Full workflow. Test env required — deploy to test first, verify, then prod. No exceptions. |
 
 **Mode is set here in this file, not in conversation.** Changing mode requires editing this section and committing. This survives compressions.
 
@@ -55,8 +55,21 @@ Never start writing production code without describing the change and getting co
 ### 7. One concern per commit
 Each commit should do one thing. "Add sig column" and "fix sort parser" are two commits, not one. This makes rollbacks possible and history readable.
 
-### 8. Verify the deployment
-After deploying, verify the live site loads and the change works. Check the version stamp. Don't assume cache is busted — confirm it.
+### 8. Deploy correctly, then verify
+**Deployment is a two-branch process.** Code lives on `main`. The live site serves from `gh-pages`. Pushing to `main` does NOT deploy.
+
+**Deploy procedure:**
+1. Commit and push to `main`
+2. Switch to `gh-pages`: `git checkout gh-pages`
+3. Pull app files from main: `git checkout main -- app/app.js app/app-data.json`
+4. Copy to root: `cp app/app.js . && cp app/app-data.json .`
+5. Clean up: `rm -rf app` (don't let main's directory structure leak into gh-pages)
+6. Check for unwanted files: `git status` — gh-pages should ONLY contain `app.js`, `app-data.json`, `index.html`, `style.css`
+7. Commit, push gh-pages, switch back to main
+
+**Then verify:** Hard-refresh the live site (Ctrl+Shift+R). Check the browser console for errors. Run a known query and confirm the change is visible. Don't assume cache is busted — confirm it.
+
+**🔴 DEFEND mode adds:** Push to test environment first (`pakelly/patrickforaptca-test` pattern). Verify on test. Only then deploy to prod. No exceptions.
 
 ### 9. No duplicate logic
 If a function exists that does X, use it. Don't write a second version. If the existing function doesn't quite fit, extend it — don't clone it. Before writing any new function, search for existing implementations.
@@ -76,9 +89,10 @@ Every new feature gets tests. Every bug fix gets a regression test. Tests are no
 5. Get confirmation to proceed
 6. Implement (smallest possible change)
 7. Run tests
-8. Commit (one concern)
-9. Deploy
-10. Verify deployment
+8. Commit to main (one concern)
+9. Deploy to gh-pages (see Rule 8 procedure)
+   - 🔴 DEFEND: deploy to test env first, verify, then prod
+10. Verify live deployment (hard-refresh, run a query, check console)
 ```
 
 ## What Went Wrong (2026-05-09)
@@ -92,3 +106,5 @@ Captured here so we don't repeat it:
 - **Missing filter parity:** `sig` was added as a sort field but not a filter field. Then added as a filter in one pipeline but not the other. **Lesson:** Design invariants (filter/sort parity) need tests that enforce them.
 
 - **Hacking without reading:** Multiple rounds of "fix, deploy, test, still broken" because we were patching symptoms without understanding the full code path. **Lesson:** Trace before touching. Read the code, don't guess.
+
+- **Pushed to main, declared victory (2026-05-13, twice):** Pushed code to `main` and told Patrick it was live. GitHub Pages serves from `gh-pages`, not `main`. The site didn't update. Happened TWICE in the same session — the first time was a miss, the second time was embarrassing. **Lesson:** Know your deployment topology. `git push origin main` ≠ deployed. The deploy procedure is now explicit in Rule 8. Follow it every time.
