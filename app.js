@@ -153,37 +153,14 @@ function toRating(prob) {
   return 2 * Math.log2(prob);
 }
 
-// ── Weight Class Distribution Adjustment ──
-// Adjusts probability weights by faction's tonnage bias relative to a baseline.
-// chassisClass: 'Light'|'Medium'|'Heavy'|'Assault'
-// factionWcd: [L,M,H,A] array (raw weights, not percentages)
-// baselineWcd: [L,M,H,A] array (IS or CLAN default)
+// ── Weight Class Distribution ──
+// MegaMek applies weight class distribution as table-level mixing, NOT per-chassis adjustment.
+// Within a weight class, chassis compete on raw availability only.
+// When showing all weight classes together, each chassis's weight is scaled by the
+// faction's proportion for that weight class: faction_wcd[class] / sum(faction_wcd).
+// When filtering to a single weight class, WCD mixing is skipped entirely.
 
 const WCD_CLASS_INDEX = { Light: 0, Medium: 1, Heavy: 2, Assault: 3 };
-
-function getBaselineWcd(factionCode) {
-  // Clan factions use CLAN baseline, everyone else uses IS
-  if (DATA && DATA.factions[factionCode]?.clan) {
-    return DATA.factions['CW']?.wcd || null; // CW inherits CLAN baseline
-  }
-  return null; // will use IS default in the caller
-}
-
-function wcdAdjustmentFactor(chassisClass, factionWcd, baselineWcd) {
-  if (!factionWcd || !baselineWcd || !chassisClass) return 1;
-  const idx = WCD_CLASS_INDEX[chassisClass];
-  if (idx === undefined) return 1;
-  
-  const factionTotal = factionWcd.reduce((a, b) => a + b, 0);
-  const baselineTotal = baselineWcd.reduce((a, b) => a + b, 0);
-  if (factionTotal === 0 || baselineTotal === 0) return 1;
-  
-  const factionPct = factionWcd[idx] / factionTotal;
-  const baselinePct = baselineWcd[idx] / baselineTotal;
-  if (baselinePct === 0) return 1;
-  
-  return factionPct / baselinePct;
-}
 
 /**
  * Get the weight class distribution for a faction in a given era.
@@ -207,42 +184,35 @@ function getFactionWcd(factionCode, eraYear) {
 }
 
 /**
- * Get the baseline (IS or CLAN) weight class distribution for a given era.
+ * Get the WCD mixing factor for a chassis in a faction.
+ * Returns the faction's proportion for this weight class: wcd[classIdx] / sum(wcd).
+ * Returns 1 if no WCD data (faction inherits baseline, no adjustment needed in mixed view).
  */
-function getBaselineWcdForEra(factionCode, eraYear) {
-  if (!DATA) return null;
-  const isClan = DATA.factions[factionCode]?.clan;
-  // Find any Clan faction's wcd as baseline (they all inherit CLAN)
-  // or use IS-inheriting factions for IS baseline
-  const baselineCode = isClan ? 'CW' : 'FS'; // These inherit from CLAN/IS defaults
-  return getFactionWcd(baselineCode, eraYear);
+function getWcdMixingFactor(factionCode, chassisClass, eraYear) {
+  if (!chassisClass) return 1;
+  const idx = WCD_CLASS_INDEX[chassisClass];
+  if (idx === undefined) return 1;
+  
+  const wcd = getFactionWcd(factionCode, eraYear);
+  if (!wcd) return 1;
+  
+  const total = wcd.reduce((a, b) => a + b, 0);
+  if (total === 0) return 1;
+  
+  return wcd[idx] / total;
 }
 
 /**
- * Apply full weight pipeline: resolve quality → log convert → weight class adjust → back to rating.
- * Returns { factionCode: adjustedRating } 
+ * Resolve quality rating to numeric weights per faction.
+ * No weight class adjustment — ratings are relative within their weight class.
+ * Returns { factionCode: resolvedRating }
  */
-function computeAdjustedWeights(rawWeights, ratingIdx, chassisClass, eraYear) {
+function computeResolvedWeights(rawWeights, ratingIdx) {
   const resolved = resolveWeights(rawWeights, ratingIdx);
   const result = {};
   
   for (const [f, rating] of Object.entries(resolved)) {
-    if (rating <= 0) { result[f] = 0; continue; }
-    
-    // Convert to probability space
-    let prob = toProb(rating);
-    
-    // Apply weight class distribution adjustment
-    const factionWcd = getFactionWcd(f, eraYear);
-    const baselineWcd = getBaselineWcdForEra(f, eraYear);
-    const factor = wcdAdjustmentFactor(chassisClass, factionWcd, baselineWcd);
-    prob *= factor;
-    
-    // Convert back to rating scale
-    // Floor: if MegaMek says a faction fields this chassis (rating > 0),
-    // wcd adjustment can reduce but not eliminate it entirely
-    const adjusted = toRating(prob);
-    result[f] = rating > 0 ? Math.max(0.1, adjusted) : Math.max(0, adjusted);
+    result[f] = Math.max(0, rating);
   }
   
   return result;
@@ -567,11 +537,34 @@ function computeBVRange(variants, scopedFactions, mul, modeB, targetYear) {
  * allFactionCodes: array of ALL faction codes in the era (for zero-padding)
  * Returns { factionCode: rawSigScore } for the requested factions.
  */
-function computeSignature(weights, mulData, factions, allFactionCodes) {
+/**
+ * Compute signature scores for a chassis across factions.
+ * When wcdParams is provided (mixed-class view), weights are converted to probability
+ * space and scaled by each faction's WCD mixing factor before z-score computation.
+ * This makes signature reflect the chassis's importance in the faction's FULL roster,
+ * not just within its weight class.
+ *
+ * @param {Object} weights - { factionCode: resolvedRating } (raw within-class ratings)
+ * @param {Object} mulData - { factionCode: 1 } MUL confirmation flags
+ * @param {string[]} factions - scoped factions to compute sig for
+ * @param {string[]} allFactionCodes - all faction codes for z-score baseline
+ * @param {Object|null} wcdParams - { chassisClass, eraYear } or null to skip WCD mixing
+ */
+function computeSignature(weights, mulData, factions, allFactionCodes, wcdParams) {
   const result = {};
   
-  // Build weight array for ALL factions (0 for non-fielders)
-  const allWeights = allFactionCodes.map(f => (mulData[f] && weights[f]) ? weights[f] : 0);
+  // Build effective weight array for ALL factions
+  // In mixed-class view, scale by WCD mixing factor in probability space
+  const allWeights = allFactionCodes.map(f => {
+    const raw = (mulData[f] && weights[f]) ? weights[f] : 0;
+    if (raw <= 0) return 0;
+    if (wcdParams) {
+      const mixFactor = getWcdMixingFactor(f, wcdParams.chassisClass, wcdParams.eraYear);
+      return toProb(raw) * mixFactor;
+    }
+    return raw;
+  });
+  
   const n = allWeights.length;
   if (n === 0) { for (const f of factions) result[f] = 0; return result; }
   
@@ -580,8 +573,15 @@ function computeSignature(weights, mulData, factions, allFactionCodes) {
   const stddev = Math.sqrt(variance);
   
   for (const f of factions) {
-    const w = (mulData[f] && weights[f]) ? weights[f] : 0;
-    if (w === 0 || stddev === 0) { result[f] = 0; continue; }
+    const raw = (mulData[f] && weights[f]) ? weights[f] : 0;
+    if (raw <= 0 || stddev === 0) { result[f] = 0; continue; }
+    let w;
+    if (wcdParams) {
+      const mixFactor = getWcdMixingFactor(f, wcdParams.chassisClass, wcdParams.eraYear);
+      w = toProb(raw) * mixFactor;
+    } else {
+      w = raw;
+    }
     const z = (w - mean) / stddev;
     result[f] = w * Math.max(0, z);
   }
@@ -1750,9 +1750,9 @@ function runQuery() {
       }
     }
     
-    // Resolve unit quality rating + log-scale weight class adjustment
+    // Resolve unit quality rating (no WCD adjustment — that's applied at display level)
     const ratingIdx = parsed.rating ? RATING_INDEX[parsed.rating] : null;
-    let weights = computeAdjustedWeights(data.w, ratingIdx, meta.class, eraYear);
+    let weights = computeResolvedWeights(data.w, ratingIdx);
     if (modeB) {
       for (const f of Object.keys(weights)) {
         if (data.mul && !data.mul[f]) {
@@ -1817,11 +1817,15 @@ function runQuery() {
     });
   }
   
+  // Determine if we're in single-class view (skip WCD mixing for signature)
+  const singleClassFilter = parsed.class && parsed.class.op === '=' && parsed.class.values.length === 1;
+  
   // Compute global signature scores (weight × z-score)
   const allFactionCodes = Object.keys(DATA.factions);
   if (scopedFactions.length > 0) {
     for (const row of rows) {
-      row.sig = computeSignature(row.weights, row.mul || {}, scopedFactions, allFactionCodes);
+      const wcdParams = singleClassFilter ? null : { chassisClass: row.meta?.class, eraYear };
+      row.sig = computeSignature(row.weights, row.mul || {}, scopedFactions, allFactionCodes, wcdParams);
     }
     
     // Compute tiers per faction using Jenks Natural Breaks
