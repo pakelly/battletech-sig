@@ -1751,7 +1751,7 @@ function runQuery() {
     }
     
     // Resolve unit quality rating (no WCD adjustment — that's applied at display level)
-    const ratingIdx = parsed.rating ? RATING_INDEX[parsed.rating] : null;
+    const ratingIdx = parsed.rating ? RATING_INDEX[parsed.rating] : RATING_INDEX['A']; // Default to A-tier
     let weights = computeResolvedWeights(data.w, ratingIdx);
     if (modeB) {
       for (const f of Object.keys(weights)) {
