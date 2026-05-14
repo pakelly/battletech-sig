@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.3.0';
 
 let DATA = null; // app-data.json
 
@@ -541,10 +541,12 @@ function computeBVRange(variants, scopedFactions, mul, modeB, targetYear) {
  */
 /**
  * Compute signature scores for a chassis across factions.
- * When wcdParams is provided (mixed-class view), weights are converted to probability
- * space and scaled by each faction's WCD mixing factor before z-score computation.
- * This makes signature reflect the chassis's importance in the faction's FULL roster,
- * not just within its weight class.
+ * All computation stays in rating space (1-10 linear scale) to keep mid-weight
+ * exclusive mechs visible. Probability space (2^(n/2)) was burying them under
+ * high-weight common designs.
+ * When wcdParams is provided (mixed-class view), ratings are scaled by each
+ * faction's WCD mixing factor to reflect weight class preferences (e.g. Lyran
+ * heavy bias boosts their heavies in sig rankings).
  *
  * @param {Object} weights - { factionCode: resolvedRating } (raw within-class ratings)
  * @param {Object} mulData - { factionCode: 1 } MUL confirmation flags
@@ -555,14 +557,18 @@ function computeBVRange(variants, scopedFactions, mul, modeB, targetYear) {
 function computeSignature(weights, mulData, factions, allFactionCodes, wcdParams) {
   const result = {};
   
-  // Build effective weight array for ALL factions
-  // In mixed-class view, scale by WCD mixing factor in probability space
+  // Build effective weight array for ALL factions.
+  // Signature uses RATING space (1-10 linear scale), not probability space.
+  // This keeps mid-weight exclusive mechs visible instead of burying them
+  // under high-weight common designs (prob-space: 2^(10/2)=32 vs 2^(4/2)=4).
+  // In mixed-class view, scale by WCD mixing factor to reflect faction
+  // weight class preferences (e.g. Lyran heavy bias boosts their heavies).
   const allWeights = allFactionCodes.map(f => {
     const raw = (mulData[f] && weights[f]) ? weights[f] : 0;
     if (raw <= 0) return 0;
     if (wcdParams) {
       const mixFactor = getWcdMixingFactor(f, wcdParams.chassisClass, wcdParams.eraYear);
-      return toProb(raw) * mixFactor;
+      return raw * mixFactor;
     }
     return raw;
   });
@@ -580,7 +586,7 @@ function computeSignature(weights, mulData, factions, allFactionCodes, wcdParams
     let w;
     if (wcdParams) {
       const mixFactor = getWcdMixingFactor(f, wcdParams.chassisClass, wcdParams.eraYear);
-      w = toProb(raw) * mixFactor;
+      w = raw * mixFactor;
     } else {
       w = raw;
     }
