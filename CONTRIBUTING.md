@@ -66,7 +66,14 @@ That's it. The script handles everything: push main, build gh-pages, clean stale
 
 **Then verify:** Hard-refresh the live site (Ctrl+Shift+R). Check the browser console for errors. Run a known query and confirm the change is visible. Don't assume cache is busted — confirm it.
 
-**🔴 DEFEND mode adds:** Push to test environment first (`pakelly/patrickforaptca-test` pattern). Verify on test. Only then deploy to prod. No exceptions.
+**After deploy, update `VERSION.md`:**
+1. Set the environment's version and deploy timestamp (UTC).
+2. Set accepted = `pending`.
+3. Add a row to History with the version, target, timestamp, and notes.
+4. When Patrick confirms the deploy looks good → update accepted to the confirmation timestamp.
+5. **Read VERSION.md after every compression** to know what's deployed and what's pending acceptance.
+
+**🔴 DEFEND mode adds:** Push to test environment first (`pakelly/patrickforaptca-test` pattern). Verify on test. Only then deploy to prod. No exceptions. VERSION.md tracks both environments — test must be accepted before prod deploy.
 
 ### 9. No duplicate logic
 If a function exists that does X, use it. Don't write a second version. If the existing function doesn't quite fit, extend it — don't clone it. Before writing any new function, search for existing implementations.
