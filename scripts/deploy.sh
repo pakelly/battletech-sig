@@ -25,12 +25,14 @@ cp app/app-data.json .
 echo ""
 echo "=== Step 5: Clean up ==="
 rm -rf app
+git rm -rf --cached app/ 2>/dev/null || true
 
 echo ""
 echo "=== Step 6: Verify gh-pages contents ==="
-# Only these files should exist: app.js, app-data.json, index.html, style.css
+# Only these tracked files should exist: app.js, app-data.json, index.html, style.css
+# Check git's tracked files only (ignore untracked/temp files like NFS locks)
 EXPECTED="app-data.json app.js index.html style.css"
-ACTUAL=$(git ls-files --cached --others --exclude-standard | sort | tr '\n' ' ' | sed 's/ $//')
+ACTUAL=$(git ls-files --cached | sort | tr '\n' ' ' | sed 's/ $//')
 if [ "$ACTUAL" != "$EXPECTED" ]; then
   echo "⚠️  WARNING: Unexpected files on gh-pages!"
   echo "  Expected: $EXPECTED"
