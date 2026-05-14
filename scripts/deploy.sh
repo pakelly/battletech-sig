@@ -51,7 +51,7 @@ echo "✓ Clean — only expected files present"
 
 echo ""
 echo "=== Step 7: Commit and push gh-pages ==="
-git add app.js app-data.json
+git add app.js app-data.json index.html
 if git diff --cached --quiet; then
   echo "No changes to deploy."
   git checkout main
