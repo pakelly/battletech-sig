@@ -18,9 +18,15 @@ echo "=== Step 3: Pull app files from main ==="
 git checkout main -- app/app.js app/app-data.json
 
 echo ""
-echo "=== Step 4: Copy to root ==="
+echo "=== Step 4: Copy to root and stamp version ==="
 cp app/app.js .
 cp app/app-data.json .
+
+# Extract APP_VERSION from app.js for cache-busting
+APP_VER=$(grep -oP "const APP_VERSION = '\\K[^']+" app.js || echo "0")
+echo "  Version: $APP_VER"
+sed -i "s/app\.js?v=[^\"']*/app.js?v=$APP_VER/g" index.html
+sed -i "s/style\.css?v=[^\"']*/style.css?v=$APP_VER/g" index.html
 
 echo ""
 echo "=== Step 5: Clean up ==="

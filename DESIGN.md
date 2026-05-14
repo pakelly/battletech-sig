@@ -1,6 +1,8 @@
 # BattleTech Faction Signatures — Design Document
 
-**v1.1 — 2026-05-13** (added Unit Quality Rating)
+**v1.2.0 — 2026-05-14** (added versioning, Biased Weight column)
+
+_Previous: v1.1 — 2026-05-13 (Unit Quality Rating)_
 
 ---
 
