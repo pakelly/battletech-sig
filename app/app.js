@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.5.0';
 
 let DATA = null; // app-data.json
 
@@ -1850,16 +1850,25 @@ function runQuery() {
       row.sig = computeSignature(row.weights, row.mul || {}, scopedFactions, allFactionCodes, wcdParams);
     }
     
-    // Compute tiers per faction using Jenks Natural Breaks
-    for (const f of scopedFactions) {
-      const sigValues = rows.map(r => r.sig?.[f] || 0).filter(v => v > 0);
-      if (sigValues.length === 0) continue;
-      sigValues.sort((a, b) => a - b); // ascending for Jenks
-      const breaks = jenksBreaks(sigValues, 5);
-      for (const row of rows) {
-        const v = row.sig?.[f] || 0;
-        if (v > 0 && row.sig) {
-          row.sig[f + '_tier'] = assignTierFromBreaks(v, breaks);
+    // Compute tiers using GLOBAL Jenks Natural Breaks across all displayed factions.
+    // This ensures a sig score of 8.0 is the same tier regardless of faction,
+    // making cross-faction tier comparison meaningful.
+    {
+      const allSigValues = [];
+      for (const f of scopedFactions) {
+        for (const row of rows) {
+          const v = row.sig?.[f] || 0;
+          if (v > 0) allSigValues.push(v);
+        }
+      }
+      allSigValues.sort((a, b) => a - b);
+      const breaks = allSigValues.length > 0 ? jenksBreaks(allSigValues, 5) : [];
+      for (const f of scopedFactions) {
+        for (const row of rows) {
+          const v = row.sig?.[f] || 0;
+          if (v > 0 && row.sig) {
+            row.sig[f + '_tier'] = assignTierFromBreaks(v, breaks);
+          }
         }
       }
     }
