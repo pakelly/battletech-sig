@@ -239,7 +239,10 @@ function computeAdjustedWeights(rawWeights, ratingIdx, chassisClass, eraYear) {
     prob *= factor;
     
     // Convert back to rating scale
-    result[f] = Math.max(0, toRating(prob));
+    // Floor: if MegaMek says a faction fields this chassis (rating > 0),
+    // wcd adjustment can reduce but not eliminate it entirely
+    const adjusted = toRating(prob);
+    result[f] = rating > 0 ? Math.max(0.1, adjusted) : Math.max(0, adjusted);
   }
   
   return result;
