@@ -65,7 +65,7 @@ git push origin gh-pages
 
 echo ""
 echo "=== Step 8: Switch back to main ==="
-git checkout main
+git checkout -f main
 
 echo ""
 echo "✅ Deployed. Hard-refresh the site to verify."
