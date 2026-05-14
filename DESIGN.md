@@ -395,34 +395,34 @@ The four values are relative weights for **Light, Medium, Heavy, Assault**. Conv
 | CC (Capellan) | 22% | 33% | 33% | 11% | Heavy-leaning |
 | CLAN (default) | 22% | 33% | 33% | 11% | Heavy-leaning |
 
-### Why It Matters for Faction Identity
+### How MegaMek Uses Weight Class Distribution
 
-Without weight class distribution, a Commando (light mech) with Lyran weight 5 and a Zeus (assault mech) with Lyran weight 5 appear equally "Lyran." But Lyrans field fewer lights and more assaults — the Commando is **over-represented** in our raw data relative to how often it actually appears in a Lyran force.
+**Key insight from MegaMek source code analysis (2026-05-14):** MegaMek does NOT apply weight class distribution as a per-chassis adjustment to availability ratings. Instead, it uses `weightDistribution` as a **table-mixing proportion**.
 
-Weight class distribution is a **multiplier** on chassis weight. It answers: "Given that this faction even rolled this weight class, how likely is this chassis?" The faction's weight class bias changes the denominator.
+MegaMek's actual algorithm:
+1. **Generate separate tables per weight class** — all medium mechs compete against each other on raw availability ratings. Within a weight class, relative rankings are untouched.
+2. **Mix the tables** in the faction's proportions — DC gets 20% medium slots, not 40%.
 
-### How It Works
+This means chassis availability ratings are always **relative to other chassis in the same weight class**. A Kintaro with DC rating 2 is "Very Rare compared to other DC mediums" — not "Very Rare compared to all DC mechs." The weight class distribution layer happens at table assembly, not at the rating level.
 
-The weight class distribution adjusts chassis weights by the faction's tonnage bias:
+Source: `RATGenerator.generateTable()` in MegaMek, confirmed by official docs (`rat-generator.txt`): *"The context for the availability is other units of the same general type: a very common assault Mek is more likely than a common one, but may be less common overall than a rare medium Mek."*
 
-1. **Look up chassis weight class** (Light/Medium/Heavy/Assault from tonnage)
-2. **Look up faction's distribution** for that era (the 4-value array)
-3. **Compute adjustment factor**: `faction_class_weight / baseline_class_weight`
-4. **Apply**: `adjusted_weight = raw_weight × adjustment_factor`
+### Our Approach: Table-Level Mixing (Not Per-Chassis Adjustment)
 
-This is done in **probability space** (after log conversion — see below), not on the raw 1-10 ratings.
+**Previous (incorrect) approach:** We applied WCD as a per-chassis multiplier in probability space: `adjusted_prob = raw_prob × (faction_class_pct / baseline_class_pct)`. This distorted individual chassis ratings, especially at low values on the log scale (e.g., crushing a rating-2 DC medium to effectively zero).
 
-**Example — Commando (Light, 25 tons) for Lyrans vs baseline:**
-- Baseline Light weight: 3/10 = 30%
-- Lyran Light weight: 4/20 = 20%  
-- Adjustment: 20%/30% = 0.67×
-- A Lyran Commando at raw weight 5 gets adjusted down — lights are rarer in Lyran forces.
+**Corrected approach:** WCD is applied as a **display-level mixing weight**, matching MegaMek's table-mixing model:
 
-**Example — Zeus (Assault, 80 tons) for Lyrans vs baseline:**
-- Baseline Assault weight: 1/10 = 10%
-- Lyran Assault weight: 3/20 = 15%
-- Adjustment: 15%/10% = 1.5×
-- A Lyran Zeus at raw weight 5 gets adjusted up — assaults are more common in Lyran forces.
+1. **Raw availability ratings stay untouched.** A chassis's weight reflects its rarity relative to other chassis of the same weight class, exactly as MegaMek intends.
+2. **When showing all weight classes together (mixed view):** Each chassis's display weight is multiplied by `faction_wcd[class] / sum(faction_wcd)` — the faction's proportion for that weight class. This replicates MegaMek's table-mixing.
+3. **When filtering to a single weight class:** WCD mixing is skipped entirely. You're looking at pure within-class competition, same as generating a weight-class-specific table in MegaMek.
+4. **Signature computation** uses the mixed weights (when all classes shown) since sig answers "what defines this faction's full roster."
+
+**Example — DC mediums in mixed view (3039):**
+- DC weight distribution: `[4,2,3,1]` → medium share = 2/10 = 20%
+- A DC medium with raw weight 2 displays as: `2^(2/2) × 0.20` in probability space
+- A DC heavy with raw weight 2 displays as: `2^(2/2) × 0.30` in probability space
+- The heavy gets more weight because DC fields more heavies — but the raw ratings are preserved.
 
 ### Inheritance
 
@@ -674,8 +674,8 @@ MUL ingestion pulls per-faction data AND the three general pools (IS General, Cl
 **Computed at runtime (in the UI):**
 1. **Resolve unit quality** — expand `[base, mod]` per rating filter (or cross-tier average)
 2. **Convert to probability space** — `2^(rating/2)` for all weights
-3. **Apply weight class adjustment** — multiply by `faction_class_pct / baseline_class_pct`
-4. **Compute signature** — z-scores and `weight × z` in probability space
+3. **Apply WCD mixing** (mixed-class views only) — multiply by `faction_wcd[class] / sum(faction_wcd)`. Skipped when a single weight class is filtered.
+4. **Compute signature** — z-scores and `weight × z` on the mixed weights
 5. **Convert back for display** — `2 × log2(prob_weight)` → 1-10 scale
 6. Spread, span, avg-weight — derived from adjusted weights
 
@@ -704,7 +704,7 @@ Vanilla HTML/CSS/JS. No framework. Single-page app loading `app-data.json` at st
 11. **LC is the canonical Lyran code.** MegaMek uses LA (Lyran Alliance) internally; we remap to LC (Lyran Commonwealth) in the output. The Commonwealth is the default/historical faction name spanning most of the timeline. `LA`, `LC`, `lyran`, `steiner` all resolve to `LC`.
 12. **Unit quality default is cross-tier average.** When no `rating=` filter is set, weights are the mean across all equipment rating levels (clamping negatives to 0). This makes broadly-fielded mechs (no `+`/`-` modifier) naturally prominent, while niche elite or garrison mechs are appropriately discounted. Specific tiers available via `rating=A` through `rating=F`.
 13. **MegaMek weights are logarithmic.** The 1–10 scale represents `2^(n/2)` probability weight internally. All mathematical operations (averaging, weight class adjustment, z-score computation) happen in probability space. Display values are converted back to the 1–10 scale.
-14. **Weight class distribution adjusts chassis weights.** Per-faction, per-era tonnage bias from MegaMek's force generator is applied as a multiplier in probability space. This ensures that a light mech in a heavy-skewing faction (e.g., Commando for Lyrans) is appropriately discounted, and vice versa.
+14. **Weight class distribution is table-level mixing, not per-chassis adjustment.** Per-faction, per-era tonnage bias from MegaMek's force generator is applied as a display-level mixing proportion when showing all weight classes together, matching MegaMek's `generateTable()` approach. Within a single weight class view, WCD does not apply — chassis compete on raw availability only. This avoids the log-scale distortion that per-chassis probability multiplication caused (crushing low-rated chassis to zero).
 15. **Salvage is excluded.** MegaMek encodes salvage allocation (e.g., DC capturing FedSuns mechs). We deliberately omit this — salvage muddies faction identity rather than defining it. A captured mech isn't "theirs."
 
 ---
