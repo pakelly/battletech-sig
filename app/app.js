@@ -900,6 +900,9 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   for (const f of scopedFactions) {
     headerHTML += `<th data-sort="${f}-weight" title="${getFactionFullName(f)}">${getFactionLabel(f)}</th>`;
   }
+  for (const f of scopedFactions) {
+    headerHTML += `<th data-sort="${f}-bw" title="${getFactionFullName(f)} Biased Weight">${getFactionLabel(f)} BW</th>`;
+  }
   headerHTML += '<th data-sort="spread">Spread</th></tr>';
   thead.innerHTML = headerHTML;
   table.appendChild(thead);
@@ -959,6 +962,16 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
             const tier = row.sig?.[f + '_tier'] || 0;
             html += `<span class="sig-value">T${tier}</span>`;
           }
+          html += '</td>';
+        } else {
+          html += '<td class="faction-cell no-data">—</td>';
+        }
+      }
+      for (const f of scopedFactions) {
+        const bw = row.biasedWeights?.[f] || 0;
+        if (bw > 0) {
+          html += `<td class="faction-cell" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
+          html += `<span class="pref-value">${bw.toFixed(2)}</span>`;
           html += '</td>';
         } else {
           html += '<td class="faction-cell no-data">—</td>';
@@ -1315,6 +1328,7 @@ function getSuggestions(text, cursorPos) {
       for (const code of Object.keys(DATA.factions)) {
         sortableFields.push(code + '-sig');
         sortableFields.push(code + '-weight');
+        sortableFields.push(code + '-bw');
       }
     }
     return sortableFields
@@ -1843,6 +1857,23 @@ function runQuery() {
     }
   }
   
+  // Compute biased weights (probability-space weight × WCD mixing factor)
+  // Shows effective contribution to a faction's full roster
+  for (const row of rows) {
+    row.biasedWeights = {};
+    for (const f of Object.keys(row.weights)) {
+      const w = row.weights[f];
+      if (w <= 0) { row.biasedWeights[f] = 0; continue; }
+      if (singleClassFilter) {
+        // No WCD mixing in single-class view — biased = raw probability
+        row.biasedWeights[f] = toProb(w);
+      } else {
+        const mixFactor = getWcdMixingFactor(f, row.meta?.class, eraYear);
+        row.biasedWeights[f] = toProb(w) * mixFactor;
+      }
+    }
+  }
+  
   // Apply post-computation filters (sig)
   if (parsed.sig || parsed.factionSig.length > 0) {
     for (let i = rows.length - 1; i >= 0; i--) {
@@ -1931,6 +1962,13 @@ function sortRowsInPlace(rows, sortSpec) {
         } else {
           va = a.bvRange?.bvMax || 0; vb = b.bvRange?.bvMax || 0;
         }
+      } else if (field.endsWith('-bw')) {
+        const fCode = field.replace('-bw', '').toUpperCase();
+        va = a.biasedWeights?.[fCode] || 0;
+        vb = b.biasedWeights?.[fCode] || 0;
+      } else if (field === 'bw') {
+        va = a.biasedWeights ? Math.max(0, ...Object.values(a.biasedWeights)) : 0;
+        vb = b.biasedWeights ? Math.max(0, ...Object.values(b.biasedWeights)) : 0;
       } else if (field.endsWith('-weight')) {
         const fCode = field.replace('-weight', '').toUpperCase();
         va = a.weights?.[fCode] || 0;
