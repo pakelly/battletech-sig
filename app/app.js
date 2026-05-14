@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.4.0';
 
 let DATA = null; // app-data.json
 
@@ -1773,7 +1773,7 @@ function runQuery() {
     }
     
     // Resolve unit quality rating (no WCD adjustment — that's applied at display level)
-    const ratingIdx = parsed.rating ? RATING_INDEX[parsed.rating] : RATING_INDEX['A']; // Default to A-tier
+    const ratingIdx = parsed.rating ? RATING_INDEX[parsed.rating] : null; // Default to cross-tier average
     let weights = computeResolvedWeights(data.w, ratingIdx);
     if (modeB) {
       for (const f of Object.keys(weights)) {
