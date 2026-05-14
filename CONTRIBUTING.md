@@ -58,14 +58,11 @@ Each commit should do one thing. "Add sig column" and "fix sort parser" are two 
 ### 8. Deploy correctly, then verify
 **Deployment is a two-branch process.** Code lives on `main`. The live site serves from `gh-pages`. Pushing to `main` does NOT deploy.
 
-**Deploy procedure:**
-1. Commit and push to `main`
-2. Switch to `gh-pages`: `git checkout gh-pages`
-3. Pull app files from main: `git checkout main -- app/app.js app/app-data.json`
-4. Copy to root: `cp app/app.js . && cp app/app-data.json .`
-5. Clean up: `rm -rf app` (don't let main's directory structure leak into gh-pages)
-6. Check for unwanted files: `git status` — gh-pages should ONLY contain `app.js`, `app-data.json`, `index.html`, `style.css`
-7. Commit, push gh-pages, switch back to main
+**Deploy procedure: run `./scripts/deploy.sh`**
+
+That's it. The script handles everything: push main, build gh-pages, clean stale files, verify only expected files exist, push gh-pages, switch back to main. If something looks wrong it aborts.
+
+**Do not deploy manually.** The manual procedure has caused repeated failures (forgetting to push main, stale `app/` dirs leaking into gh-pages). The script exists to prevent this. Use it.
 
 **Then verify:** Hard-refresh the live site (Ctrl+Shift+R). Check the browser console for errors. Run a known query and confirm the change is visible. Don't assume cache is busted — confirm it.
 

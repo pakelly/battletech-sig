@@ -1,0 +1,63 @@
+#!/bin/bash
+set -e
+cd "$(dirname "$0")/.."
+
+# ── BattleTech Sig Deploy Script ──
+# Pushes main, builds gh-pages, cleans, pushes gh-pages, switches back.
+# One command. No forgotten steps.
+
+echo "=== Step 1: Push main to origin ==="
+git push origin main
+
+echo ""
+echo "=== Step 2: Switch to gh-pages ==="
+git checkout gh-pages
+
+echo ""
+echo "=== Step 3: Pull app files from main ==="
+git checkout main -- app/app.js app/app-data.json
+
+echo ""
+echo "=== Step 4: Copy to root ==="
+cp app/app.js .
+cp app/app-data.json .
+
+echo ""
+echo "=== Step 5: Clean up ==="
+rm -rf app
+
+echo ""
+echo "=== Step 6: Verify gh-pages contents ==="
+# Only these files should exist: app.js, app-data.json, index.html, style.css
+EXPECTED="app-data.json app.js index.html style.css"
+ACTUAL=$(git ls-files --cached --others --exclude-standard | sort | tr '\n' ' ' | sed 's/ $//')
+if [ "$ACTUAL" != "$EXPECTED" ]; then
+  echo "⚠️  WARNING: Unexpected files on gh-pages!"
+  echo "  Expected: $EXPECTED"
+  echo "  Actual:   $ACTUAL"
+  echo "  Aborting. Clean up manually, then re-run."
+  git checkout main
+  exit 1
+fi
+echo "✓ Clean — only expected files present"
+
+echo ""
+echo "=== Step 7: Commit and push gh-pages ==="
+git add app.js app-data.json
+if git diff --cached --quiet; then
+  echo "No changes to deploy."
+  git checkout main
+  exit 0
+fi
+
+# Use the latest main commit message as deploy message
+MAIN_MSG=$(git log main -1 --format="%s")
+git commit -m "Deploy: $MAIN_MSG"
+git push origin gh-pages
+
+echo ""
+echo "=== Step 8: Switch back to main ==="
+git checkout main
+
+echo ""
+echo "✅ Deployed. Hard-refresh the site to verify."
