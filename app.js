@@ -1,5 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
+const APP_VERSION = '1.2.0';
+
 let DATA = null; // app-data.json
 
 // ── Faction code aliases ──
@@ -1999,13 +2001,17 @@ async function init() {
     applyFamilyOverridesToData(); // apply user's saved family preferences
     console.log('Loaded app-data.json:', Object.keys(DATA.eraData).length, 'eras,', Object.keys(DATA.chassis).length, 'chassis');
     
-    // Show deploy timestamp
-    if (DATA._meta?.generated) {
-      const d = new Date(DATA._meta.generated);
-      document.getElementById('deploy-stamp').textContent =
-        'v' + d.toISOString().slice(0, 10).replace(/-/g, '') + '.' +
-        d.toISOString().slice(11, 16).replace(':', '') +
-        ' • ' + DATA._meta.description;
+    // Show version + data info
+    {
+      const parts = ['v' + APP_VERSION];
+      if (DATA._meta?.generated) {
+        const d = new Date(DATA._meta.generated);
+        parts.push('Data: ' + d.toISOString().slice(0, 10).replace(/-/g, ''));
+      }
+      if (DATA._meta?.description) {
+        parts.push(DATA._meta.description);
+      }
+      document.getElementById('deploy-stamp').textContent = parts.join(' • ');
     }
   } catch (err) {
     console.error('Failed to load app-data.json:', err);
