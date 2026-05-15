@@ -5,6 +5,22 @@ cd "$(dirname "$0")/.."
 # ── BattleTech Sig Deploy Script ──
 # Pushes main, builds gh-pages, cleans, pushes gh-pages, switches back.
 # One command. No forgotten steps.
+#
+# Usage:
+#   ./scripts/deploy.sh          # Deploy to PROD (origin)
+#   ./scripts/deploy.sh --test   # Deploy to TEST (test remote)
+#
+# In DEFEND mode: deploy to test first, verify, then deploy to prod.
+
+TARGET="origin"
+LABEL="PROD"
+if [ "$1" = "--test" ]; then
+  TARGET="test"
+  LABEL="TEST"
+fi
+
+echo "=== Deploying to $LABEL ($TARGET) ==="
+echo ""
 
 echo "=== Step 1: Push main to origin ==="
 git push origin main
@@ -37,8 +53,6 @@ git rm -rf --cached app/ 2>/dev/null || true
 
 echo ""
 echo "=== Step 6: Verify gh-pages contents ==="
-# Only these tracked files should exist: app.js, app-data.json, index.html, style.css
-# Check git's tracked files only (ignore untracked/temp files like NFS locks)
 EXPECTED="app-data.json app.js index.html style.css"
 ACTUAL=$(git ls-files --cached | sort | tr '\n' ' ' | sed 's/ $//')
 if [ "$ACTUAL" != "$EXPECTED" ]; then
@@ -52,22 +66,26 @@ fi
 echo "✓ Clean — only expected files present"
 
 echo ""
-echo "=== Step 7: Commit and push gh-pages ==="
-git add app.js app-data.json index.html
+echo "=== Step 7: Commit and push gh-pages to $LABEL ==="
+git add app.js app-data.json index.html style.css
 if git diff --cached --quiet; then
   echo "No changes to deploy."
   git checkout main
   exit 0
 fi
 
-# Use the latest main commit message as deploy message
 MAIN_MSG=$(git log main -1 --format="%s")
-git commit -m "Deploy: $MAIN_MSG"
-git push origin gh-pages
+git commit -m "Deploy ($LABEL): $MAIN_MSG"
+git push $TARGET gh-pages
 
 echo ""
 echo "=== Step 8: Switch back to main ==="
 git checkout -f main
 
 echo ""
-echo "✅ Deployed. Hard-refresh the site to verify."
+if [ "$TARGET" = "test" ]; then
+  echo "✅ Deployed to TEST. Verify at: https://pakelly.github.io/battletech-sig-test/"
+  echo "   Then deploy to prod: ./scripts/deploy.sh"
+else
+  echo "✅ Deployed to PROD. Hard-refresh the site to verify."
+fi
