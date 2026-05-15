@@ -58,6 +58,8 @@ A broken live site feels urgent. That urgency is exactly why you need the gate. 
 
 Wait for confirmation before proceeding. **Urgency is not an override.** If anything, urgent situations need *more* oversight, not less.
 
+**Why this matters:** Unreviewed emergency fixes are how doom loops start. A rushed fix introduces a new problem, which feels urgent, which gets another rushed fix, which breaks something else. Each iteration increases pressure and decreases thinking time. The gate exists to break this cycle. One calm diagnosis beats three panicked patches.
+
 ### 5. Propose, don't implement
 Never start writing production code without describing the change and getting confirmation. **No exceptions. Not for hotfixes, not for "obvious" one-liners, not for emergencies.** The moment you feel pressure to skip this rule is the moment it matters most.
 
