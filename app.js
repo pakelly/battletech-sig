@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.10.0';
+const APP_VERSION = '1.10.1';
 
 let DATA = null; // app-data.json
 
@@ -2028,13 +2028,8 @@ function runQuery() {
     for (const f of Object.keys(row.weights)) {
       const w = row.weights[f];
       if (w <= 0) { row.biasedWeights[f] = 0; continue; }
-      if (singleClassFilter) {
-        // No WCD mixing in single-class view — biased = raw probability
-        row.biasedWeights[f] = toProb(w);
-      } else {
-        const mixFactor = getWcdMixingFactor(f, row.meta?.class, eraYear);
-        row.biasedWeights[f] = toProb(w) * mixFactor;
-      }
+      const mixFactor = getWcdMixingFactor(f, row.meta?.class, eraYear);
+      row.biasedWeights[f] = toProb(w) * mixFactor;
     }
   }
   
