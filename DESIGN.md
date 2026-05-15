@@ -788,9 +788,38 @@ A `?` button in the header bar (next to the ⚙ Settings button). Opens a full-s
 
 ### Content Structure
 
-The help panel is organized into three sections, each with collapsible sub-sections:
+The help panel has two distinct sections, each serving a different reader:
 
-#### 1. Columns — "What am I looking at?"
+#### Section 1: Overview & Quick Start — "What is this?"
+
+For first-time visitors or anyone who wants the big picture before diving in. Written conversationally, not as reference material.
+
+**What this app does:**
+This tool explores faction identity in BattleTech through mech usage data. It answers questions like: "What mechs define the Draconis Combine?" or "Who should I paint this Griffin for?" It does this by analyzing how heavily each faction fields each chassis compared to everyone else.
+
+**How it works (the 30-second version):**
+- Data comes from two sources: MegaMek's force generator (community-curated mech availability tables) and the official Master Unit List (canon confirmation).
+- Each faction has a weight (1–10) for each chassis — how likely they are to field it. Higher = more common in that faction's forces.
+- **Signature** measures how much a mech *belongs* to a faction. It combines usage (do they field it a lot?) with distinctiveness (does anyone else?). A mech only one faction uses scores very high. A mech everyone uses scores low.
+- Signature tiers (T1–T5) group mechs by natural breaks in the data. T1 = the faction's totemic mechs.
+
+**Key assumptions:**
+- **MegaMek data is the primary source.** It's community-curated and richer than the official MUL, but may include reasonable extrapolations beyond strict canon.
+- **Mode B (default) filters by canon.** If the MUL says a faction doesn't have a chassis in that era, it's excluded. Mode A shows everything MegaMek has.
+- **Weight class distribution matters.** Factions that invest heavily in heavies get more sig credit for their heavy mechs. A Lyran Atlas counts more than a Lyran Locust in the identity ranking.
+- **Unit quality is averaged by default.** Some mechs are elite-only (rating A) or garrison-only (rating F). The default view averages across all tiers. Use `rating=A` or `rating=F` to focus on a specific tier.
+- **Signature is global and stable.** Adding or removing factions from your query doesn't change any faction's signature scores. It's a property of the faction's relationship to the chassis across the entire universe.
+
+**Quick start — try these:**
+_(Same example queries as the landing page, with one-line explanations of what each one shows)_
+
+---
+
+#### Section 2: Reference — "Tell me everything"
+
+The detailed lookup for specific filters, columns, and settings. Organized by what the user is looking at or trying to do.
+
+##### Columns — "What am I looking at?"
 
 | Column | Appears When | Description |
 |--------|-------------|-------------|
@@ -816,7 +845,7 @@ Tiers are assigned using Jenks Natural Breaks — a statistical method that find
 
 **Heat map coloring:** Faction weight cells are colored on a cool-to-warm scale based on the raw weight value. Weight 1 = coolest, weight 10 = hottest. This is independent of signature — a cell can be warm (high usage) but low signature (everyone else uses it too).
 
-#### 2. Query Language — "What can I type?"
+##### Query Language — "What can I type?"
 
 **Filters** narrow which chassis appear:
 
@@ -851,7 +880,7 @@ Tiers are assigned using Jenks Natural Breaks — a statistical method that find
 - `DC-sig>5` — only chassis where DC's signature exceeds 5
 - `DC-weight>3` — only chassis where DC's raw weight exceeds 3
 
-#### 3. Settings — "What do the toggles do?"
+##### Settings — "What do the toggles do?"
 
 | Setting | What it controls |
 |---------|-----------------|
