@@ -78,10 +78,10 @@ header h1:hover {
   color: var(--accent);
 }
 
-#settings-btn {
+#settings-btn,
+#help-btn {
   position: absolute;
   top: 0.5rem;
-  right: 0;
   background: none;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -91,7 +91,10 @@ header h1:hover {
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s;
 }
-#settings-btn:hover {
+#settings-btn { right: 0; }
+#help-btn { right: 2.8rem; font-weight: 700; font-size: 1rem; }
+#settings-btn:hover,
+#help-btn:hover {
   color: var(--accent);
   border-color: var(--accent);
 }
@@ -406,6 +409,177 @@ header h1:hover {
 #query-bar::placeholder {
   color: var(--text-dim);
   opacity: 0.6;
+}
+
+/* ── Help Panel ── */
+#help-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  display: flex;
+  justify-content: flex-end;
+}
+#help-overlay.hidden {
+  display: none;
+}
+
+#help-panel {
+  width: min(560px, 90vw);
+  height: 100%;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.help-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+}
+.help-header h3 {
+  margin: 0;
+}
+#help-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0 0.3rem;
+}
+#help-close:hover {
+  color: var(--text);
+}
+
+.help-body {
+  padding: 1rem 1.2rem;
+  flex: 1;
+}
+
+.help-body details {
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.help-section-title {
+  padding: 0.7rem 1rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  color: var(--accent);
+  background: var(--bg-raised);
+  list-style: none;
+}
+.help-section-title::-webkit-details-marker { display: none; }
+.help-section-title::before {
+  content: '▸ ';
+  font-size: 0.8rem;
+}
+details[open] > .help-section-title::before {
+  content: '▾ ';
+}
+
+.help-section-content {
+  padding: 0.5rem 1rem 1rem;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+.help-section-content h4 {
+  color: var(--accent);
+  margin: 1rem 0 0.4rem 0;
+  font-size: 0.9rem;
+}
+.help-section-content p {
+  margin: 0.4rem 0;
+}
+.help-section-content ul {
+  margin: 0.3rem 0;
+  padding-left: 1.2rem;
+}
+.help-section-content li {
+  margin-bottom: 0.3rem;
+}
+.help-section-content code {
+  background: var(--bg-raised);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.82rem;
+}
+
+.help-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin: 0.5rem 0;
+}
+.help-table th {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.help-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.help-table-compact td,
+.help-table-compact th {
+  padding: 0.25rem 0.5rem;
+}
+
+.help-code {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre;
+  margin: 0.5rem 0;
+}
+
+.help-hint {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin: 0.3rem 0;
+  font-style: italic;
+}
+
+.help-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+.help-example-query {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.help-example-query:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* ── Suggestions ── */
