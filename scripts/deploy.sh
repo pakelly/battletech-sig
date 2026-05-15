@@ -15,12 +15,14 @@ git checkout gh-pages
 
 echo ""
 echo "=== Step 3: Pull app files from main ==="
-git checkout main -- app/app.js app/app-data.json
+git checkout main -- app/app.js app/app-data.json app/index.html app/style.css
 
 echo ""
 echo "=== Step 4: Copy to root and stamp version ==="
 cp app/app.js .
 cp app/app-data.json .
+cp app/index.html .
+cp app/style.css .
 
 # Extract APP_VERSION from app.js for cache-busting
 APP_VER=$(grep -oP "const APP_VERSION = '\\K[^']+" app.js || echo "0")
