@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.10.1';
+const APP_VERSION = '1.10.2';
 
 let DATA = null; // app-data.json
 
@@ -915,7 +915,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
     headerHTML += `<th data-sort="${f}-weight" title="${getFactionFullName(f)}">${getFactionLabel(f)}</th>`;
   }
   for (const f of scopedFactions) {
-    headerHTML += `<th data-sort="${f}-bw" title="${getFactionFullName(f)} Biased Weight">${getFactionLabel(f)} BW</th>`;
+    headerHTML += `<th data-sort="${f}-bw" title="${getFactionFullName(f)} Probability Weight">${getFactionLabel(f)} Prob</th>`;
   }
   headerHTML += '<th data-sort="spread">Spread</th></tr>';
   thead.innerHTML = headerHTML;
