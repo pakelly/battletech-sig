@@ -61,7 +61,7 @@ Never start writing production code without describing the change and getting co
 ### 6. Run tests after every change
 `npm test` after every code change, before every commit. No exceptions. If tests fail, go to Rule 4.
 
-**Never add production code just to make a test pass.** If a test expects a function that doesn't exist, the test is wrong — not the codebase. Code flows from design through tests to implementation. Adding code to satisfy tests inverts that flow and risks introducing bugs to fulfill stale or incorrect expectations.
+**When a test fails, the test is wrong or the code is wrong.** If the test is wrong, either the design doc is wrong or the test has a bug. Trace the intent chain: DESIGN.md → test → code. Adding production code to pass a test is correct *when the test faithfully encodes the design*. Adding production code to pass a test that has a bug (wrong function names, stale API, bad assumptions) papers over the real problem.
 
 ### 7. One concern per commit
 Each commit should do one thing. "Add sig column" and "fix sort parser" are two commits, not one. This makes rollbacks possible and history readable.
