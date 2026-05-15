@@ -69,13 +69,14 @@ echo ""
 echo "=== Step 7: Commit and push gh-pages to $LABEL ==="
 git add app.js app-data.json index.html style.css
 if git diff --cached --quiet; then
-  echo "No changes to deploy."
-  git checkout main
-  exit 0
+  echo "No new changes to commit (gh-pages already up to date locally)."
+else
+  MAIN_MSG=$(git log main -1 --format="%s")
+  git commit -m "Deploy ($LABEL): $MAIN_MSG"
 fi
 
-MAIN_MSG=$(git log main -1 --format="%s")
-git commit -m "Deploy ($LABEL): $MAIN_MSG"
+# Always push — local gh-pages may be ahead of the target remote
+# (e.g., test deploy updated local gh-pages but origin hasn't been pushed)
 git push $TARGET gh-pages
 
 echo ""
