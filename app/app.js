@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.10.2';
+const APP_VERSION = '1.11.0';
 
 let DATA = null; // app-data.json
 
@@ -2447,6 +2447,18 @@ function initSettings() {
       runQuery();
     });
   });
+
+  // Reset to defaults
+  document.getElementById('reset-defaults-btn').addEventListener('click', () => {
+    if (!confirm('Reset all preferences to defaults? This clears column visibility, family overrides, and other saved settings.')) return;
+    try {
+      localStorage.removeItem(COL_VIS_KEY);
+      localStorage.removeItem(FAMILY_STORAGE_KEY);
+      localStorage.removeItem(INCOMPLETE_STORAGE_KEY);
+      localStorage.removeItem(PAGE_SIZE_KEY);
+    } catch {}
+    location.reload();
+  });
 }
 
 function initHelp() {
@@ -2748,7 +2760,7 @@ function updateColVisibility() {
 
     // Chassis column (index 0) is always visible
     const isLocked = idx === 0;
-    // Weight columns (bare faction code, no "Sig") and Spread default to hidden
+    // Weight columns (bare faction code, no "Sig"/"Prob") and Spread default to hidden
     const isSigCol = name.endsWith(' Sig');
     const isWeightCol = !isSigCol && DATA?.factions?.[name];
     const isSpread = name === 'Spread';

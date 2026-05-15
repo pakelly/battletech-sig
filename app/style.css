@@ -166,6 +166,22 @@ header h1:hover {
   margin: 0 0 0.75rem 0;
 }
 
+.reset-defaults-btn {
+  width: 100%;
+  padding: 0.5rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.reset-defaults-btn:hover {
+  color: #e55;
+  border-color: #e55;
+}
+
 .toggle-row {
   display: flex;
   align-items: center;
