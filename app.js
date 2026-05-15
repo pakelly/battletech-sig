@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.6.0';
 
 let DATA = null; // app-data.json
 
@@ -148,11 +148,6 @@ function resolveWeights(weights, ratingIdx) {
 function toProb(rating) {
   if (rating <= 0) return 0;
   return Math.pow(2, rating / 2);
-}
-
-function toRating(prob) {
-  if (prob <= 0) return 0;
-  return 2 * Math.log2(prob);
 }
 
 // ── Weight Class Distribution ──
@@ -444,8 +439,25 @@ function resolveFactionGroup(name) {
   if (lower === 'clans') {
     return DATA?.factionGroups?.Clans || [];
   }
+  if (lower === 'innersphere' || lower === 'inner sphere' || lower === 'is') {
+    // All non-Clan, non-Periphery factions
+    if (DATA?.factions) {
+      return Object.entries(DATA.factions)
+        .filter(([, info]) => info && !info.clan && !info.periphery)
+        .map(([code]) => code);
+    }
+    return ['DC', 'FS', 'FWL', 'LC', 'CC', 'FC', 'FRR', 'CS', 'WOB', 'SIC', 'MERC', 'ROS'];
+  }
   if (lower === 'invasionclans' || lower === 'invasion clans') {
     return ['CW', 'CJF', 'CGB', 'CSJ'];
+  }
+  if (lower === 'isclans' || lower === 'is clans' || lower === 'innersphereclans' || lower === 'inner sphere clans') {
+    // Clans with significant Inner Sphere presence
+    return ['CW', 'CJF', 'CGB', 'CSJ', 'CHH', 'CNC', 'CDS', 'CSR', 'RD', 'RA'];
+  }
+  if (lower === 'homeclans' || lower === 'home clans' || lower === 'homeworldclans' || lower === 'homeworld clans') {
+    // Clans that remained in the homeworlds
+    return ['CBS', 'CCO', 'CFM', 'CGS', 'CIH', 'CSA', 'CSV'];
   }
   if (lower === 'periphery') {
     return DATA?.factionGroups?.Periphery || [];
@@ -653,20 +665,6 @@ function jenksBreaks(sortedValues, numClasses) {
   return breaks;
 }
 
-/**
- * Assign tier (1–5) using Jenks Natural Breaks.
- * Takes a value and the break points array (4 values for 5 classes).
- * Tier 1 = highest class (faction-defining), Tier 5 = lowest.
- */
-function assignTier(value, breaks) {
-  // breaks are sorted ascending — values above highest break = tier 1
-  for (let i = breaks.length - 1; i >= 0; i--) {
-    if (value >= breaks[i]) return i + 1 <= breaks.length ? (breaks.length - i) : 1;
-  }
-  return breaks.length + 1; // lowest tier
-}
-
-// Simpler: tier 1 = above breaks[3], tier 2 = above breaks[2], etc.
 function assignTierFromBreaks(value, breaks) {
   if (breaks.length === 0) return 1;
   // breaks sorted ascending: [b0, b1, b2, b3] for 5 classes
@@ -1148,11 +1146,6 @@ function renderMechView(rows, eraYear, chassisName) {
   updateColVisibility();
 }
 
-function renderMechDetail(rows, scopedFactions, eraYear) {
-  // Basically faction comparison but for specific chassis
-  renderFactionComparison(rows, scopedFactions, eraYear);
-}
-
 // ── Variant Drill-down ──
 
 function showVariants(chassisName, faction, eraYear) {
@@ -1397,8 +1390,11 @@ function getValueSuggestions(field, lower) {
     case 'faction': {
       const items = [
         { text: 'GreatHouses', hint: 'DC, FS, FWL, LC, CC' },
+        { text: 'InnerSphere', hint: 'All IS factions (non-Clan, non-Periphery)' },
         { text: 'Clans', hint: 'All Clan factions' },
         { text: 'InvasionClans', hint: 'CW, CJF, CGB, CSJ' },
+        { text: 'ISClans', hint: 'Clans in the IS (CW, CJF, CGB, CSJ, CHH, CNC, CDS, CSR, RD, RA)' },
+        { text: 'HomeClans', hint: 'Homeworld Clans (CBS, CCO, CFM, CGS, CIH, CSA, CSV)' },
         { text: 'Periphery', hint: 'TC, MH, OA, MC' },
       ];
       for (const [code, info] of Object.entries(DATA.factions)) {
@@ -2016,7 +2012,6 @@ async function init() {
     const resp = await fetch('app-data.json?v=' + Date.now());
     DATA = await resp.json();
     applyFamilyOverridesToData(); // apply user's saved family preferences
-    console.log('Loaded app-data.json:', Object.keys(DATA.eraData).length, 'eras,', Object.keys(DATA.chassis).length, 'chassis');
     
     // Show version + data info
     {
@@ -2344,8 +2339,6 @@ function renderFamiliesList() {
       overrides[name].enabled = cb.checked;
       saveFamilyOverrides(overrides);
       applyFamilyOverridesToData();
-      const fam = DATA.families.find(f => f.groupName === name);
-      console.log('[family toggle]', name, '→ enabled:', fam?.enabled, 'override:', overrides[name]);
       runQuery();
     });
   });
