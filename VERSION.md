@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.10.0 | 2026-05-15 19:12 UTC | pending |
-| test | 1.10.1 | 2026-05-15 19:42 UTC | pending |
+| test | 1.10.2 | 2026-05-15 19:50 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.10.2 | test | 2026-05-15 19:50 | pending | Rename BW column to Prob (Probability Weight) |
 | 1.10.1 | test | 2026-05-15 19:42 | pending | Always apply WCD to biased weight, even in single-class view |
 | 1.10.0 | prod | 2026-05-15 19:12 | pending | VERSION.md: auto-stamp 1.10.0 test deploy |
 | 1.10.0 | test | 2026-05-15 19:11 | pending | Heat map coloring for Biased Weight columns |
