@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.9.0';
+const APP_VERSION = '1.10.0';
 
 let DATA = null; // app-data.json
 
@@ -862,6 +862,14 @@ function heatClass(pref) {
   return 'heat-' + Math.round(Math.min(10, Math.max(1, pref)));
 }
 
+function bwHeatClass(bw) {
+  if (!bw || bw <= 0) return 'no-data';
+  // Log-scale heat: map log2(bw) from [-3.5, 3.5] to heat 1–10
+  const l = Math.log2(bw);
+  const heat = Math.round(1 + 9 * (l + 3.5) / 7);
+  return 'heat-' + Math.max(1, Math.min(10, heat));
+}
+
 function sigTierToHeat(tier) {
   // T1 (most iconic) = hottest, T5 = coolest
   const map = { 1: 'heat-10', 2: 'heat-8', 3: 'heat-6', 4: 'heat-3', 5: 'heat-1' };
@@ -976,7 +984,8 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
       for (const f of scopedFactions) {
         const bw = row.biasedWeights?.[f] || 0;
         if (bw > 0) {
-          html += `<td class="faction-cell" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
+          const bwCls = bwHeatClass(bw);
+          html += `<td class="faction-cell ${bwCls}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
           html += `<span class="pref-value">${bw.toFixed(2)}</span>`;
           html += '</td>';
         } else {
