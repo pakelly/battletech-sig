@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.9.0 | 2026-05-15 19:06 UTC | pending |
-| test | 1.9.0 | 2026-05-15 19:05 UTC | pending |
+| test | 1.10.0 | 2026-05-15 19:11 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.10.0 | test | 2026-05-15 19:11 | pending | Heat map coloring for Biased Weight columns |
 | 1.9.0 | prod | 2026-05-15 19:06 | pending | VERSION.md: auto-stamp 1.9.0 test deploy |
 | 1.9.0 | test | 2026-05-15 19:05 | pending | Show explanatory text when faction doesn't field a chassis |
 | 1.9.0 | test | 2026-05-15 18:47 | pending | Make empty faction cells clickable for drill-down |
