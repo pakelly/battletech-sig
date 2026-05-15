@@ -2760,12 +2760,7 @@ function updateColVisibility() {
 
     // Chassis column (index 0) is always visible
     const isLocked = idx === 0;
-    // Weight columns (bare faction code, no "Sig"/"Prob") and Spread default to hidden
-    const isSigCol = name.endsWith(' Sig');
-    const isWeightCol = !isSigCol && DATA?.factions?.[name];
-    const isSpread = name === 'Spread';
-    const defaultHidden = isWeightCol || isSpread;
-    const isVisible = isLocked || (state[name] !== undefined ? state[name] !== false : !defaultHidden);
+    const isVisible = isLocked || (state[name] !== undefined ? state[name] !== false : !isDefaultHidden(name));
 
     const label = document.createElement('label');
     label.className = 'col-vis-item';
@@ -2791,6 +2786,13 @@ function updateColVisibility() {
   applyColVisibility();
 }
 
+function isDefaultHidden(name) {
+  const isSigCol = name.endsWith(' Sig');
+  const isWeightCol = !isSigCol && DATA?.factions?.[name];
+  const isSpread = name === 'Spread';
+  return isWeightCol || isSpread;
+}
+
 function applyColVisibility() {
   const table = document.querySelector('#view-container .data-table');
   if (!table) return;
@@ -2802,7 +2804,8 @@ function applyColVisibility() {
   const colVisible = [];
   headers.forEach((th, idx) => {
     const name = th.textContent.trim();
-    const visible = idx === 0 || state[name] !== false;
+    const isLocked = idx === 0;
+    const visible = isLocked || (state[name] !== undefined ? state[name] !== false : !isDefaultHidden(name));
     colVisible.push(visible);
     th.style.display = visible ? '' : 'none';
   });
