@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.8.1';
+const APP_VERSION = '1.9.0';
 
 let DATA = null; // app-data.json
 
@@ -1241,21 +1241,170 @@ function showVariants(chassisName, faction, eraYear) {
   title.textContent = `${chassisName} — ${getFactionFullName(faction)}`;
   
   let html = '';
-  for (const [varName, w] of sorted) {
-    const pct = (w / total * 100).toFixed(1);
-    const bvStr = variantBV[varName] != null ? `<span class="variant-bv">BV ${variantBV[varName]}</span>` : '';
-    const introStr = variantIntro[varName] != null ? `<span class="variant-intro">${variantIntro[varName]}</span>` : '';
-    const metaStr = (bvStr || introStr) ? `<span class="variant-meta">${bvStr}${introStr}</span>` : '';
-    html += `
-      <div class="variant-row">
-        <span class="variant-name">${escHtml(varName)}</span>
-        ${metaStr}
-        <div class="variant-bar-container">
-          <div class="variant-bar" style="width:${pct}%"></div>
+
+  // ── Rating Tiers Section ──
+  // Find the raw weight entry for this faction (before resolving)
+  // For families, collect entries from all members; show combined if mixed
+  const rawEntries = [];
+  const chassisNames = [];
+  if (isFamily) {
+    for (const fam of DATA.families) {
+      if (fam.groupName.replace(/ Family$/, '') === chassisName || fam.groupName === chassisName) {
+        for (const member of fam.chassis) {
+          const memberData = eraData[member];
+          if (memberData?.w?.[faction] !== undefined) {
+            rawEntries.push({ name: member, entry: memberData.w[faction] });
+            chassisNames.push(member);
+          }
+        }
+        break;
+      }
+    }
+  } else {
+    const chData = eraData[chassisName];
+    if (chData?.w?.[faction] !== undefined) {
+      rawEntries.push({ name: chassisName, entry: chData.w[faction] });
+      chassisNames.push(chassisName);
+    }
+  }
+
+  const isClan = DATA.factions[faction]?.clan;
+  const tierLabels = isClan
+    ? ['PGC', 'Solahma', 'Second Line', 'Front Line', 'Keshik']
+    : ['F (Garrison)', 'D', 'C', 'B', 'A (Elite)'];
+
+  if (rawEntries.length > 0) {
+    html += '<div class="drilldown-section"><h4 class="drilldown-section-title">Rating Tiers</h4>';
+
+    for (const { name: entryName, entry } of rawEntries) {
+      const showLabel = rawEntries.length > 1 ? `<span class="rating-chassis-label">${escHtml(entryName)}</span>` : '';
+
+      if (Array.isArray(entry) && (entry[1] === 0 || entry[1] === '0' || !entry[1])) {
+        // Flat — single line
+        html += `<div class="rating-tier-row">${showLabel}
+          <span class="rating-tier-label">All tiers</span>
+          <div class="rating-tier-bar-container"><div class="rating-tier-bar" style="width:${entry[0] * 10}%"></div></div>
+          <span class="rating-tier-value">${entry[0]}</span>
+          <span class="rating-tier-mod">(flat)</span>
+        </div>`;
+      } else if (Array.isArray(entry)) {
+        // + or - modifier — show all tiers top to bottom (A/Keshik first)
+        const modLabel = entry[1] === '+' ? `${entry[0]}+` : `${entry[0]}−`;
+        if (showLabel) html += `<div class="rating-chassis-header">${showLabel} <span class="rating-tier-mod">${modLabel}</span></div>`;
+        else html += `<div class="rating-chassis-header"><span class="rating-tier-mod">${modLabel}</span></div>`;
+        for (let i = NUM_LEVELS - 1; i >= 0; i--) {
+          const val = resolveWeight(entry, i);
+          html += `<div class="rating-tier-row">
+            <span class="rating-tier-label">${tierLabels[i]}</span>
+            <div class="rating-tier-bar-container"><div class="rating-tier-bar" style="width:${val * 10}%"></div></div>
+            <span class="rating-tier-value">${val}</span>
+          </div>`;
+        }
+        const avg = resolveWeight(entry, null);
+        html += `<div class="rating-tier-row rating-tier-avg">
+          <span class="rating-tier-label">Avg (default)</span>
+          <div class="rating-tier-bar-container"></div>
+          <span class="rating-tier-value">${avg.toFixed(1)}</span>
+        </div>`;
+      } else if (typeof entry === 'object' && entry !== null) {
+        // Explicit per-level (Clan format)
+        if (showLabel) html += `<div class="rating-chassis-header">${showLabel}</div>`;
+        // Show levels from highest to lowest tier
+        const levelEntries = Object.entries(entry);
+        // Sort by tier index desc
+        levelEntries.sort((a, b) => {
+          const idxA = CLAN_LEVEL_INDEX[a[0]] ?? RATING_INDEX[a[0]] ?? -1;
+          const idxB = CLAN_LEVEL_INDEX[b[0]] ?? RATING_INDEX[b[0]] ?? -1;
+          return idxB - idxA;
+        });
+        for (const [levelName, val] of levelEntries) {
+          html += `<div class="rating-tier-row">
+            <span class="rating-tier-label">${escHtml(levelName)}</span>
+            <div class="rating-tier-bar-container"><div class="rating-tier-bar" style="width:${val * 10}%"></div></div>
+            <span class="rating-tier-value">${val}</span>
+          </div>`;
+        }
+        const avg = resolveWeight(entry, null);
+        html += `<div class="rating-tier-row rating-tier-avg">
+          <span class="rating-tier-label">Avg (default)</span>
+          <div class="rating-tier-bar-container"></div>
+          <span class="rating-tier-value">${avg.toFixed(1)}</span>
+        </div>`;
+      } else if (typeof entry === 'number') {
+        // Legacy plain number — flat
+        html += `<div class="rating-tier-row">${showLabel}
+          <span class="rating-tier-label">All tiers</span>
+          <div class="rating-tier-bar-container"><div class="rating-tier-bar" style="width:${entry * 10}%"></div></div>
+          <span class="rating-tier-value">${entry}</span>
+          <span class="rating-tier-mod">(flat)</span>
+        </div>`;
+      }
+    }
+    html += '</div>';
+  }
+
+  // ── Weight Class Distribution Section ──
+  const factionData = DATA.factions[faction];
+  const wcdRaw = factionData?.wcd?.[String(eraYear)] || factionData?.wcd;
+  // wcd can be keyed by era year or be a flat array (find closest era)
+  let wcd = null;
+  if (Array.isArray(wcdRaw)) {
+    wcd = wcdRaw;
+  } else if (wcdRaw && typeof wcdRaw === 'object') {
+    // Find the closest era year <= current
+    const years = Object.keys(wcdRaw).map(Number).sort((a, b) => a - b);
+    for (const y of years) {
+      if (y <= eraYear) wcd = wcdRaw[y];
+    }
+    if (!wcd && years.length > 0) wcd = wcdRaw[years[0]];
+  }
+
+  if (wcd && wcd.length === 4) {
+    const wcdTotal = wcd.reduce((a, b) => a + b, 0);
+    const classLabels = ['Light', 'Medium', 'Heavy', 'Assault'];
+    // Determine which class this chassis belongs to
+    let chassisClass = null;
+    // Check all chassis names involved (family or single)
+    for (const cn of chassisNames) {
+      const meta = DATA.chassis[cn];
+      if (meta?.class) { chassisClass = meta.class; break; }
+    }
+
+    html += `<div class="drilldown-section"><h4 class="drilldown-section-title">${escHtml(getFactionFullName(faction))} Force Composition</h4>`;
+    for (let i = 0; i < 4; i++) {
+      const pct = wcdTotal > 0 ? (wcd[i] / wcdTotal * 100) : 0;
+      const isActive = chassisClass === classLabels[i];
+      const marker = isActive ? `<span class="wcd-marker">← ${escHtml(chassisNames[0] || chassisName)}</span>` : '';
+      html += `<div class="wcd-row${isActive ? ' wcd-active' : ''}">
+        <span class="wcd-label">${classLabels[i]}</span>
+        <div class="wcd-bar-container"><div class="wcd-bar" style="width:${pct}%"></div></div>
+        <span class="wcd-pct">${pct.toFixed(0)}%</span>
+        ${marker}
+      </div>`;
+    }
+    html += '</div>';
+  }
+
+  // ── Variant Breakdown Section ──
+  if (sorted.length > 0) {
+    html += '<div class="drilldown-section"><h4 class="drilldown-section-title">Variants</h4>';
+    for (const [varName, w] of sorted) {
+      const pct = (w / total * 100).toFixed(1);
+      const bvStr = variantBV[varName] != null ? `<span class="variant-bv">BV ${variantBV[varName]}</span>` : '';
+      const introStr = variantIntro[varName] != null ? `<span class="variant-intro">${variantIntro[varName]}</span>` : '';
+      const metaStr = (bvStr || introStr) ? `<span class="variant-meta">${bvStr}${introStr}</span>` : '';
+      html += `
+        <div class="variant-row">
+          <span class="variant-name">${escHtml(varName)}</span>
+          ${metaStr}
+          <div class="variant-bar-container">
+            <div class="variant-bar" style="width:${pct}%"></div>
+          </div>
+          <span class="variant-pct">${pct}%</span>
         </div>
-        <span class="variant-pct">${pct}%</span>
-      </div>
-    `;
+      `;
+    }
+    html += '</div>';
   }
   
   content.innerHTML = html;
