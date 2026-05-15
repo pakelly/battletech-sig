@@ -34,13 +34,22 @@ Report the trace findings before proceeding.
 ### 3. Write tests next
 Write tests that will verify the new behavior BEFORE writing the implementation. Tests define the contract. If you can't write a test for it, the requirement isn't clear enough.
 
-### 4. When a test fails, stop
-Don't start fixing. Report the failure:
+**Tests encode intent, not implementation.** A test should express what DESIGN.md says should happen — the *what*, not the *how*. Test against the public API the app actually uses. Don't test internal helper functions that might get renamed or refactored; test the behavior those helpers produce.
+
+### 4. When a test fails, stop and diagnose
+Don't start fixing. The design→test→code pipeline means a failure lives in one of three layers. Figure out which one.
+
+**Diagnosis checklist:**
+1. **Is the test wrong?** Does it test a function that doesn't exist, use a stale API, or assert something DESIGN.md never promised? → Fix the test.
+2. **Is the design wrong?** Does the test correctly encode an intent that turned out to be a bad idea? Has the design evolved but the doc wasn't updated? → Update DESIGN.md, then update the test to match.
+3. **Is the code wrong?** Does DESIGN.md say X, the test asserts X, but the code does Y? → Fix the code.
+
+**Report before acting:**
 - What test failed
 - Expected vs actual
-- What the failure tells us about the code
+- Which layer you think is wrong (test / design / code) and why
 
-Wait for confirmation before proceeding with a fix.
+Wait for confirmation before proceeding. "Make red go green" is not a diagnosis.
 
 ### 5. Propose, don't implement
 Never start writing production code without describing the change and getting confirmation. The proposal should include:
@@ -51,6 +60,8 @@ Never start writing production code without describing the change and getting co
 
 ### 6. Run tests after every change
 `npm test` after every code change, before every commit. No exceptions. If tests fail, go to Rule 4.
+
+**Never add production code just to make a test pass.** If a test expects a function that doesn't exist, the test is wrong — not the codebase. Code flows from design through tests to implementation. Adding code to satisfy tests inverts that flow and risks introducing bugs to fulfill stale or incorrect expectations.
 
 ### 7. One concern per commit
 Each commit should do one thing. "Add sig column" and "fix sort parser" are two commits, not one. This makes rollbacks possible and history readable.
