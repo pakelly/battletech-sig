@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.8.1 | 2026-05-15 17:24 UTC | 2026-05-15 17:27 UTC |
-| test | 1.9.0 | 2026-05-15 18:47 UTC | pending |
+| test | 1.9.0 | 2026-05-15 19:05 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.9.0 | test | 2026-05-15 19:05 | pending | Show explanatory text when faction doesn't field a chassis |
 | 1.9.0 | test | 2026-05-15 18:47 | pending | Make empty faction cells clickable for drill-down |
 | 1.9.0 | test | 2026-05-15 18:29 | pending | Chassis detail drill-down: rating tiers + weight class distribution |
 | 1.8.1 | prod | 2026-05-15 17:24 | pending | VERSION.md: auto-stamp 1.8.1 test deploy |
