@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.8.0 | 2026-05-15 17:15 UTC | pending |
-| test | 1.8.1 | 2026-05-15 17:22 UTC | pending |
+| test | 1.8.1 | 2026-05-15 17:23 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.8.1 | test | 2026-05-15 17:23 | pending | Fix VERSION.md auto-stamper: section-aware awk replaces fragile sed/awk |
 | 1.8.1 | test | 2026-05-15 17:22 | pending | Unify versioning: APP_VERSION is single source of truth |
 | 1.8.0 | prod | 2026-05-15 17:15 | pending | Help panel (? button) — overview, column reference, query language, settings docs |
 | 1.8.0 | test | 2026-05-15 17:05 | 2026-05-15 17:13 | Help panel (? button) — overview, column reference, query language, settings docs |
