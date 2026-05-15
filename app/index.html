@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BattleTech Faction Signatures</title>
-  <link rel="stylesheet" href="style.css?v=1.5.0">
+  <link rel="stylesheet" href="style.css?v=1.6.0">
 </head>
 <body>
   <div id="app">
@@ -12,8 +12,158 @@
       <h1>BattleTech Faction Signatures</h1>
       <p class="subtitle">Explore faction identity through mech usage data</p>
       <p class="deploy-stamp" id="deploy-stamp"></p>
+      <button id="help-btn" title="Help">?</button>
       <button id="settings-btn" title="Settings">⚙</button>
     </header>
+
+    <!-- Help panel -->
+    <div id="help-overlay" class="hidden">
+      <div id="help-panel">
+        <div class="help-header">
+          <h3>Help</h3>
+          <button id="help-close">&times;</button>
+        </div>
+        <div class="help-body">
+
+          <details open>
+            <summary class="help-section-title">What is this?</summary>
+            <div class="help-section-content">
+              <p>This tool explores faction identity in BattleTech through mech usage data. It answers questions like <em>"What mechs define the Draconis Combine?"</em> or <em>"Who should I paint this Griffin for?"</em></p>
+
+              <h4>How it works</h4>
+              <p>Data comes from two sources: <strong>MegaMek's force generator</strong> (community-curated mech availability tables) and the official <strong>Master Unit List</strong> (canon confirmation).</p>
+              <ul>
+                <li>Each faction has a <strong>weight</strong> (1–10) for each chassis — how likely they are to field it. Higher = more common. Each +2 on this scale doubles the probability.</li>
+                <li><strong>Signature</strong> measures how much a mech <em>belongs</em> to a faction. It combines usage (do they field it a lot?) with distinctiveness (does anyone else?). A mech only one faction uses scores very high. A mech everyone uses scores low.</li>
+                <li><strong>Signature tiers</strong> (T1–T5) group mechs by natural breaks in the data. T1 = the faction's totemic mechs.</li>
+              </ul>
+
+              <h4>Key assumptions</h4>
+              <ul>
+                <li><strong>MegaMek data is the primary source.</strong> It's community-curated and richer than the official MUL, but may include reasonable extrapolations beyond strict canon.</li>
+                <li><strong>Mode B (default) filters by canon.</strong> If the MUL says a faction doesn't have a chassis in that era, it's excluded. Mode A shows everything MegaMek has.</li>
+                <li><strong>Weight class distribution matters.</strong> Factions that invest heavily in heavies get more sig credit for their heavy mechs. A Lyran Atlas counts more than a Lyran Locust in the identity ranking.</li>
+                <li><strong>Unit quality is averaged by default.</strong> Some mechs are elite-only or garrison-only. The default view averages across all tiers. Use <code>rating=A</code> or <code>rating=F</code> to focus on a specific tier.</li>
+                <li><strong>Signature is global and stable.</strong> Adding or removing factions from your query doesn't change any faction's signature scores.</li>
+              </ul>
+
+              <h4>Quick start — try these</h4>
+              <div class="help-examples">
+                <button class="help-example-query" data-query="faction=GreatHouses year=3039 sort by DC sig desc">Great Houses, 3039 — DC's identity mechs</button>
+                <button class="help-example-query" data-query="faction=(DC OR FS) year=3039 sort by sig desc">DC vs FedSuns — Who owns what?</button>
+                <button class="help-example-query" data-query="faction=DC year=3039 sort by sig desc">Draconis Combine identity, 3039</button>
+                <button class="help-example-query" data-query="faction=Clans year=3055 sort by sig desc">Clans, 3055 — Iconic OmniMechs</button>
+                <button class="help-example-query" data-query="faction=GreatHouses year=3039 class=Assault sort by sig desc">Great Houses Assaults — Faction icons</button>
+              </div>
+            </div>
+          </details>
+
+          <details>
+            <summary class="help-section-title">Columns — What am I looking at?</summary>
+            <div class="help-section-content">
+              <table class="help-table">
+                <thead><tr><th>Column</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Chassis</strong></td><td>Mech name (or family name if merging is on). Click to see variant breakdown.</td></tr>
+                  <tr><td><strong>Tons</strong></td><td>Chassis tonnage with weight class badge (L/M/H/A).</td></tr>
+                  <tr><td><strong>BV</strong></td><td>Battle Value range across in-scope variants (min–max).</td></tr>
+                  <tr><td><strong>[Faction] Sig</strong></td><td>Signature tier (T1–T5) and raw score. T1 = faction-defining.</td></tr>
+                  <tr><td><strong>[Faction]</strong></td><td>Raw MegaMek weight (1–10 log scale). Heat-colored. Each +2 doubles probability.</td></tr>
+                  <tr><td><strong>[Faction] BW</strong></td><td>Biased Weight — effective probability including weight class distribution. Hidden by default (☰).</td></tr>
+                  <tr><td><strong>Spread</strong></td><td>Difference between highest and lowest raw weight across scoped factions. Hidden by default.</td></tr>
+                </tbody>
+              </table>
+
+              <h4>Signature tiers</h4>
+              <ul>
+                <li><strong>T1</strong> — Faction-defining. The totemic mechs. Start here if painting for one faction.</li>
+                <li><strong>T2</strong> — Strong identity markers. Clearly associated.</li>
+                <li><strong>T3</strong> — Moderate association. Above-average usage.</li>
+                <li><strong>T4</strong> — Weak association. Present but not distinctive.</li>
+                <li><strong>T5</strong> — Incidental. The faction has access but it's not "theirs."</li>
+              </ul>
+              <p class="help-hint">Tiers use Jenks Natural Breaks — a statistical method that finds natural gaps rather than arbitrary cutoffs.</p>
+
+              <h4>How signature is computed</h4>
+              <pre class="help-code">z = (weight - mean) / stddev    (across ALL factions, non-fielding = 0)
+signature = weight × max(0, z)</pre>
+              <p>The z-score measures how unusual this faction's usage is. Non-fielding factions count as 0, so a mech only one faction fields produces a very high z-score. Weight class distribution is applied before the z-score in mixed-class views.</p>
+
+              <h4>Heat map</h4>
+              <p>Faction weight cells are colored cool-to-warm based on raw weight. Weight 1 = coolest, weight 10 = hottest. Independent of signature — a cell can be warm (high usage) but low signature (everyone else uses it too).</p>
+            </div>
+          </details>
+
+          <details>
+            <summary class="help-section-title">Query Language</summary>
+            <div class="help-section-content">
+              <h4>Filters</h4>
+              <table class="help-table">
+                <thead><tr><th>Filter</th><th>Example</th><th>What it does</th></tr></thead>
+                <tbody>
+                  <tr><td><code>faction=</code></td><td><code>faction=DC</code>, <code>faction=GreatHouses</code></td><td>Which factions to compare. Codes, names, or groups.</td></tr>
+                  <tr><td><code>chassis=</code></td><td><code>chassis=Dragon</code>, <code>chassis!=Locust</code></td><td>Show or exclude specific chassis. Partial match works.</td></tr>
+                  <tr><td><code>class=</code></td><td><code>class=Assault</code>, <code>class=(Light OR Medium)</code></td><td>Filter by weight class.</td></tr>
+                  <tr><td><code>tons</code></td><td><code>tons&gt;50</code>, <code>tons=75</code></td><td>Filter by tonnage.</td></tr>
+                  <tr><td><code>bv</code></td><td><code>bv&gt;1000 bv&lt;1500</code></td><td>Filter by Battle Value range.</td></tr>
+                  <tr><td><code>spread</code></td><td><code>spread&gt;3</code></td><td>Only chassis where factions disagree by more than this.</td></tr>
+                  <tr><td><code>sig</code></td><td><code>sig&gt;5</code></td><td>Only chassis with signature score above threshold.</td></tr>
+                  <tr><td><code>weight</code></td><td><code>weight&gt;5</code></td><td>Only chassis with raw weight above threshold.</td></tr>
+                  <tr><td><code>year=</code></td><td><code>year=3039</code></td><td>Set the target year.</td></tr>
+                  <tr><td><code>era=</code></td><td><code>era=ClanInvasion</code></td><td>Select an era by name.</td></tr>
+                  <tr><td><code>rating=</code></td><td><code>rating=A</code>, <code>rating=F</code></td><td>Unit quality tier. A = elite, F = garrison. Default = cross-tier average.</td></tr>
+                  <tr><td><code>mode=</code></td><td><code>mode=A</code></td><td>Data mode. A = MegaMek only, B = MegaMek × MUL.</td></tr>
+                  <tr><td><code>family=</code></td><td><code>family=off</code></td><td>Toggle chassis family merging.</td></tr>
+                  <tr><td><code>industrial=</code></td><td><code>industrial=show</code></td><td>Show IndustrialMechs (hidden by default).</td></tr>
+                </tbody>
+              </table>
+
+              <h4>Operators</h4>
+              <p><code>=</code>, <code>!=</code>, <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code>. Text fields support <code>OR</code>: <code>class=(Light OR Medium)</code>.</p>
+
+              <h4>Sorting</h4>
+              <ul>
+                <li><code>sort by spread desc</code> — any numeric field, ascending or descending</li>
+                <li><code>sort by DC sig desc</code> — a specific faction's signature</li>
+                <li><code>sort by DC weight desc</code> — a specific faction's raw weight</li>
+                <li><code>sort by DC sig desc, tons asc</code> — multi-sort</li>
+              </ul>
+
+              <h4>Faction groups</h4>
+              <table class="help-table help-table-compact">
+                <thead><tr><th>Shortcut</th><th>Factions</th></tr></thead>
+                <tbody>
+                  <tr><td><code>GreatHouses</code></td><td>DC, FS, FWL, LC, CC</td></tr>
+                  <tr><td><code>Clans</code></td><td>All Clan factions</td></tr>
+                  <tr><td><code>InnerSphere</code></td><td>All IS factions</td></tr>
+                  <tr><td><code>Periphery</code></td><td>All periphery factions</td></tr>
+                </tbody>
+              </table>
+
+              <h4>Faction-specific filters</h4>
+              <p><code>DC-sig&gt;5</code> — only chassis where DC's signature exceeds 5<br>
+              <code>DC-weight&gt;3</code> — only chassis where DC's raw weight exceeds 3</p>
+            </div>
+          </details>
+
+          <details>
+            <summary class="help-section-title">Settings</summary>
+            <div class="help-section-content">
+              <table class="help-table">
+                <thead><tr><th>Setting</th><th>What it controls</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Chassis families</strong></td><td>Related chassis (e.g. Dragon + Grand Dragon) scored as one entry. Per-family toggles available.</td></tr>
+                  <tr><td><strong>Show incomplete</strong></td><td>62 chassis with unknown tonnage (mostly IndustrialMechs) hidden by default.</td></tr>
+                  <tr><td><strong>Data Mode A/B</strong></td><td>A = raw MegaMek. B (default) = filtered by MUL canon availability.</td></tr>
+                  <tr><td><strong>Column visibility (☰)</strong></td><td>Show/hide individual columns. BW and Spread hidden by default.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+
+        </div>
+      </div>
+    </div>
 
     <!-- Settings panel -->
     <div id="settings-overlay" class="hidden">
@@ -109,6 +259,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=1.5.0"></script>
+  <script src="app.js?v=1.6.0"></script>
 </body>
 </html>

@@ -2176,6 +2176,9 @@ async function init() {
   // ── Settings Panel ──
   initSettings();
 
+  // ── Help Panel ──
+  initHelp();
+
   // ── Column Visibility ──
   initColVisibility();
 
@@ -2297,6 +2300,31 @@ function initSettings() {
       } else {
         bar.value = current;
       }
+      runQuery();
+    });
+  });
+}
+
+function initHelp() {
+  const overlay = document.getElementById('help-overlay');
+  if (!overlay) return;
+
+  document.getElementById('help-btn').addEventListener('click', () => {
+    overlay.classList.remove('hidden');
+  });
+  document.getElementById('help-close').addEventListener('click', () => {
+    overlay.classList.add('hidden');
+  });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.add('hidden');
+  });
+
+  // Help example queries — run query and close help
+  overlay.querySelectorAll('.help-example-query').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const bar = document.getElementById('query-bar');
+      bar.value = btn.dataset.query;
+      overlay.classList.add('hidden');
       runQuery();
     });
   });
