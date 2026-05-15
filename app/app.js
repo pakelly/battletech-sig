@@ -220,6 +220,46 @@ function computeResolvedWeights(rawWeights, ratingIdx) {
   return result;
 }
 
+/**
+ * Compute the WCD adjustment factor: ratio of faction's class share to baseline's class share.
+ * @param {string} chassisClass - 'Light', 'Medium', 'Heavy', or 'Assault'
+ * @param {number[]|null} factionWcd - faction's [L,M,H,A] distribution
+ * @param {number[]|null} baselineWcd - baseline [L,M,H,A] distribution
+ * @returns {number} ratio (>1 = faction favors this class more than baseline)
+ */
+function wcdAdjustmentFactor(chassisClass, factionWcd, baselineWcd) {
+  if (!factionWcd || !baselineWcd) return 1;
+  const idx = WCD_CLASS_INDEX[chassisClass];
+  if (idx === undefined) return 1;
+  const fTotal = factionWcd.reduce((a, b) => a + b, 0);
+  const bTotal = baselineWcd.reduce((a, b) => a + b, 0);
+  if (fTotal === 0 || bTotal === 0) return 1;
+  const fShare = factionWcd[idx] / fTotal;
+  const bShare = baselineWcd[idx] / bTotal;
+  if (bShare === 0) return 1;
+  return fShare / bShare;
+}
+
+/**
+ * Resolve rating + apply WCD mixing per faction. Composite of computeResolvedWeights + getWcdMixingFactor.
+ * WCD mixing is applied in rating space (matching computeSignature behavior), not probability space.
+ * @param {Object} rawWeights - { factionCode: [base, mod] | number | {levels} }
+ * @param {number|null} ratingIdx - tier index (0-4) or null for cross-tier average
+ * @param {string|null} chassisClass - 'Light', 'Medium', 'Heavy', 'Assault'
+ * @param {number|null} eraYear - era year for WCD lookup
+ * @returns {Object} { factionCode: adjustedWeight }
+ */
+function computeAdjustedWeights(rawWeights, ratingIdx, chassisClass, eraYear) {
+  const resolved = computeResolvedWeights(rawWeights, ratingIdx);
+  if (!chassisClass || !eraYear) return resolved;
+  const result = {};
+  for (const [f, rating] of Object.entries(resolved)) {
+    const mixFactor = getWcdMixingFactor(f, chassisClass, eraYear);
+    result[f] = rating * mixFactor;
+  }
+  return result;
+}
+
 // ── Query Parser ──
 
 function parseQuery(queryStr) {
