@@ -826,10 +826,10 @@ The detailed lookup for specific filters, columns, and settings. Organized by wh
 | **Chassis** | Always | Mech name (or family name if family merging is on). Click to see variant breakdown. |
 | **Tons** | Always | Chassis tonnage with weight class badge (L/M/H/A). |
 | **BV** | When BV data exists | Battle Value range across in-scope variants (min–max). |
-| **[Faction] Sig** | Multi-faction queries | Signature tier (T1–T5) and raw score. T1 = faction-defining. Higher raw score = stronger association. |
-| **[Faction]** | Multi-faction queries | Raw MegaMek weight (1–10 scale). Heat-colored: warm = high usage, cool = low. This is the faction's availability rating for the chassis — how likely they are to field it. |
-| **[Faction] BW** | Multi-faction queries | Biased Weight — the chassis's effective contribution to the faction's full roster, accounting for weight class distribution. Hidden by default (☰ menu). |
-| **Spread** | Multi-faction queries | Difference between highest and lowest weight across scoped factions. High spread = factions disagree about this mech = interesting. Hidden by default. |
+| **[Faction] Sig** | Multi-faction queries | Signature tier (T1–T5) and raw score. T1 = faction-defining. Higher raw score = stronger association. See "How signature is computed" below. |
+| **[Faction]** | Multi-faction queries | Raw MegaMek weight (1–10 logarithmic scale). Heat-colored: warm = high usage, cool = low. This is the faction's availability rating for the chassis — how likely they are to field it relative to other chassis in the same weight class. Each +2 on this scale doubles the probability of appearing in a force. |
+| **[Faction] BW** | Multi-faction queries | Biased Weight — the chassis's effective probability of appearing in a faction's full roster. Formula: `2^(rating/2) × classShare`, where `classShare` is the faction's weight class distribution proportion for this chassis's weight class (e.g., Lyran Heavy share = 0.35, DC Assault share = 0.10). When filtering to a single weight class, BW is just `2^(rating/2)` (no class mixing). Hidden by default (☰ menu). |
+| **Spread** | Multi-faction queries | Difference between highest and lowest raw weight across scoped factions. High spread = factions disagree about this mech = interesting. Hidden by default. |
 | **Weight** | Single-faction view | Raw availability weight with usage bar. |
 
 **Signature tiers explained:**
@@ -841,7 +841,20 @@ The detailed lookup for specific filters, columns, and settings. Organized by wh
 
 Tiers are assigned using Jenks Natural Breaks — a statistical method that finds natural gaps in the data rather than arbitrary cutoffs. Tiers are computed globally across all displayed factions, so T1 means the same thing regardless of which faction column you're reading.
 
-**How signature is computed:** For each chassis, the signature score combines how much a faction uses it (raw weight) with how unusual that usage is compared to all other factions (z-score). A mech that one faction fields heavily while nobody else does scores very high. A mech that everyone fields equally scores low, even if everyone uses it a lot. Weight class distribution is factored in — a faction that invests heavily in assaults gets more sig credit for their assault mechs.
+**How signature is computed:**
+
+```
+effective_weight = rating × classShare    (mixed-class view)
+effective_weight = rating                  (single-class view)
+
+z = (effective_weight - mean) / stddev    (across ALL factions, non-fielding = 0)
+
+signature = effective_weight × max(0, z)
+```
+
+The z-score measures how unusual this faction's usage is. Non-fielding factions count as 0 in the mean/stddev calculation, so a mech that only one faction fields produces a very high z-score (everyone else pulls the mean down). The product of weight × z captures both signals: the faction uses it a lot AND they stand out from the crowd. Negative z-scores (below-average usage) are clamped to 0 — if a faction uses a mech less than average, it contributes nothing to their identity.
+
+Weight class distribution (classShare) is applied before the z-score calculation. This means a faction's tonnage preferences shape their identity — Lyran heavies get boosted, Lyran lights get dampened, reflecting how the faction actually builds its forces. In single-class views (`class=Heavy`), WCD is skipped because you're already looking at within-class competition.
 
 **Heat map coloring:** Faction weight cells are colored on a cool-to-warm scale based on the raw weight value. Weight 1 = coolest, weight 10 = hottest. This is independent of signature — a cell can be warm (high usage) but low signature (everyone else uses it too).
 
@@ -861,7 +874,7 @@ Tiers are assigned using Jenks Natural Breaks — a statistical method that find
 | `weight` | `weight>5` | Only chassis with raw weight above threshold. |
 | `year=` | `year=3039` | Set the target year. Filters out chassis/variants introduced after this date. |
 | `era=` | `era=ClanInvasion` | Select an era by name. |
-| `rating=` | `rating=A`, `rating=F` | Filter by unit quality tier. A = elite/Keshik, F = garrison/PGC. Omit for cross-tier average. |
+| `rating=` | `rating=A`, `rating=F` | Unit quality tier. A = elite/Keshik, B, C, D, F = garrison/PGC. MegaMek encodes that some mechs are more common at elite tiers (`+` modifier: highest at A, decreasing down) or garrison tiers (`-` modifier: highest at F, decreasing up). Flat entries (no modifier) are the same at all tiers. **Default (no rating filter):** cross-tier average — a `+` mech at base 8 averages to 6.0 because lower tiers pull it down. **`rating=A`:** shows what the faction's elite units field. **`rating=F`:** the garrison/militia picture. The roster shrinks at extreme tiers as many mechs go to zero. |
 | `type=` | `type=omni`, `type=battlemech` | Filter by mech type. |
 | `tech=` | `tech=clan`, `tech=is` | Filter by technology base. |
 | `family=` | `family=on`, `family=off` | Toggle chassis family merging. |
