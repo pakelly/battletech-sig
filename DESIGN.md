@@ -687,7 +687,9 @@ Vanilla HTML/CSS/JS. No framework. Single-page app loading `app-data.json` at st
 
 ### Known Architecture Debt
 
-**Multiple code paths:** The codebase currently has two query processing pipelines (`executeQuery` — unused dead code, and `runQuery` — the actual entry point) and three sort function implementations. These should be consolidated to a single pipeline with a single sort function. See PROGRESS.md for refactoring plan.
+**`runQuery()` monolith:** The main query function (295 lines) handles parsing, filtering, scoring, signature computation, Jenks breaks, sorting, rendering dispatch, and pagination in a single function. Natural decomposition targets: extract filtering loop, scoring pass, and render dispatch into separate functions.
+
+**Dead code:** `assignTier()` (superseded by `assignTierFromBreaks()`), `renderMechDetail()` (trivial passthrough never called), `toRating()` (unused inverse of `toProb()`). Should be cleaned up.
 
 ---
 
@@ -782,7 +784,7 @@ This is strictly better than deletion:
 
 - **Faction lineage / succession model:** Many factions merge, splinter, rename, or absorb others across eras. Current approach patches this case-by-case (e.g. LA/LC MUL merge → canonical LC). Needs a proper lineage map that understands rename (LC↔LA), merger (FS+LC→FC), splintering (FRR from DC), conquest-then-absorption (FRR→CGB occupation→RD), brief existence (WOB, ROS, SIC), etc. Scoring implications differ: a rename shares the same force pool, a merger combines two, a splinter starts fresh-ish. Key example: FRR goes DC→FRR→CGB/FRR→RD, with mech roster evolving at each transition.
 - **Boolean query language (Level 3):** Replace the regex-based parser with a proper tokenizer + AST parser supporting full boolean logic: `(faction=DC AND class=Heavy) OR (faction=FS AND class=Light)`. Would require: tokenizer → recursive descent parser → AST → evaluator per row. Current parser handles AND implicitly (multiple fields) and OR within fields (`class=(Light OR Medium)`), plus `NOT`/`!=` negation. Cross-field OR and parenthetical grouping need AST evaluation. Big lift but would make the query bar a real query language.
-- **Code consolidation:** Merge dead `executeQuery` path into `runQuery`. Consolidate sort functions.
+- **Code consolidation:** Decompose `runQuery()` monolith. Clean up dead functions (`assignTier`, `renderMechDetail`, `toRating`).
 - **Collection tracker:** Mark owned minis, recommend next purchases by faction identity gaps.
 - **Force builder integration:** "Build me a 10,000 BV Davion force that maximizes faction identity score."
 - **User-Defined Value Functions / Lance Builder Preferences:** A weighted scoring layer for lance composition that goes beyond raw signature. Users could define faction-flavored preferences:
