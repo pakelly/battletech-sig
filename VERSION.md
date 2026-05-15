@@ -4,13 +4,14 @@
 
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
-| prod | 1.10.0 | 2026-05-15 19:12 UTC | pending |
+| prod | 1.11.0 | 2026-05-15 22:57 UTC | pending |
 | test | 1.11.0 | 2026-05-15 22:54 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.11.0 | prod | 2026-05-15 22:57 | pending | VERSION.md: auto-stamp 1.11.0 test deploy |
 | 1.11.0 | test | 2026-05-15 22:54 | pending | Fix column visibility defaults not applied after reset |
 | 1.11.0 | test | 2026-05-15 22:40 | pending | Add 'Reset to defaults' button in Settings panel |
 | 1.10.2 | test | 2026-05-15 19:50 | pending | Rename BW column to Prob (Probability Weight) |
