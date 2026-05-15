@@ -94,12 +94,13 @@ MAIN_MSG=$(git log main -1 --format="%s")
 
 # Update "Current State" table — find the row for this environment and update it
 if grep -q "| $LABEL_LC " VERSION.md; then
-  sed -i "s|| $LABEL_LC |.*|| $LABEL_LC | $APP_VER | $DEPLOY_TS UTC | pending |" VERSION.md
+  sed -i "s#| $LABEL_LC |.*#| $LABEL_LC | $APP_VER | $DEPLOY_TS UTC | pending |#" VERSION.md
 fi
 
-# Append to History table (insert after the header row)
+# Append to History table (insert after the header separator row)
+# Use awk to avoid sed escaping issues with commit messages
 HISTORY_LINE="| $APP_VER | $LABEL_LC | $DEPLOY_TS | pending | $MAIN_MSG |"
-sed -i "/^| Version | Target /a\\$HISTORY_LINE" VERSION.md
+awk -v line="$HISTORY_LINE" '/^\|[-]+\|[-]+/{print; print line; next}1' VERSION.md > VERSION.md.tmp && mv VERSION.md.tmp VERSION.md
 
 git add VERSION.md
 git commit -m "VERSION.md: auto-stamp $APP_VER $LABEL_LC deploy"
