@@ -1053,7 +1053,7 @@ details[open] > .help-section-title::before {
   border-radius: 10px;
   padding: 1.5rem;
   min-width: 320px;
-  max-width: 500px;
+  max-width: 540px;
   max-height: 80vh;
   overflow-y: auto;
   position: relative;
@@ -1128,6 +1128,130 @@ details[open] > .help-section-title::before {
 
 .variant-intro {
   color: var(--text-dim);
+}
+
+/* ── Drilldown Sections ── */
+.drilldown-section {
+  margin-bottom: 1.2rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+.drilldown-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.drilldown-section-title {
+  font-size: 0.8rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+}
+
+/* Rating Tiers */
+.rating-chassis-header {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin: 0.4rem 0 0.2rem 0;
+}
+.rating-chassis-label {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.78rem;
+}
+.rating-tier-mod {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+.rating-tier-row {
+  display: flex;
+  align-items: center;
+  padding: 0.15rem 0;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+.rating-tier-label {
+  min-width: 90px;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+}
+.rating-tier-bar-container {
+  flex: 1;
+  height: 14px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.rating-tier-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  opacity: 0.7;
+}
+.rating-tier-value {
+  min-width: 28px;
+  text-align: right;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+.rating-tier-avg {
+  border-top: 1px dashed var(--border);
+  margin-top: 0.3rem;
+  padding-top: 0.3rem;
+}
+.rating-tier-avg .rating-tier-label {
+  font-style: italic;
+}
+
+/* Weight Class Distribution */
+.wcd-row {
+  display: flex;
+  align-items: center;
+  padding: 0.2rem 0;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+.wcd-active {
+  color: var(--accent);
+}
+.wcd-active .wcd-label {
+  color: var(--accent);
+  font-weight: 600;
+}
+.wcd-label {
+  min-width: 60px;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+}
+.wcd-bar-container {
+  flex: 1;
+  height: 14px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.wcd-bar {
+  height: 100%;
+  background: #4a9;
+  border-radius: 3px;
+  opacity: 0.7;
+}
+.wcd-active .wcd-bar {
+  background: var(--accent);
+  opacity: 0.9;
+}
+.wcd-pct {
+  min-width: 32px;
+  text-align: right;
+  font-size: 0.82rem;
+}
+.wcd-marker {
+  font-size: 0.72rem;
+  color: var(--accent);
+  white-space: nowrap;
 }
 
 .bv-col {
