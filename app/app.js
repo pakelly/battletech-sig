@@ -1738,6 +1738,8 @@ function runQuery() {
       }
     }
     
+    // Hide incomplete chassis (no tonnage data) unless user opted in
+    if (!getShowIncomplete() && meta.tons == null) continue;
     if (hideIndustrial && meta.industrial) continue;
     if (/\bLAM\b/.test(chassisName)) continue; // LAMs always hidden for now
     if (parsed.type === 'omni' && !meta.omni) continue;
@@ -2197,6 +2199,13 @@ async function init() {
 // Structure: { "Dragon Family": { enabled: true, chassis: ["Dragon", "Grand Dragon"] }, ... }
 // Only stores overrides — missing entries use DATA.families defaults.
 
+const INCOMPLETE_STORAGE_KEY = 'bt-sig-show-incomplete';
+
+function getShowIncomplete() {
+  try { return localStorage.getItem(INCOMPLETE_STORAGE_KEY) === 'true'; }
+  catch { return false; }
+}
+
 const FAMILY_STORAGE_KEY = 'bt-sig-family-overrides';
 
 function loadFamilyOverrides() {
@@ -2267,6 +2276,15 @@ function initSettings() {
     }
     runQuery();
     renderFamiliesList();
+  });
+
+  // Incomplete chassis toggle
+  const incompleteToggle = document.getElementById('show-incomplete-toggle');
+  incompleteToggle.checked = getShowIncomplete();
+  incompleteToggle.addEventListener('change', () => {
+    try { localStorage.setItem(INCOMPLETE_STORAGE_KEY, incompleteToggle.checked); }
+    catch {}
+    runQuery();
   });
 
   // Data mode radio

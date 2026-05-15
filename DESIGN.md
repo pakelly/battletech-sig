@@ -755,6 +755,29 @@ A hamburger menu (☰) attached to the results table that lets users show/hide c
 
 ---
 
+## Incomplete Chassis Filter
+
+### Background
+
+The dataset includes ~62 chassis with `tons: null` — unknown tonnage. Most are IndustrialMechs (48 confirmed via Sarna), LAMs, or obscure designs that lack complete MUL metadata. Rather than deleting these entries (losing data), they are filtered out by default via a UI toggle.
+
+### Behavior
+
+- **Default:** Incomplete chassis (any chassis where `tons` is `null` in the chassis metadata) are hidden from all views.
+- **Toggle:** A "Show incomplete chassis" checkbox on the Settings panel lets users opt in to seeing them.
+- **Persistence:** Toggle state is saved in `localStorage` (key: `bt-sig-show-incomplete`).
+- **Interaction with other filters:** The incomplete filter runs early in the render loop, before tonnage/class/industrial filters. If a chassis has no tonnage, it can't meaningfully participate in tonnage filters anyway.
+
+### Rationale
+
+This is strictly better than deletion:
+- Data is preserved for future enrichment (someone could add tonnage later)
+- No destructive changes to the dataset
+- Users who want to explore industrial/exotic mechs can opt in
+- The default experience is cleaner — only chassis with complete data appear
+
+---
+
 ## Future Possibilities
 
 - **Faction lineage / succession model:** Many factions merge, splinter, rename, or absorb others across eras. Current approach patches this case-by-case (e.g. LA/LC MUL merge → canonical LC). Needs a proper lineage map that understands rename (LC↔LA), merger (FS+LC→FC), splintering (FRR from DC), conquest-then-absorption (FRR→CGB occupation→RD), brief existence (WOB, ROS, SIC), etc. Scoring implications differ: a rename shares the same force pool, a merger combines two, a splinter starts fresh-ish. Key example: FRR goes DC→FRR→CGB/FRR→RD, with mech roster evolving at each transition.
