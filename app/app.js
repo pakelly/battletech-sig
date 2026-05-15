@@ -1259,6 +1259,11 @@ function showVariants(chassisName, faction, eraYear) {
     ? ['PGC', 'Solahma', 'Second Line', 'Front Line', 'Keshik']
     : ['F (Garrison)', 'D', 'C', 'B', 'A (Elite)'];
 
+  if (rawEntries.length === 0 && sorted.length === 0) {
+    // Faction has no weight entry for this chassis at all
+    html += `<div class="drilldown-section"><p class="drilldown-empty">${escHtml(getFactionFullName(faction))} does not field the ${escHtml(chassisName)} in this era.</p></div>`;
+  }
+
   if (rawEntries.length > 0) {
     html += '<div class="drilldown-section"><h4 class="drilldown-section-title">Rating Tiers</h4>';
 

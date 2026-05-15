@@ -1140,6 +1140,12 @@ details[open] > .help-section-title::before {
   margin-bottom: 0;
   padding-bottom: 0;
 }
+.drilldown-empty {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-style: italic;
+  margin: 0;
+}
 .drilldown-section-title {
   font-size: 0.8rem;
   color: var(--accent);
