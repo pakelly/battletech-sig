@@ -92,15 +92,29 @@ DEPLOY_TS=$(TZ=UTC date '+%Y-%m-%d %H:%M')
 LABEL_LC=$(echo "$LABEL" | tr '[:upper:]' '[:lower:]')
 MAIN_MSG=$(git log main -1 --format="%s")
 
-# Update "Current State" table — find the row for this environment and update it
-if grep -q "| $LABEL_LC " VERSION.md; then
-  sed -i "s#| $LABEL_LC |.*#| $LABEL_LC | $APP_VER | $DEPLOY_TS UTC | pending |#" VERSION.md
-fi
+# Use a single awk pass to update both tables correctly:
+# - In "Current State" section: replace the row matching this environment
+# - In "History" section: insert a new row after the separator
+awk -v env="$LABEL_LC" -v ver="$APP_VER" -v ts="$DEPLOY_TS" -v msg="$MAIN_MSG" '
+  /^## Current State/ { section="current" }
+  /^## History/       { section="history" }
 
-# Append to History table (insert after the header separator row)
-# Use awk to avoid sed escaping issues with commit messages
-HISTORY_LINE="| $APP_VER | $LABEL_LC | $DEPLOY_TS | pending | $MAIN_MSG |"
-awk -v line="$HISTORY_LINE" '/^\|[-]+\|[-]+/{print; print line; next}1' VERSION.md > VERSION.md.tmp && mv VERSION.md.tmp VERSION.md
+  # Current State: replace the row for this environment
+  section=="current" && $0 ~ "\\| " env " \\|" {
+    print "| " env " | " ver " | " ts " UTC | pending |"
+    next
+  }
+
+  # History: insert after the separator row (|---|---|...)
+  section=="history" && /^\|[-]/ {
+    print
+    print "| " ver " | " env " | " ts " | pending | " msg " |"
+    section="done"
+    next
+  }
+
+  { print }
+' VERSION.md > VERSION.md.tmp && mv VERSION.md.tmp VERSION.md
 
 git add VERSION.md
 git commit -m "VERSION.md: auto-stamp $APP_VER $LABEL_LC deploy"
