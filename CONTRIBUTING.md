@@ -4,7 +4,7 @@
 
 ## Development Mode
 
-**Current mode: 🟡 EXPLORE**
+**Current mode: 🔴 DEFEND**
 
 | Mode | When | What changes |
 |------|------|-------------|
