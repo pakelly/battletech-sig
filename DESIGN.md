@@ -621,9 +621,49 @@ Stat columns: Spread, Span, Avg Pref.
 For single-faction queries without explicit sort/sig. Simpler table:
 - Chassis, Tons, Class, Weight, Usage bar
 
-### Variant Drill-Down
+### Chassis Detail Drill-Down
 
-Click any faction cell to see the variant breakdown overlay.
+Click any faction cell to open a detail overlay with three sections:
+
+#### 1. Rating Tiers
+
+Shows how the chassis's availability changes across unit quality tiers for this faction.
+
+**For `+` modifier (elite-skewed):**
+```
+Rating Tiers (Dragon — DC: 8+)
+A (Elite)     ████████████████  8
+B             ██████████████    7
+C             ████████████      6
+D             ██████████        5
+F (Garrison)  ████████          4
+              ─────────────────
+Avg (default)                   6.0
+```
+
+**For flat entries (no modifier):** Collapsed to a single "All tiers: 6 (flat)" line — no need for 5 identical bars.
+
+**For explicit Clan entries:** Shows named tiers (Keshik, Front Line, Second Line, Solahma, PGC) with per-tier weights.
+
+The "Avg" line shows the cross-tier average used in the default (no `rating=`) view, connecting the detail to what users see in the main table.
+
+#### 2. Weight Class Distribution
+
+Shows how the faction distributes its forces across weight classes in this era, with the current chassis's class highlighted:
+
+```
+DC Force Composition (3039)
+Light    ████████████████████  40%
+Medium   ██████████            20%
+Heavy    ███████████████       30%  ← Dragon
+Assault  █████                 10%
+```
+
+This answers "why is my biased weight what it is?" — a DC medium gets only 20% of the force allocation, dampening its effective roster presence.
+
+#### 3. Variant Breakdown
+
+Existing variant distribution display — per-variant weight as percentage bars, with BV and introduction year metadata. Unchanged from current implementation.
 
 ---
 
@@ -923,16 +963,5 @@ In-app help rather than a separate docs page because:
 - **Faction lineage / succession model:** Many factions merge, splinter, rename, or absorb others across eras. Current approach patches this case-by-case (e.g. LA/LC MUL merge → canonical LC). Needs a proper lineage map that understands rename (LC↔LA), merger (FS+LC→FC), splintering (FRR from DC), conquest-then-absorption (FRR→CGB occupation→RD), brief existence (WOB, ROS, SIC), etc. Scoring implications differ: a rename shares the same force pool, a merger combines two, a splinter starts fresh-ish. Key example: FRR goes DC→FRR→CGB/FRR→RD, with mech roster evolving at each transition.
 - **Boolean query language (Level 3):** Replace the regex-based parser with a proper tokenizer + AST parser supporting full boolean logic: `(faction=DC AND class=Heavy) OR (faction=FS AND class=Light)`. Would require: tokenizer → recursive descent parser → AST → evaluator per row. Current parser handles AND implicitly (multiple fields) and OR within fields (`class=(Light OR Medium)`), plus `NOT`/`!=` negation. Cross-field OR and parenthetical grouping need AST evaluation. Big lift but would make the query bar a real query language.
 - **Code consolidation:** Decompose `runQuery()` monolith. Clean up dead functions (`assignTier`, `renderMechDetail`, `toRating`).
-- **Collection tracker:** Mark owned minis, recommend next purchases by faction identity gaps.
-- **Force builder integration:** "Build me a 10,000 BV Davion force that maximizes faction identity score."
-- **User-Defined Value Functions / Lance Builder Preferences:** A weighted scoring layer for lance composition that goes beyond raw signature. Users could define faction-flavored preferences:
-  - **Tonnage bias** — e.g., "Steiners run heavy" → penalize lights, reward assaults. Could be auto-derived from faction tonnage distribution in MegaMek weights.
-  - **Role mix** — e.g., "Davions want combined arms" → reward role diversity within a lance. MUL provides Alpha Strike `Role` per variant.
-  - **Range profile** — e.g., "Kurita likes close-in" → weight by weapon range band. MUL Alpha Strike fields: `BFDamageShort`, `BFDamageMedium`, `BFDamageLong`.
-  - **Armor density** — BV/ton as a crude proxy for "thick." MUL has `BFArmor` and `BFStructure`.
-  - **Custom weights** — user dials knobs: `lance_score = Σ(mech) [ w1×signature + w2×tonnage_pref + w3×role_fit + w4×range_fit + ... ]`
-  - Some preferences derivable from existing data (tonnage distribution, role distribution per faction). Others need new data pulled from MUL Alpha Strike stats (already in cache but not yet in app-data.json).
-  - Natural extension of the lance builder / force builder concept.
-- **Vehicles & aerospace:** Same data sources support non-mech unit types.
-- **Community sharing:** Export/import faction palettes and chassis family configs.
+
 - **Structured form UI:** Dropdowns and sliders layered on top of the query bar, reading/writing the same query syntax.
