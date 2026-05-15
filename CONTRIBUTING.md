@@ -36,23 +36,32 @@ Write tests that will verify the new behavior BEFORE writing the implementation.
 
 **Tests encode intent, not implementation.** A test should express what DESIGN.md says should happen — the *what*, not the *how*. Test against the public API the app actually uses. Don't test internal helper functions that might get renamed or refactored; test the behavior those helpers produce.
 
-### 4. When a test fails, stop and diagnose
-Don't start fixing. The design→test→code pipeline means a failure lives in one of three layers. Figure out which one.
+### 4. When something fails, stop and diagnose
+Don't start fixing. Whether it's a test failure or a production bug, the same discipline applies: diagnose first, report, then wait.
 
-**Diagnosis checklist:**
+**Test failures — which layer is wrong?**
 1. **Is the test wrong?** Does it test a function that doesn't exist, use a stale API, or assert something DESIGN.md never promised? → Fix the test.
 2. **Is the design wrong?** Does the test correctly encode an intent that turned out to be a bad idea? Has the design evolved but the doc wasn't updated? → Update DESIGN.md, then update the test to match.
 3. **Is the code wrong?** Does DESIGN.md say X, the test asserts X, but the code does Y? → Fix the code.
 
-**Report before acting:**
-- What test failed
-- Expected vs actual
-- Which layer you think is wrong (test / design / code) and why
+**Production bugs — same protocol, higher stakes.**
+A broken live site feels urgent. That urgency is exactly why you need the gate. The site is already broken — waiting 30 seconds for approval doesn't make it more broken. Rushing a fix without review can make it worse.
+1. Diagnose the root cause
+2. Report: what's broken, why, and what you think the fix is
+3. Wait for confirmation before touching anything
 
-Wait for confirmation before proceeding. "Make red go green" is not a diagnosis.
+**Report before acting:**
+- What failed (test or production)
+- Expected vs actual behavior
+- Root cause analysis
+- Proposed fix and which files it touches
+
+Wait for confirmation before proceeding. **Urgency is not an override.** If anything, urgent situations need *more* oversight, not less.
 
 ### 5. Propose, don't implement
-Never start writing production code without describing the change and getting confirmation. The proposal should include:
+Never start writing production code without describing the change and getting confirmation. **No exceptions. Not for hotfixes, not for "obvious" one-liners, not for emergencies.** The moment you feel pressure to skip this rule is the moment it matters most.
+
+The proposal should include:
 - What changes
 - Which files
 - Which functions
@@ -123,5 +132,7 @@ Captured here so we don't repeat it:
 - **Hacking without reading:** Multiple rounds of "fix, deploy, test, still broken" because we were patching symptoms without understanding the full code path. **Lesson:** Trace before touching. Read the code, don't guess.
 
 - **Pushed to main, declared victory (2026-05-13, twice):** Pushed code to `main` and told Patrick it was live. GitHub Pages serves from `gh-pages`, not `main`. The site didn't update. Happened TWICE in the same session — the first time was a miss, the second time was embarrassing. **Lesson:** Know your deployment topology. `git push origin main` ≠ deployed. The deploy procedure is now explicit in Rule 8. Follow it every time.
+
+- **Skipped Rule 5 for a "hotfix" (2026-05-15):** Deploy script only copied `app.js` and `app-data.json` to gh-pages, missing `index.html` and `style.css`. This caused a null reference crash that killed all JavaScript including autocomplete. Diagnosed correctly, then went straight to editing the deploy script and redeploying without proposing the fix first. Patrick was right there in the conversation — getting approval would have taken 30 seconds. **Lesson:** Urgency is not an override. Rule 5 exists precisely for moments when the pressure to skip it is highest. A broken site is already broken; rushing an unapproved fix risks making it worse. Diagnose → report → wait. Always. This incident also revealed that Rule 4 only covered test failures, not production bugs — now fixed to cover both.
 
 - **Changed working code to satisfy broken tests (2026-05-15):** Tests referenced two functions (`computeAdjustedWeights`, `wcdAdjustmentFactor`) that never existed in app.js. Instead of fixing the tests to use the actual API, we added new functions to production code just to make the tests pass. This is backwards — it inverts the design→test→code flow and risks introducing bugs to satisfy stale expectations. **Lesson:** When tests fail, diagnose which layer is wrong. The rule ordering exists for a reason: design doc captures intent, tests encode intent as contracts, code fulfills contracts. A failing test means one of those three layers is wrong. Figure out which one before changing anything. Don't reflexively "make the red thing green."
