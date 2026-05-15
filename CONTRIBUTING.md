@@ -88,12 +88,12 @@ That's it. The script handles everything: push main, build gh-pages, clean stale
 
 **Then verify:** Hard-refresh the live site (Ctrl+Shift+R). Check the browser console for errors. Run a known query and confirm the change is visible. Don't assume cache is busted — confirm it.
 
-**After deploy, update `VERSION.md`:**
-1. Set the environment's version and deploy timestamp (UTC).
-2. Set accepted = `pending`.
-3. Add a row to History with the version, target, timestamp, and notes.
-4. When Patrick confirms the deploy looks good → update accepted to the confirmation timestamp.
-5. **Read VERSION.md after every compression** to know what's deployed and what's pending acceptance.
+**Versioning:**
+- `APP_VERSION` in `app/app.js` is the **single source of truth** for the version number. Bump it as part of your commit when making a releasable change.
+- Do NOT manually add `?v=` cache-bust strings to `index.html` — the deploy script stamps them automatically from `APP_VERSION`.
+- The deploy script auto-updates `VERSION.md` (current state + history row) after a successful push. No manual VERSION.md edits needed for deploys.
+- When Patrick confirms a deploy looks good → update the `accepted` column in VERSION.md's current state table.
+- **Read VERSION.md after every compression** to know what's deployed and what's pending acceptance.
 
 **🔴 DEFEND mode adds:** Push to test environment first (`pakelly/patrickforaptca-test` pattern). Verify on test. Only then deploy to prod. No exceptions. VERSION.md tracks both environments — test must be accepted before prod deploy.
 

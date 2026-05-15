@@ -43,8 +43,11 @@ cp app/style.css .
 # Extract APP_VERSION from app.js for cache-busting
 APP_VER=$(grep -oP "const APP_VERSION = '\\K[^']+" app.js || echo "0")
 echo "  Version: $APP_VER"
-sed -i "s/app\.js?v=[^\"']*/app.js?v=$APP_VER/g" index.html
-sed -i "s/style\.css?v=[^\"']*/style.css?v=$APP_VER/g" index.html
+
+# Stamp cache-bust version on asset references in index.html
+# Handles both bare filenames (app.js) and previously-stamped ones (app.js?v=1.5.0)
+sed -i "s|app\.js\(?v=[^\"']*\)\?|app.js?v=$APP_VER|g" index.html
+sed -i "s|style\.css\(?v=[^\"']*\)\?|style.css?v=$APP_VER|g" index.html
 
 echo ""
 echo "=== Step 5: Clean up ==="
@@ -84,9 +87,28 @@ echo "=== Step 8: Switch back to main ==="
 git checkout -f main
 
 echo ""
+echo "=== Step 9: Update VERSION.md ==="
+DEPLOY_TS=$(TZ=UTC date '+%Y-%m-%d %H:%M')
+LABEL_LC=$(echo "$LABEL" | tr '[:upper:]' '[:lower:]')
+MAIN_MSG=$(git log main -1 --format="%s")
+
+# Update "Current State" table — find the row for this environment and update it
+if grep -q "| $LABEL_LC " VERSION.md; then
+  sed -i "s|| $LABEL_LC |.*|| $LABEL_LC | $APP_VER | $DEPLOY_TS UTC | pending |" VERSION.md
+fi
+
+# Append to History table (insert after the header row)
+HISTORY_LINE="| $APP_VER | $LABEL_LC | $DEPLOY_TS | pending | $MAIN_MSG |"
+sed -i "/^| Version | Target /a\\$HISTORY_LINE" VERSION.md
+
+git add VERSION.md
+git commit -m "VERSION.md: auto-stamp $APP_VER $LABEL_LC deploy"
+git push origin main
+
+echo ""
 if [ "$TARGET" = "test" ]; then
-  echo "✅ Deployed to TEST. Verify at: https://pakelly.github.io/battletech-sig-test/"
+  echo "✅ Deployed to TEST (v$APP_VER). Verify at: https://pakelly.github.io/battletech-sig-test/"
   echo "   Then deploy to prod: ./scripts/deploy.sh"
 else
-  echo "✅ Deployed to PROD. Hard-refresh the site to verify."
+  echo "✅ Deployed to PROD (v$APP_VER). Hard-refresh the site to verify."
 fi
