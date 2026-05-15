@@ -780,6 +780,102 @@ This is strictly better than deletion:
 
 ---
 
+## User Documentation (Help Panel)
+
+### Trigger
+
+A `?` button in the header bar (next to the ⚙ Settings button). Opens a full-screen overlay similar to the Settings panel.
+
+### Content Structure
+
+The help panel is organized into three sections, each with collapsible sub-sections:
+
+#### 1. Columns — "What am I looking at?"
+
+| Column | Appears When | Description |
+|--------|-------------|-------------|
+| **Chassis** | Always | Mech name (or family name if family merging is on). Click to see variant breakdown. |
+| **Tons** | Always | Chassis tonnage with weight class badge (L/M/H/A). |
+| **BV** | When BV data exists | Battle Value range across in-scope variants (min–max). |
+| **[Faction] Sig** | Multi-faction queries | Signature tier (T1–T5) and raw score. T1 = faction-defining. Higher raw score = stronger association. |
+| **[Faction]** | Multi-faction queries | Raw MegaMek weight (1–10 scale). Heat-colored: warm = high usage, cool = low. This is the faction's availability rating for the chassis — how likely they are to field it. |
+| **[Faction] BW** | Multi-faction queries | Biased Weight — the chassis's effective contribution to the faction's full roster, accounting for weight class distribution. Hidden by default (☰ menu). |
+| **Spread** | Multi-faction queries | Difference between highest and lowest weight across scoped factions. High spread = factions disagree about this mech = interesting. Hidden by default. |
+| **Weight** | Single-faction view | Raw availability weight with usage bar. |
+
+**Signature tiers explained:**
+- **T1** — Faction-defining. The totemic mechs. If you're painting one faction, start here.
+- **T2** — Strong identity markers. Clearly associated with the faction.
+- **T3** — Moderate association. The faction fields it, and more than average.
+- **T4** — Weak association. Present but not distinctive.
+- **T5** — Incidental. The faction has access but it's not "theirs."
+
+Tiers are assigned using Jenks Natural Breaks — a statistical method that finds natural gaps in the data rather than arbitrary cutoffs. Tiers are computed globally across all displayed factions, so T1 means the same thing regardless of which faction column you're reading.
+
+**How signature is computed:** For each chassis, the signature score combines how much a faction uses it (raw weight) with how unusual that usage is compared to all other factions (z-score). A mech that one faction fields heavily while nobody else does scores very high. A mech that everyone fields equally scores low, even if everyone uses it a lot. Weight class distribution is factored in — a faction that invests heavily in assaults gets more sig credit for their assault mechs.
+
+**Heat map coloring:** Faction weight cells are colored on a cool-to-warm scale based on the raw weight value. Weight 1 = coolest, weight 10 = hottest. This is independent of signature — a cell can be warm (high usage) but low signature (everyone else uses it too).
+
+#### 2. Query Language — "What can I type?"
+
+**Filters** narrow which chassis appear:
+
+| Filter | Example | What it does |
+|--------|---------|-------------|
+| `faction=` | `faction=DC`, `faction=GreatHouses` | Which factions to compare. Accepts codes (DC, FS), full names (Draconis Combine), or groups (GreatHouses, Clans, InnerSphere, ISClans, HomeClans, Periphery, InvasionClans). |
+| `chassis=` | `chassis=Dragon`, `chassis!=Locust` | Show or exclude specific chassis. Partial match and model prefixes (DRG, AWS) work. |
+| `class=` | `class=Assault`, `class=(Light OR Medium)` | Filter by weight class. |
+| `tons` | `tons>50`, `tons=75` | Filter by tonnage. |
+| `bv` | `bv>1000 bv<1500` | Filter by Battle Value. Multiple conditions narrow the range. |
+| `spread` | `spread>3` | Only chassis where factions disagree by more than this. |
+| `sig` | `sig>5` | Only chassis with signature score above threshold. |
+| `weight` | `weight>5` | Only chassis with raw weight above threshold. |
+| `year=` | `year=3039` | Set the target year. Filters out chassis/variants introduced after this date. |
+| `era=` | `era=ClanInvasion` | Select an era by name. |
+| `rating=` | `rating=A`, `rating=F` | Filter by unit quality tier. A = elite/Keshik, F = garrison/PGC. Omit for cross-tier average. |
+| `type=` | `type=omni`, `type=battlemech` | Filter by mech type. |
+| `tech=` | `tech=clan`, `tech=is` | Filter by technology base. |
+| `family=` | `family=on`, `family=off` | Toggle chassis family merging. |
+| `mode=` | `mode=A`, `mode=B` | Data mode. A = MegaMek only, B = MegaMek × MUL (default). |
+| `industrial=` | `industrial=show` | Show IndustrialMechs (hidden by default). |
+
+**Operators:** `=`, `!=`, `>`, `<`, `>=`, `<=`. Text fields support `OR`: `class=(Light OR Medium)`, `NOT`: `NOT class=Assault`.
+
+**Sorting:**
+- `sort by spread desc` — sort by any numeric field, ascending or descending
+- `sort by DC sig desc` — sort by a specific faction's signature
+- `sort by DC weight desc` — sort by a specific faction's raw weight
+- Multi-sort: `sort by DC sig desc, tons asc`
+
+**Faction-specific filters:**
+- `DC-sig>5` — only chassis where DC's signature exceeds 5
+- `DC-weight>3` — only chassis where DC's raw weight exceeds 3
+
+#### 3. Settings — "What do the toggles do?"
+
+| Setting | What it controls |
+|---------|-----------------|
+| **Enable family merging** | Related chassis (e.g. Dragon + Grand Dragon) are scored as one entry. Per-family toggles below. |
+| **Show incomplete chassis** | 62 chassis with unknown tonnage (mostly IndustrialMechs) are hidden by default. Toggle to see them. |
+| **Data Mode A/B** | Mode A uses raw MegaMek force generator data. Mode B (default) filters by MUL canon availability — if the MUL says a faction doesn't have a chassis in that era, it's excluded. |
+| **Column visibility (☰)** | Show/hide individual columns. Weight and Spread columns are hidden by default to reduce clutter. |
+
+### Implementation
+
+- **Location:** `app/index.html` — new overlay div, similar structure to Settings panel
+- **Trigger:** `?` button in header, next to ⚙
+- **Style:** Same dark panel aesthetic. Collapsible sections via `<details>`/`<summary>` for scannability.
+- **No JavaScript logic needed** — pure static HTML/CSS content. The help text is hardcoded, not generated.
+- **Files touched:** `app/index.html` (help overlay HTML), `app/style.css` (help panel styles), `app/app.js` (open/close wiring — minimal)
+
+### Design Rationale
+
+In-app help rather than a separate docs page because:
+1. Users are already in the app when they need help
+2. No context switch — they can read and try simultaneously
+3. Stays in sync with the deployed version (same deploy pipeline)
+4. No separate hosting or docs framework needed
+
 ## Future Possibilities
 
 - **Faction lineage / succession model:** Many factions merge, splinter, rename, or absorb others across eras. Current approach patches this case-by-case (e.g. LA/LC MUL merge → canonical LC). Needs a proper lineage map that understands rename (LC↔LA), merger (FS+LC→FC), splintering (FRR from DC), conquest-then-absorption (FRR→CGB occupation→RD), brief existence (WOB, ROS, SIC), etc. Scoring implications differ: a rename shares the same force pool, a merger combines two, a splinter starts fresh-ish. Key example: FRR goes DC→FRR→CGB/FRR→RD, with mech roster evolving at each transition.
