@@ -67,7 +67,6 @@ before(() => {
         computeResolvedWeights,
         getWcdMixingFactor,
         toProb,
-        toRating,
         RATING_INDEX,
       };
     }
@@ -815,19 +814,8 @@ describe('Logarithmic Scale Conversion', () => {
     assert.ok(Math.abs(F.toProb(10) - 32.0) < 0.01);
   });
 
-  it('toRating is inverse of toProb', () => {
-    for (const r of [1, 2, 3, 5, 7, 10]) {
-      const roundTrip = F.toRating(F.toProb(r));
-      assert.ok(Math.abs(roundTrip - r) < 0.01, `Round trip for ${r}: got ${roundTrip}`);
-    }
-  });
-
   it('toProb(0) returns 0', () => {
     assert.strictEqual(F.toProb(0), 0);
-  });
-
-  it('toRating(0) returns 0', () => {
-    assert.strictEqual(F.toRating(0), 0);
   });
 });
 
