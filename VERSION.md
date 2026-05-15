@@ -5,7 +5,7 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.7.0 | 2026-05-15 03:58 UTC | pending |
-| test | 1.8.0 | 2026-05-15 17:05 UTC | pending |
+| test | 1.8.0 | 2026-05-15 17:05 UTC | 2026-05-15 17:13 UTC |
 
 ## History
 
