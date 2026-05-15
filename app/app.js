@@ -439,8 +439,25 @@ function resolveFactionGroup(name) {
   if (lower === 'clans') {
     return DATA?.factionGroups?.Clans || [];
   }
+  if (lower === 'innersphere' || lower === 'inner sphere' || lower === 'is') {
+    // All non-Clan, non-Periphery factions
+    if (DATA?.factions) {
+      return Object.entries(DATA.factions)
+        .filter(([, info]) => info && !info.clan && !info.periphery)
+        .map(([code]) => code);
+    }
+    return ['DC', 'FS', 'FWL', 'LC', 'CC', 'FC', 'FRR', 'CS', 'WOB', 'SIC', 'MERC', 'ROS'];
+  }
   if (lower === 'invasionclans' || lower === 'invasion clans') {
     return ['CW', 'CJF', 'CGB', 'CSJ'];
+  }
+  if (lower === 'isclans' || lower === 'is clans' || lower === 'innersphereclans' || lower === 'inner sphere clans') {
+    // Clans with significant Inner Sphere presence
+    return ['CW', 'CJF', 'CGB', 'CSJ', 'CHH', 'CNC', 'CDS', 'CSR', 'RD', 'RA'];
+  }
+  if (lower === 'homeclans' || lower === 'home clans' || lower === 'homeworldclans' || lower === 'homeworld clans') {
+    // Clans that remained in the homeworlds
+    return ['CBS', 'CCO', 'CFM', 'CGS', 'CIH', 'CSA', 'CSV'];
   }
   if (lower === 'periphery') {
     return DATA?.factionGroups?.Periphery || [];
@@ -1373,8 +1390,11 @@ function getValueSuggestions(field, lower) {
     case 'faction': {
       const items = [
         { text: 'GreatHouses', hint: 'DC, FS, FWL, LC, CC' },
+        { text: 'InnerSphere', hint: 'All IS factions (non-Clan, non-Periphery)' },
         { text: 'Clans', hint: 'All Clan factions' },
         { text: 'InvasionClans', hint: 'CW, CJF, CGB, CSJ' },
+        { text: 'ISClans', hint: 'Clans in the IS (CW, CJF, CGB, CSJ, CHH, CNC, CDS, CSR, RD, RA)' },
+        { text: 'HomeClans', hint: 'Homeworld Clans (CBS, CCO, CFM, CGS, CIH, CSA, CSV)' },
         { text: 'Periphery', hint: 'TC, MH, OA, MC' },
       ];
       for (const [code, info] of Object.entries(DATA.factions)) {
