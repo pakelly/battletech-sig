@@ -952,7 +952,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
             html += `<span class="weight-value">w:${(row.weights[f] || 0).toFixed(1)}</span>`;
             html += '</td>';
           } else {
-            html += '<td class="faction-cell no-data">—</td>';
+            html += `<td class="faction-cell no-data" data-chassis="${escAttr(row.name)}" data-faction="${f}">—</td>`;
           }
         }
       }
@@ -970,7 +970,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
           }
           html += '</td>';
         } else {
-          html += '<td class="faction-cell no-data">—</td>';
+          html += `<td class="faction-cell no-data" data-chassis="${escAttr(row.name)}" data-faction="${f}">—</td>`;
         }
       }
       for (const f of scopedFactions) {
@@ -980,7 +980,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
           html += `<span class="pref-value">${bw.toFixed(2)}</span>`;
           html += '</td>';
         } else {
-          html += '<td class="faction-cell no-data">—</td>';
+          html += `<td class="faction-cell no-data" data-chassis="${escAttr(row.name)}" data-faction="${f}">—</td>`;
         }
       }
       html += `<td class="stat-col">${row.spread.toFixed(1)}</td>`;
@@ -1196,13 +1196,6 @@ function showVariants(chassisName, faction, eraYear) {
     }
   }
   
-  if (!variants) {
-    title.textContent = `${chassisName} — ${getFactionFullName(faction)}`;
-    content.innerHTML = '<p style="color:var(--text-dim)">No variant data available.</p>';
-    overlay.classList.remove('hidden');
-    return;
-  }
-  
   // Calculate variant percentages for this faction
   // Variants can be either new format { w: {...}, bv, intro } or legacy { faction: weight }
   const variantWeights = {};
@@ -1212,7 +1205,7 @@ function showVariants(chassisName, faction, eraYear) {
   // (eraYear param comes from currentEraYear, resolved from year= or era= in runQuery)
   const targetYear = currentQuery.year || eraYear;
   let total = 0;
-  for (const [varName, varData] of Object.entries(variants)) {
+  for (const [varName, varData] of Object.entries(variants || {})) {
     // Handle both new { w: {...}, bv, intro } and legacy { faction: weight } format
     // Variant weights may be [base, mod], {levels}, or plain numbers — resolve them
     const factionWeights = varData.w || varData;
@@ -1226,13 +1219,6 @@ function showVariants(chassisName, faction, eraYear) {
       if (varData.bv != null) variantBV[varName] = varData.bv;
       if (varData.intro != null) variantIntro[varName] = varData.intro;
     }
-  }
-  
-  if (total === 0) {
-    title.textContent = `${chassisName} — ${getFactionFullName(faction)}`;
-    content.innerHTML = '<p style="color:var(--text-dim)">No variant data for this faction.</p>';
-    overlay.classList.remove('hidden');
-    return;
   }
   
   // Sort by weight desc

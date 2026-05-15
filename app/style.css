@@ -968,8 +968,7 @@ details[open] > .help-section-title::before {
 .no-data {
   color: var(--text-dim);
   opacity: 0.3;
-  cursor: default;
-  pointer-events: none;
+  cursor: pointer;
 }
 
 /* Stats columns */
