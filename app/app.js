@@ -566,16 +566,30 @@ function computeBVRange(variants, scopedFactions, mul, modeB, targetYear) {
  * @param {string[]} allFactionCodes - all faction codes for z-score baseline
  * @param {Object|null} wcdParams - { chassisClass, eraYear } or null to skip WCD mixing
  */
-function computeSignature(weights, mulData, factions, allFactionCodes, wcdParams) {
+function computeSignature(weights, mulData, factions, allFactionCodes, wcdParams, chassisTech) {
   const result = {};
   
-  // Build effective weight array for ALL factions in probability space.
+  // Filter comparison pool by tech base so IS workhorse mechs aren't
+  // inflated by Clan factions' zeros (and vice versa).
+  // Include any faction that: (a) matches the tech base, OR (b) actually fields the chassis.
+  // This handles late-era tech sharing (e.g., IS factions fielding Clan mechs).
+  let compareFactions = allFactionCodes;
+  if (chassisTech === 'Inner Sphere' || chassisTech === 'Primitive') {
+    compareFactions = allFactionCodes.filter(f =>
+      !DATA.factions[f]?.clan || (weights[f] && weights[f] > 0));
+  } else if (chassisTech === 'Clan') {
+    compareFactions = allFactionCodes.filter(f =>
+      DATA.factions[f]?.clan || (weights[f] && weights[f] > 0));
+  }
+  // Mixed/null tech: compare against all factions
+  
+  // Build effective weight array in probability space.
   // Signature uses 2^(rating/2) to reflect actual battlefield presence —
   // a rating-8 mech is 8× more likely than rating-2, not 4×.
   // This better captures "you'll see this mech and it'll be theirs."
   // In mixed-class view, scale by WCD mixing factor to reflect faction
   // weight class preferences (e.g. Lyran heavy bias boosts their heavies).
-  const allWeights = allFactionCodes.map(f => {
+  const allWeights = compareFactions.map(f => {
     const raw = (mulData[f] && weights[f]) ? weights[f] : 0;
     if (raw <= 0) return 0;
     const prob = toProb(raw);
@@ -1994,7 +2008,7 @@ function runQuery() {
   if (scopedFactions.length > 0) {
     for (const row of rows) {
       const wcdParams = singleClassFilter ? null : { chassisClass: row.meta?.class, eraYear };
-      row.sig = computeSignature(row.weights, row.mul || {}, scopedFactions, allFactionCodes, wcdParams);
+      row.sig = computeSignature(row.weights, row.mul || {}, scopedFactions, allFactionCodes, wcdParams, row.meta?.tech);
     }
     
     // Compute tiers using GLOBAL Jenks Natural Breaks across all displayed factions.
