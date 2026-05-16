@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.12.1';
-const DEPLOY_TIME = '20260516.0045';
+const APP_VERSION = '1.12.2';
+const DEPLOY_TIME = '20260516.0052';
 
 let DATA = null; // app-data.json
 
@@ -969,12 +969,18 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
         for (const f of scopedFactions) {
           const sigVal = row.sig?.[f] || 0;
           const sigTier = row.sig?.[f + '_tier'] || 0;
+          const hasWeight = (row.weights[f] || 0) > 0;
           if (sigVal > 0) {
             const sigHeat = sigTierToHeat(sigTier);
             html += `<td class="faction-cell ${sigHeat}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
             html += `<span class="pref-value">T${sigTier}</span>`;
             html += `<span class="sig-raw">${sigVal.toFixed(1)}</span>`;
             html += `<span class="weight-value">w:${(row.weights[f] || 0).toFixed(1)}</span>`;
+            html += '</td>';
+          } else if (hasWeight) {
+            // Faction fields the chassis but sig is 0 (below-average usage after WCD)
+            html += `<td class="faction-cell heat-1" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
+            html += `<span class="pref-value">–</span>`;
             html += '</td>';
           } else {
             html += `<td class="faction-cell no-data" data-chassis="${escAttr(row.name)}" data-faction="${f}">—</td>`;
