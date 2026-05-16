@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.11.0 | 2026-05-15 22:57 UTC | pending |
-| test | 1.12.2 | 2026-05-16 00:52 UTC | pending |
+| test | 1.12.3 | 2026-05-16 00:54 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.12.3 | test | 2026-05-16 00:54 | pending | Show T5 for fielded-but-not-distinctive instead of en-dash |
 | 1.12.2 | test | 2026-05-16 00:52 | pending | Distinguish 'fielded but not distinctive' from 'not fielded' in sig column |
 | 1.12.1 | test | 2026-05-16 00:45 | pending | Bump to 1.12.1 — increment patch for each test deploy |
 | 1.12.0 | test | 2026-05-16 00:44 | pending | Add deploy timestamp to version stamp |
