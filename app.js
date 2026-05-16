@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.12.4';
-const DEPLOY_TIME = '20260516.0406';
+const APP_VERSION = '1.12.5';
+const DEPLOY_TIME = '20260516.1459';
 
 let DATA = null; // app-data.json
 
@@ -370,9 +370,13 @@ function parseQuery(queryStr) {
         result.mode = value.toUpperCase();
         break;
       case 'rating':
-        const rVal = value.toUpperCase();
-        if (RATING_INDEX[rVal] !== undefined) {
-          result.rating = rVal;
+        // Support single (rating=A) or multi (rating=(A OR B))
+        const rVals = value.toUpperCase().split(/\s+OR\s+|\s*,\s*/).map(v => v.replace(/[()]/g, '').trim());
+        const validRatings = rVals.filter(v => RATING_INDEX[v] !== undefined);
+        if (validRatings.length === 1) {
+          result.rating = validRatings[0];
+        } else if (validRatings.length > 1) {
+          result.rating = validRatings; // array signals multi-rating average
         }
         break;
       case 'tons':
@@ -1652,7 +1656,10 @@ function renderChips(parsed) {
   }
   if (parsed.year) chips.push({ label: 'year=' + parsed.year, field: 'year' });
   if (parsed.era) chips.push({ label: 'era=' + parsed.era, field: 'era' });
-  if (parsed.rating) chips.push({ label: 'rating=' + parsed.rating, field: 'rating' });
+  if (parsed.rating) {
+    const rLabel = Array.isArray(parsed.rating) ? parsed.rating.join('+') : parsed.rating;
+    chips.push({ label: 'rating=' + rLabel, field: 'rating' });
+  }
   if (parsed.mode !== 'B') chips.push({ label: 'mode=' + parsed.mode, field: 'mode' });
   if (parsed.sort.length > 0) {
     chips.push({ label: 'sort by ' + parsed.sort.map(s => s.field + ' ' + s.dir).join(', '), field: 'sort' });
@@ -1941,8 +1948,26 @@ function runQuery() {
     }
     
     // Resolve unit quality rating (no WCD adjustment — that's applied at display level)
-    const ratingIdx = parsed.rating ? RATING_INDEX[parsed.rating] : null; // Default to cross-tier average
-    let weights = computeResolvedWeights(data.w, ratingIdx);
+    // Support single rating (string → index), multi-rating (array → average those tiers), or null (all-tier average)
+    let ratingIdx = null;
+    let multiRatingIdxs = null;
+    if (Array.isArray(parsed.rating)) {
+      multiRatingIdxs = parsed.rating.map(r => RATING_INDEX[r]);
+    } else if (parsed.rating) {
+      ratingIdx = RATING_INDEX[parsed.rating];
+    }
+    let weights;
+    if (multiRatingIdxs) {
+      // Average across specified tiers
+      const perTier = multiRatingIdxs.map(idx => computeResolvedWeights(data.w, idx));
+      weights = {};
+      const allKeys = new Set(perTier.flatMap(t => Object.keys(t)));
+      for (const f of allKeys) {
+        weights[f] = perTier.reduce((sum, t) => sum + (t[f] || 0), 0) / multiRatingIdxs.length;
+      }
+    } else {
+      weights = computeResolvedWeights(data.w, ratingIdx);
+    }
     if (modeB) {
       for (const f of Object.keys(weights)) {
         if (data.mul && !data.mul[f]) {
