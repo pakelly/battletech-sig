@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.12.5 | 2026-05-16 15:03 UTC | pending |
-| test | 1.12.5 | 2026-05-16 15:00 UTC | pending |
+| test | 1.13.0 | 2026-05-16 17:34 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.13.0 | test | 2026-05-16 17:34 | pending | Rename Signature to Distinctiveness Rating (DR1-DR5) |
 | 1.12.5 | prod | 2026-05-16 15:03 | pending | VERSION.md: auto-stamp 1.12.5 test deploy |
 | 1.12.5 | test | 2026-05-16 15:00 | pending | Support multi-rating filter: rating=(A OR B) averages tiers |
 | 1.12.4 | test | 2026-05-16 04:06 | pending | Fix sig sort: fielded-but-zero-sig sorts above not-fielded |
