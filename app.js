@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.11.0';
+const APP_VERSION = '1.12.0';
 
 let DATA = null; // app-data.json
 
@@ -569,20 +569,21 @@ function computeBVRange(variants, scopedFactions, mul, modeB, targetYear) {
 function computeSignature(weights, mulData, factions, allFactionCodes, wcdParams) {
   const result = {};
   
-  // Build effective weight array for ALL factions.
-  // Signature uses RATING space (1-10 linear scale), not probability space.
-  // This keeps mid-weight exclusive mechs visible instead of burying them
-  // under high-weight common designs (prob-space: 2^(10/2)=32 vs 2^(4/2)=4).
+  // Build effective weight array for ALL factions in probability space.
+  // Signature uses 2^(rating/2) to reflect actual battlefield presence —
+  // a rating-8 mech is 8× more likely than rating-2, not 4×.
+  // This better captures "you'll see this mech and it'll be theirs."
   // In mixed-class view, scale by WCD mixing factor to reflect faction
   // weight class preferences (e.g. Lyran heavy bias boosts their heavies).
   const allWeights = allFactionCodes.map(f => {
     const raw = (mulData[f] && weights[f]) ? weights[f] : 0;
     if (raw <= 0) return 0;
+    const prob = toProb(raw);
     if (wcdParams) {
       const mixFactor = getWcdMixingFactor(f, wcdParams.chassisClass, wcdParams.eraYear);
-      return raw * mixFactor;
+      return prob * mixFactor;
     }
-    return raw;
+    return prob;
   });
   
   const n = allWeights.length;
@@ -595,12 +596,13 @@ function computeSignature(weights, mulData, factions, allFactionCodes, wcdParams
   for (const f of factions) {
     const raw = (mulData[f] && weights[f]) ? weights[f] : 0;
     if (raw <= 0 || stddev === 0) { result[f] = 0; continue; }
+    const prob = toProb(raw);
     let w;
     if (wcdParams) {
       const mixFactor = getWcdMixingFactor(f, wcdParams.chassisClass, wcdParams.eraYear);
-      w = raw * mixFactor;
+      w = prob * mixFactor;
     } else {
-      w = raw;
+      w = prob;
     }
     const z = (w - mean) / stddev;
     result[f] = w * Math.max(0, z);
