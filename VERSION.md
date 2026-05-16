@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.11.0 | 2026-05-15 22:57 UTC | pending |
-| test | 1.12.0 | 2026-05-16 00:27 UTC | pending |
+| test | 1.12.0 | 2026-05-16 00:40 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.12.0 | test | 2026-05-16 00:40 | pending | Tech-base-aware signature: compare against plausible factions only |
 | 1.12.0 | test | 2026-05-16 00:27 | pending | Fix WCD bar alignment: fixed-width label, remove inline marker |
 | 1.12.0 | test | 2026-05-16 00:21 | pending | Log-Jenks tier assignment for prob-space signature |
 | 1.12.0 | test | 2026-05-16 00:13 | pending | Signature computation in probability space instead of rating space |
