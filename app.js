@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.12.5';
-const DEPLOY_TIME = '20260516.1503';
+const APP_VERSION = '1.13.0';
+const DEPLOY_TIME = '20260516.1734';
 
 let DATA = null; // app-data.json
 
@@ -260,9 +260,9 @@ function parseQuery(queryStr) {
       let dir = 'desc';
       
       // Handle "DC preference desc" or "DC sig desc" -> field = DC-preference or DC-sig
-      if (tokens.length >= 2 && (tokens[1].toLowerCase() === 'preference' || tokens[1].toLowerCase() === 'weight' || tokens[1].toLowerCase() === 'sig' || tokens[1].toLowerCase() === 'signature')) {
+      if (tokens.length >= 2 && (tokens[1].toLowerCase() === 'preference' || tokens[1].toLowerCase() === 'weight' || tokens[1].toLowerCase() === 'sig' || tokens[1].toLowerCase() === 'signature' || tokens[1].toLowerCase() === 'dr' || tokens[1].toLowerCase() === 'distinctiveness')) {
         const factionCode = resolveFaction(tokens[0]);
-        const metric = (tokens[1].toLowerCase() === 'preference' || tokens[1].toLowerCase() === 'weight') ? 'weight' : 'sig';
+        const metric = (tokens[1].toLowerCase() === 'preference' || tokens[1].toLowerCase() === 'weight') ? 'weight' : 'sig'; // dr/distinctiveness also maps to sig
         if (factionCode) {
           field = factionCode + '-' + metric;
         } else {
@@ -272,7 +272,7 @@ function parseQuery(queryStr) {
       } else {
         field = tokens[0].toLowerCase();
         // Handle faction-prefixed fields: fs-sig, dc-pref, dc-preference
-        const prefixMatch = field.match(/^([a-z]+)-(sig|signature|pref|preference|weight)$/);
+        const prefixMatch = field.match(/^([a-z]+)-(sig|signature|dr|distinctiveness|pref|preference|weight)$/);
         if (prefixMatch) {
           const fCode = resolveFaction(prefixMatch[1]);
           const metric = (prefixMatch[2].startsWith('pref') || prefixMatch[2] === 'weight') ? 'weight' : 'sig';
@@ -346,6 +346,8 @@ function parseQuery(queryStr) {
         break;
       case 'sig':
       case 'signature':
+      case 'dr':
+      case 'distinctiveness':
         result.sig = { op, val: parseFloat(value) };
         break;
       case 'year':
@@ -389,10 +391,10 @@ function parseQuery(queryStr) {
         break;
       default: {
         // Handle faction-prefixed filters: DC-pref>8, FS-sig>5, etc.
-        const fpMatch = field.match(/^([a-z]+)-(pref|preference|weight|sig|signature)$/);
+        const fpMatch = field.match(/^([a-z]+)-(pref|preference|weight|sig|signature|dr|distinctiveness)$/);
         if (fpMatch) {
           const fCode = resolveFaction(fpMatch[1]);
-          const metric = fpMatch[2].startsWith('pref') ? 'weight' : (fpMatch[2].startsWith('w') ? 'weight' : 'sig');
+          const metric = (fpMatch[2].startsWith('pref') || fpMatch[2].startsWith('w')) ? 'weight' : 'sig'; // dr/distinctiveness also → sig
           if (fCode) {
             const entry = { faction: fCode, op, val: parseFloat(value) };
             if (metric === 'weight') result.factionWeight.push(entry);
@@ -929,7 +931,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   if (hasBV) headerHTML += '<th data-sort="bv">BV</th>';
   if (hasSig) {
     for (const f of scopedFactions) {
-      headerHTML += `<th data-sort="${f}-sig" title="${getFactionFullName(f)} Signature">${getFactionLabel(f)} Sig</th>`;
+      headerHTML += `<th data-sort="${f}-sig" title="${getFactionFullName(f)} Distinctiveness">${getFactionLabel(f)} DR</th>`;
     }
   }
   for (const f of scopedFactions) {
@@ -977,14 +979,14 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
           if (sigVal > 0) {
             const sigHeat = sigTierToHeat(sigTier);
             html += `<td class="faction-cell ${sigHeat}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
-            html += `<span class="pref-value">T${sigTier}</span>`;
+            html += `<span class="pref-value">DR${sigTier}</span>`;
             html += `<span class="sig-raw">${sigVal.toFixed(1)}</span>`;
             html += `<span class="weight-value">w:${(row.weights[f] || 0).toFixed(1)}</span>`;
             html += '</td>';
           } else if (hasWeight) {
             // Faction fields the chassis but sig is 0 (below-average usage after WCD)
             html += `<td class="faction-cell heat-1" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
-            html += `<span class="pref-value">T5</span>`;
+            html += `<span class="pref-value">DR5</span>`;
             html += '</td>';
           } else {
             html += `<td class="faction-cell no-data" data-chassis="${escAttr(row.name)}" data-faction="${f}">—</td>`;
@@ -1001,7 +1003,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
           html += `<span class="pref-value">${w.toFixed(1)}</span>`;
           if (hasSig && row.sig?.[f] > 0) {
             const tier = row.sig?.[f + '_tier'] || 0;
-            html += `<span class="sig-value">T${tier}</span>`;
+            html += `<span class="sig-value">DR${tier}</span>`;
           }
           html += '</td>';
         } else {
@@ -1469,7 +1471,7 @@ function handleHeaderSort(th, rows, scopedFactions, eraYear, query) {
 
 // ── Auto-Suggest ──
 
-const FIELD_NAMES = ['faction', 'chassis', 'class', 'type', 'tech', 'spread', 'sig', 'signature', 'weight', 'tons', 'tonnage', 'bv', 'year', 'era', 'rating', 'family', 'industrial', 'mode', 'sort'];
+const FIELD_NAMES = ['faction', 'chassis', 'class', 'type', 'tech', 'spread', 'sig', 'signature', 'dr', 'distinctiveness', 'weight', 'tons', 'tonnage', 'bv', 'year', 'era', 'rating', 'family', 'industrial', 'mode', 'sort'];
 
 function getSuggestions(text, cursorPos) {
   if (!DATA) return [];
@@ -1497,7 +1499,7 @@ function getSuggestions(text, cursorPos) {
   const sortByMatch = beforeCursor.match(/\bsort\s+by\s+(\S*)$/i);
   if (sortByMatch) {
     const partial = sortByMatch[1].toLowerCase();
-    const sortableFields = ['spread', 'sig', 'weight', 'tons', 'bv', 'name'];
+    const sortableFields = ['spread', 'sig', 'dr', 'weight', 'tons', 'bv', 'name'];
     // Add faction-prefixed sort fields
     if (DATA) {
       for (const code of Object.keys(DATA.factions)) {
@@ -1514,7 +1516,7 @@ function getSuggestions(text, cursorPos) {
 
   // Field name completion
   const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'year', 'era', 'rating', 'family', 'industrial', 'mode']);
-  const OPERATOR_FIELD_SET = new Set(['spread', 'sig', 'signature', 'weight', 'tons', 'tonnage', 'bv', 'battlevalue']);
+  const OPERATOR_FIELD_SET = new Set(['spread', 'sig', 'signature', 'dr', 'distinctiveness', 'weight', 'tons', 'tonnage', 'bv', 'battlevalue']);
 
   if (!lastToken.includes('=') && !lastToken.includes('>') && !lastToken.includes('<')) {
     const lower = lastToken.toLowerCase();
@@ -1536,7 +1538,7 @@ function getSuggestions(text, cursorPos) {
       const fCode = resolveFaction(fpMatch[1]);
       if (fCode && DATA.factions[fCode]) {
         const partial2 = fpMatch[2] || '';
-        if ('sig'.startsWith(partial2)) suggestions.push({ text: fCode + '-sig>', hint: fCode + ' signature' });
+        if ('dr'.startsWith(partial2) || 'sig'.startsWith(partial2)) suggestions.push({ text: fCode + '-dr>', hint: fCode + ' distinctiveness' });
         if ('weight'.startsWith(partial2)) suggestions.push({ text: fCode + '-weight>', hint: fCode + ' weight' });
       }
     }
@@ -1697,7 +1699,7 @@ function removeFieldFromQuery(field) {
     'span': /\bspan\s*[><=!]+\s*[\d.]+/gi,
     'avg-weight': /\bavg-weight\s*[><=!]+\s*[\d.]+/gi,
     'weight': /\b(?<![-\w])weight\s*[><=!]+\s*[\d.]+/gi,
-    'sig': /\b(?<![-\w])sig(?:nature)?\s*[><=!]+\s*[\d.]+/gi,
+    'sig': /\b(?<![-\w])(?:sig(?:nature)?|dr|distinctiveness)\s*[><=!]+\s*[\d.]+/gi,
     'tons': /\b(?:tons|tonnage)\s*[><=!]+\s*[\d.]+/gi,
     'bv': /\b(?:bv|battlevalue)\s*[><=!]+\s*[\d.]+/gi,
     'year': /\byear\s*=\s*\d+/gi,
@@ -2182,12 +2184,12 @@ function sortRowsInPlace(rows, sortSpec) {
         const fCode = field.replace('-weight', '').toUpperCase();
         va = a.weights?.[fCode] || 0;
         vb = b.weights?.[fCode] || 0;
-      } else if (field.endsWith('-sig') || field.endsWith('-signature')) {
-        const fCode = field.replace(/-sig(nature)?$/, '').toUpperCase();
+      } else if (field.endsWith('-sig') || field.endsWith('-signature') || field.endsWith('-dr') || field.endsWith('-distinctiveness')) {
+        const fCode = field.replace(/-(sig(nature)?|dr|distinctiveness)$/, '').toUpperCase();
         // Fielded but sig=0 gets a tiny positive value to sort above not-fielded
         va = a.sig?.[fCode] || ((a.weights?.[fCode] || 0) > 0 ? 1e-9 : 0);
         vb = b.sig?.[fCode] || ((b.weights?.[fCode] || 0) > 0 ? 1e-9 : 0);
-      } else if (field === 'sig' || field === 'signature') {
+      } else if (field === 'sig' || field === 'signature' || field === 'dr' || field === 'distinctiveness') {
         va = a.sig ? Math.max(0, ...Object.values(a.sig)) : 0;
         vb = b.sig ? Math.max(0, ...Object.values(b.sig)) : 0;
       } else {
@@ -2882,7 +2884,7 @@ function initQuickFilter() {
 
   // Known field names that take = values (not sort, not numeric-operator fields used bare)
   const VALUE_FIELDS = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'year', 'era', 'rating', 'family', 'industrial', 'mode']);
-  const OPERATOR_FIELDS = new Set(['spread', 'sig', 'signature', 'weight', 'tons', 'tonnage']);
+  const OPERATOR_FIELDS = new Set(['spread', 'sig', 'signature', 'dr', 'distinctiveness', 'weight', 'tons', 'tonnage']);
 
   function normalizeFilterText(raw) {
     // "sort by ..." → pass through
