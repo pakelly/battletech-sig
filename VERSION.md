@@ -4,13 +4,14 @@
 
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
-| prod | 1.12.3 | 2026-05-16 00:56 UTC | pending |
+| prod | 1.12.5 | 2026-05-16 15:03 UTC | pending |
 | test | 1.12.5 | 2026-05-16 15:00 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.12.5 | prod | 2026-05-16 15:03 | pending | VERSION.md: auto-stamp 1.12.5 test deploy |
 | 1.12.5 | test | 2026-05-16 15:00 | pending | Support multi-rating filter: rating=(A OR B) averages tiers |
 | 1.12.4 | test | 2026-05-16 04:06 | pending | Fix sig sort: fielded-but-zero-sig sorts above not-fielded |
 | 1.12.3 | prod | 2026-05-16 00:56 | pending | VERSION.md: auto-stamp 1.12.3 test deploy |
