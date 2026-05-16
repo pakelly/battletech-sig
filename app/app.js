@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.12.2';
+const APP_VERSION = '1.12.3';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -980,7 +980,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
           } else if (hasWeight) {
             // Faction fields the chassis but sig is 0 (below-average usage after WCD)
             html += `<td class="faction-cell heat-1" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
-            html += `<span class="pref-value">–</span>`;
+            html += `<span class="pref-value">T5</span>`;
             html += '</td>';
           } else {
             html += `<td class="faction-cell no-data" data-chassis="${escAttr(row.name)}" data-faction="${f}">—</td>`;
