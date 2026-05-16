@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.12.3';
-const DEPLOY_TIME = '20260516.0056';
+const APP_VERSION = '1.12.4';
+const DEPLOY_TIME = '20260516.0406';
 
 let DATA = null; // app-data.json
 
@@ -2159,8 +2159,9 @@ function sortRowsInPlace(rows, sortSpec) {
         vb = b.weights?.[fCode] || 0;
       } else if (field.endsWith('-sig') || field.endsWith('-signature')) {
         const fCode = field.replace(/-sig(nature)?$/, '').toUpperCase();
-        va = a.sig?.[fCode] || 0;
-        vb = b.sig?.[fCode] || 0;
+        // Fielded but sig=0 gets a tiny positive value to sort above not-fielded
+        va = a.sig?.[fCode] || ((a.weights?.[fCode] || 0) > 0 ? 1e-9 : 0);
+        vb = b.sig?.[fCode] || ((b.weights?.[fCode] || 0) > 0 ? 1e-9 : 0);
       } else if (field === 'sig' || field === 'signature') {
         va = a.sig ? Math.max(0, ...Object.values(a.sig)) : 0;
         vb = b.sig ? Math.max(0, ...Object.values(b.sig)) : 0;
