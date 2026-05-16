@@ -1376,12 +1376,10 @@ function showVariants(chassisName, faction, eraYear) {
     for (let i = 0; i < 4; i++) {
       const pct = wcdTotal > 0 ? (wcd[i] / wcdTotal * 100) : 0;
       const isActive = chassisClass === classLabels[i];
-      const marker = isActive ? `<span class="wcd-marker">← ${escHtml(chassisNames[0] || chassisName)}</span>` : '';
       html += `<div class="wcd-row${isActive ? ' wcd-active' : ''}">
-        <span class="wcd-label">${classLabels[i]}</span>
+        <span class="wcd-label">${classLabels[i]}${isActive ? ' ◂' : ''}</span>
         <div class="wcd-bar-container"><div class="wcd-bar" style="width:${pct}%"></div></div>
         <span class="wcd-pct">${pct.toFixed(0)}%</span>
-        ${marker}
       </div>`;
     }
     html += '</div>';

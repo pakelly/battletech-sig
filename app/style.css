@@ -1243,7 +1243,8 @@ details[open] > .help-section-title::before {
   font-weight: 600;
 }
 .wcd-label {
-  min-width: 60px;
+  width: 68px;
+  flex-shrink: 0;
   color: var(--text-dim);
   font-size: 0.78rem;
 }
@@ -1265,14 +1266,10 @@ details[open] > .help-section-title::before {
   opacity: 0.9;
 }
 .wcd-pct {
-  min-width: 32px;
+  width: 32px;
+  flex-shrink: 0;
   text-align: right;
   font-size: 0.82rem;
-}
-.wcd-marker {
-  font-size: 0.72rem;
-  color: var(--accent);
-  white-space: nowrap;
 }
 
 .bv-col {
