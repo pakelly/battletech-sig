@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.11.0 | 2026-05-15 22:57 UTC | pending |
-| test | 1.11.0 | 2026-05-15 22:54 UTC | pending |
+| test | 1.12.0 | 2026-05-16 00:13 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.12.0 | test | 2026-05-16 00:13 | pending | Signature computation in probability space instead of rating space |
 | 1.11.0 | prod | 2026-05-15 22:57 | pending | VERSION.md: auto-stamp 1.11.0 test deploy |
 | 1.11.0 | test | 2026-05-15 22:54 | pending | Fix column visibility defaults not applied after reset |
 | 1.11.0 | test | 2026-05-15 22:40 | pending | Add 'Reset to defaults' button in Settings panel |
