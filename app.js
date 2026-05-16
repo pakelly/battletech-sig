@@ -2011,7 +2011,11 @@ function runQuery() {
         }
       }
       allSigValues.sort((a, b) => a - b);
-      const breaks = allSigValues.length > 0 ? jenksBreaks(allSigValues, 5) : [];
+      // Log-transform before Jenks to handle exponential sig distribution.
+      // Finds natural breaks in log space, then maps breaks back to raw space.
+      const logValues = allSigValues.map(v => Math.log2(v));
+      const logBreaks = logValues.length > 0 ? jenksBreaks(logValues, 5) : [];
+      const breaks = logBreaks.map(b => Math.pow(2, b));
       for (const f of scopedFactions) {
         for (const row of rows) {
           const v = row.sig?.[f] || 0;
