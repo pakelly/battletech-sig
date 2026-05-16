@@ -49,6 +49,10 @@ echo "  Version: $APP_VER"
 sed -i "s|app\.js\(?v=[^\"']*\)\?|app.js?v=$APP_VER|g" index.html
 sed -i "s|style\.css\(?v=[^\"']*\)\?|style.css?v=$APP_VER|g" index.html
 
+# Stamp deploy timestamp into app.js
+DEPLOY_TIME=$(TZ=UTC date '+%Y%m%d.%H%M')
+sed -i "s|const DEPLOY_TIME = .*|const DEPLOY_TIME = '$DEPLOY_TIME';|" app.js
+
 echo ""
 echo "=== Step 5: Clean up ==="
 rm -rf app
