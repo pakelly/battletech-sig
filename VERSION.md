@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.15.1 | 2026-05-17 17:49 UTC | pending |
-| test | 1.15.1 | 2026-05-17 17:35 UTC | pending |
+| test | 1.16.0 | 2026-05-17 19:34 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.16.0 | test | 2026-05-17 19:34 | pending | Single-faction view: add DR, Prob columns; default sort by DR desc |
 | 1.15.1 | prod | 2026-05-17 17:49 | pending | VERSION.md: auto-stamp 1.15.1 test deploy |
 | 1.15.1 | test | 2026-05-17 17:35 | pending | Legend: default to expanded |
 | 1.15.0 | test | 2026-05-17 17:27 | pending | Legend: replace dismiss with expand/collapse toggle |
