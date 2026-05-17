@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.13.3';
-const DEPLOY_TIME = '20260517.0038';
+const APP_VERSION = '1.14.0';
+const DEPLOY_TIME = '20260517.1536';
 
 let DATA = null; // app-data.json
 
@@ -2101,14 +2101,14 @@ function runQuery() {
     });
   }
   
-  // Determine if we're in single-class view (skip WCD mixing for signature)
-  const singleClassFilter = parsed.class && parsed.class.op === '=' && parsed.class.values.length === 1;
-  
   // Compute global signature scores (weight × z-score)
+  // Signature ALWAYS uses WCD mixing — even in single-class view — because sig
+  // answers "how much does this mech belong to this faction?" which includes
+  // weight class preferences (e.g. Lyran heavy bias boosts their heavy sigs).
   const allFactionCodes = Object.keys(DATA.factions);
   if (scopedFactions.length > 0) {
     for (const row of rows) {
-      const wcdParams = singleClassFilter ? null : { chassisClass: row.meta?.class, eraYear };
+      const wcdParams = { chassisClass: row.meta?.class, eraYear };
       row.sig = computeSignature(row.weights, row.mul || {}, scopedFactions, allFactionCodes, wcdParams, row.meta?.tech, row.rawW, probRatingIdx);
     }
     
