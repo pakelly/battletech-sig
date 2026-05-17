@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.14.9';
-const DEPLOY_TIME = '20260517.1702';
+const APP_VERSION = '1.15.0';
+const DEPLOY_TIME = '20260517.1727';
 
 let DATA = null; // app-data.json
 
@@ -1897,7 +1897,6 @@ function runQuery() {
   const modeIndicator = document.getElementById('mode-indicator');
   
   const columnLegend = document.getElementById('column-legend');
-  const legendDismissed = localStorage.getItem('bt-sig-legend-dismissed') === '1';
   
   if (!queryStr) {
     landing.style.display = '';
@@ -1910,7 +1909,7 @@ function runQuery() {
   }
   
   landing.style.display = 'none';
-  if (columnLegend && !legendDismissed) columnLegend.classList.remove('hidden');
+  if (columnLegend) columnLegend.classList.remove('hidden');
   
   const parsed = parseQuery(queryStr);
   renderChips(parsed);
@@ -2597,13 +2596,21 @@ function initHelp() {
   const overlay = document.getElementById('help-overlay');
   if (!overlay) return;
 
-  // Column legend dismiss
-  const legendDismissBtn = document.getElementById('legend-dismiss');
-  if (legendDismissBtn) {
-    legendDismissBtn.addEventListener('click', () => {
-      const legend = document.getElementById('column-legend');
-      if (legend) legend.classList.add('hidden');
-      localStorage.setItem('bt-sig-legend-dismissed', '1');
+  // Column legend expand/collapse
+  const legendHeader = document.getElementById('legend-header');
+  const legendToggle = document.getElementById('legend-toggle');
+  const legendBody = document.getElementById('legend-body');
+  if (legendHeader && legendToggle && legendBody) {
+    const savedState = localStorage.getItem('bt-sig-legend-expanded');
+    // Default to collapsed
+    if (savedState === '1') {
+      legendBody.classList.remove('hidden');
+      legendToggle.classList.add('expanded');
+    }
+    legendHeader.addEventListener('click', () => {
+      const isHidden = legendBody.classList.toggle('hidden');
+      legendToggle.classList.toggle('expanded', !isHidden);
+      localStorage.setItem('bt-sig-legend-expanded', isHidden ? '0' : '1');
     });
   }
 
