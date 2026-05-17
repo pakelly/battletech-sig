@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.13.0 | 2026-05-16 20:29 UTC | pending |
-| test | 1.13.0 | 2026-05-16 17:34 UTC | pending |
+| test | 1.13.1 | 2026-05-17 00:14 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.13.1 | test | 2026-05-17 00:14 | pending | Fix cross-tier averaging: compute in probability space (Jensen's fix) |
 | 1.13.0 | prod | 2026-05-16 20:29 | pending | VERSION.md: auto-stamp 1.13.0 test deploy |
 | 1.13.0 | test | 2026-05-16 17:34 | pending | Rename Signature to Distinctiveness Rating (DR1-DR5) |
 | 1.12.5 | prod | 2026-05-16 15:03 | pending | VERSION.md: auto-stamp 1.12.5 test deploy |
