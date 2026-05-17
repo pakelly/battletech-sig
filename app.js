@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.14.8';
-const DEPLOY_TIME = '20260517.1645';
+const APP_VERSION = '1.14.9';
+const DEPLOY_TIME = '20260517.1702';
 
 let DATA = null; // app-data.json
 
@@ -1897,6 +1897,7 @@ function runQuery() {
   const modeIndicator = document.getElementById('mode-indicator');
   
   const columnLegend = document.getElementById('column-legend');
+  const legendDismissed = localStorage.getItem('bt-sig-legend-dismissed') === '1';
   
   if (!queryStr) {
     landing.style.display = '';
@@ -1909,7 +1910,7 @@ function runQuery() {
   }
   
   landing.style.display = 'none';
-  if (columnLegend) columnLegend.classList.remove('hidden');
+  if (columnLegend && !legendDismissed) columnLegend.classList.remove('hidden');
   
   const parsed = parseQuery(queryStr);
   renderChips(parsed);
@@ -2595,6 +2596,16 @@ function initSettings() {
 function initHelp() {
   const overlay = document.getElementById('help-overlay');
   if (!overlay) return;
+
+  // Column legend dismiss
+  const legendDismissBtn = document.getElementById('legend-dismiss');
+  if (legendDismissBtn) {
+    legendDismissBtn.addEventListener('click', () => {
+      const legend = document.getElementById('column-legend');
+      if (legend) legend.classList.add('hidden');
+      localStorage.setItem('bt-sig-legend-dismissed', '1');
+    });
+  }
 
   document.getElementById('help-btn').addEventListener('click', () => {
     overlay.classList.remove('hidden');
