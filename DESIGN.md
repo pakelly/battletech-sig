@@ -618,8 +618,11 @@ Stat columns: Spread, Span, Avg Pref.
 
 ### Single Faction Roster View
 
-For single-faction queries without explicit sort/sig. Simpler table:
-- Chassis, Tons, Class, Weight, Usage bar
+For single-faction queries without explicit sort/sig. Same key metrics as multi-faction view:
+- Chassis, Tons, Class, BV (if available), DR (tier + raw score), Prob, Availability (numeric weight + bar)
+- Default sort: DR desc (most iconic mechs first)
+- DR and Prob use the same heat-colored styling as multi-faction view
+- Availability bar shows raw weight with percentage fill relative to the faction's max weight
 
 ### Chassis Detail Drill-Down
 
