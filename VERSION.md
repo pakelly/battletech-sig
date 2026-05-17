@@ -4,13 +4,14 @@
 
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
-| prod | 1.14.0 | 2026-05-17 15:42 UTC | pending |
+| prod | 1.14.1 | 2026-05-17 15:58 UTC | pending |
 | test | 1.14.1 | 2026-05-17 15:57 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.14.1 | prod | 2026-05-17 15:58 | pending | VERSION.md: auto-stamp 1.14.1 test deploy |
 | 1.14.1 | test | 2026-05-17 15:57 | pending | Add loading spinner + CDN-friendly cache-bust |
 | 1.14.0 | prod | 2026-05-17 15:42 | pending | VERSION.md: auto-stamp 1.14.0 test deploy |
 | 1.14.0 | test | 2026-05-17 15:36 | pending | sig: always apply WCD mixing, even in single-class view |
