@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.13.2';
-const DEPLOY_TIME = '20260517.0033';
+const APP_VERSION = '1.13.3';
+const DEPLOY_TIME = '20260517.0034';
 
 let DATA = null; // app-data.json
 
@@ -1716,44 +1716,66 @@ function removeFieldFromQuery(field) {
   const bar = document.getElementById('query-bar');
   let q = bar.value;
   
-  // Simple removal - strip the field expression
-  // Patterns handle both = and != operators, and optional NOT prefix
-  const patterns = {
-    'faction': /\b(?:NOT\s+)?faction\s*[!=]=?\s*(\([^)]+\)|"[^"]+"|[^\s]+)/gi,
-    'chassis': /\b(?:NOT\s+)?chassis\s*[!=]=?\s*(\([^)]+\)|"[^"]+"|[^\s]+)/gi,
-    'class': /\b(?:NOT\s+)?class\s*[!=]=?\s*(\([^)]+\)|"[^"]+"|[^\s]+)/gi,
-    'type': /\b(?:NOT\s+)?type\s*[!=]=?\s*\w+/gi,
-    'tech': /\b(?:NOT\s+)?tech\s*[!=]=?\s*\w+/gi,
-    'spread': /\bspread\s*[><=!]+\s*[\d.]+/gi,
-    'span': /\bspan\s*[><=!]+\s*[\d.]+/gi,
-    'avg-weight': /\bavg-weight\s*[><=!]+\s*[\d.]+/gi,
-    'weight': /\b(?<![-\w])weight\s*[><=!]+\s*[\d.]+/gi,
-    'sig': /\b(?<![-\w])(?:sig(?:nature)?|dr|distinctiveness)\s*[><=!]+\s*[\d.]+/gi,
-    'tons': /\b(?:tons|tonnage)\s*[><=!]+\s*[\d.]+/gi,
-    'bv': /\b(?:bv|battlevalue)\s*[><=!]+\s*[\d.]+/gi,
-    'year': /\byear\s*=\s*\d+/gi,
-    'era': /\bera\s*=\s*\w+/gi,
-    'rating': /\brating\s*=\s*(\([^)]+\)|\w+)/gi,
-    'mode': /\bmode\s*=\s*\w+/gi,
-    'sort': /\bsort\s+by\s+.+$/gi,
-  };
+  // Unified field removal using two generic patterns:
+  // 1. "sort by ..." — special case, always at end
+  // 2. Everything else: [NOT] <fieldName> <operator> <value>
+  //    where value can be: (parenthesized group), "quoted string", or bare word/number
+  //
+  // Field aliases map to canonical names for matching.
   
-  // Handle faction-specific weight/sig filters (e.g. DC-weight>5, FS-sig>3)
-  const factionFieldMatch = field.match(/^([A-Z]+)-(weight|sig)$/);
-  if (factionFieldMatch) {
-    const [, fCode, metric] = factionFieldMatch;
-    const factionPattern = new RegExp(`\\b${fCode}[-\\s](?:${metric}|pref|preference|signature)\\s*[><=!]+\\s*[\\d.]+`, 'gi');
-    q = q.replace(factionPattern, '').replace(/\s+/g, ' ').trim();
+  if (field === 'sort') {
+    q = q.replace(/\bsort\s+by\s+.+$/gi, '').trim();
     bar.value = q;
     runQuery();
     return;
   }
   
-  if (patterns[field]) {
-    q = q.replace(patterns[field], '').replace(/\s+/g, ' ').trim();
+  // Map field name to all recognized aliases for that field
+  const fieldAliases = {
+    'faction': ['faction'],
+    'chassis': ['chassis'],
+    'class': ['class'],
+    'type': ['type'],
+    'tech': ['tech'],
+    'spread': ['spread'],
+    'span': ['span'],
+    'avg-weight': ['avg-weight', 'avg-pref'],
+    'weight': ['weight'],
+    'sig': ['sig', 'signature', 'dr', 'distinctiveness'],
+    'tons': ['tons', 'tonnage'],
+    'bv': ['bv', 'battlevalue'],
+    'year': ['year'],
+    'era': ['era'],
+    'rating': ['rating'],
+    'mode': ['mode'],
+    'family': ['family'],
+    'industrial': ['industrial'],
+  };
+  
+  // Handle faction-specific filters (e.g. DC-weight>5, FS-sig>3, DC-dr>2)
+  const factionFieldMatch = field.match(/^([A-Z]+)-(weight|sig|dr)$/i);
+  if (factionFieldMatch) {
+    const fCode = factionFieldMatch[1];
+    const metric = factionFieldMatch[2];
+    const aliases = metric === 'weight' ? 'weight|pref|preference' : 'sig|signature|dr|distinctiveness';
+    const pat = new RegExp(`\\b${fCode}[-\\s](?:${aliases})\\s*[><=!]+\\s*[\\d.]+`, 'gi');
+    q = q.replace(pat, '').replace(/\s+/g, ' ').trim();
     bar.value = q;
     runQuery();
+    return;
   }
+  
+  // Build regex from aliases
+  // Generic value pattern: parenthesized group, quoted string, or bare token (word/number/dot)
+  const aliases = fieldAliases[field] || [field];
+  const namePattern = aliases.map(a => a.replace(/[-]/g, '[-]')).join('|');
+  const pat = new RegExp(
+    `\\b(?:NOT\\s+)?(?:${namePattern})\\s*[><=!]+\\s*(?:\\([^)]+\\)|"[^"]+"|[^\\s]+)`,
+    'gi'
+  );
+  q = q.replace(pat, '').replace(/\s+/g, ' ').trim();
+  bar.value = q;
+  runQuery();
 }
 
 // ── HTML Helpers ──
