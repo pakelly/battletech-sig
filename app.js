@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.13.1';
-const DEPLOY_TIME = '20260517.0022';
+const APP_VERSION = '1.13.2';
+const DEPLOY_TIME = '20260517.0033';
 
 let DATA = null; // app-data.json
 
@@ -1733,7 +1733,7 @@ function removeFieldFromQuery(field) {
     'bv': /\b(?:bv|battlevalue)\s*[><=!]+\s*[\d.]+/gi,
     'year': /\byear\s*=\s*\d+/gi,
     'era': /\bera\s*=\s*\w+/gi,
-    'rating': /\brating\s*=\s*\w+/gi,
+    'rating': /\brating\s*=\s*(\([^)]+\)|\w+)/gi,
     'mode': /\bmode\s*=\s*\w+/gi,
     'sort': /\bsort\s+by\s+.+$/gi,
   };
