@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.14.0';
-const DEPLOY_TIME = '20260517.1542';
+const APP_VERSION = '1.14.1';
+const DEPLOY_TIME = '20260517.1557';
 
 let DATA = null; // app-data.json
 
@@ -2275,7 +2275,7 @@ function sortRowsInPlace(rows, sortSpec) {
 
 async function init() {
   try {
-    const resp = await fetch('app-data.json?v=' + Date.now());
+    const resp = await fetch('app-data.json?v=' + APP_VERSION);
     DATA = await resp.json();
     applyFamilyOverridesToData(); // apply user's saved family preferences
     
@@ -2291,9 +2291,14 @@ async function init() {
       }
       document.getElementById('deploy-stamp').textContent = parts.join(' • ');
     }
+    // Hide loading overlay
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) loadingOverlay.classList.add('hidden');
   } catch (err) {
     console.error('Failed to load app-data.json:', err);
     document.getElementById('status-text').textContent = 'Error loading data!';
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) loadingOverlay.classList.add('hidden');
     return;
   }
   
