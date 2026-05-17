@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.14.7 | 2026-05-17 16:43 UTC | pending |
-| test | 1.14.7 | 2026-05-17 16:42 UTC | pending |
+| test | 1.14.8 | 2026-05-17 16:46 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.14.8 | test | 2026-05-17 16:46 | pending | Add column legend (DR + Weight) above results, visible on query |
 | 1.14.7 | prod | 2026-05-17 16:43 | pending | VERSION.md: auto-stamp 1.14.7 test deploy |
 | 1.14.7 | test | 2026-05-17 16:42 | pending | Add Clan Sea Fox to Draconis Reach query |
 | 1.14.6 | test | 2026-05-17 16:40 | pending | Add both Hot Spots queries: Hinterlands (LC/CW/CJF/CHH/MERC) and Draconis Reach (DC/FS/RA/MERC) |
