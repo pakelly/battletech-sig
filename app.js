@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.18.1';
-const DEPLOY_TIME = '20260517.2322';
+const APP_VERSION = '1.18.2';
+const DEPLOY_TIME = '20260517.2332';
 
 let DATA = null; // app-data.json
 
@@ -2237,10 +2237,14 @@ function runQuery() {
   // answers "how much does this mech belong to this faction?" which includes
   // weight class preferences (e.g. Lyran heavy bias boosts their heavy sigs).
   const allFactionCodes = Object.keys(DATA.factions);
-  if (scopedFactions.length > 0) {
+  // Compute sig for scoped factions, or ALL fielding factions if none scoped
+  const sigFactions = scopedFactions.length > 0 ? scopedFactions : null;
+  {
     for (const row of rows) {
       const wcdParams = { chassisClass: row.meta?.class, eraYear };
-      row.sig = computeSignature(row.weights, row.mul || {}, scopedFactions, allFactionCodes, wcdParams, row.meta?.tech, row.rawW, probRatingIdx);
+      const factions = sigFactions || Object.keys(row.weights).filter(f => (row.weights[f] || 0) > 0);
+      if (factions.length === 0) continue;
+      row.sig = computeSignature(row.weights, row.mul || {}, factions, allFactionCodes, wcdParams, row.meta?.tech, row.rawW, probRatingIdx);
     }
     
     // Compute tiers using GLOBAL Jenks Natural Breaks across all displayed factions.
@@ -2248,9 +2252,12 @@ function runQuery() {
     // making cross-faction tier comparison meaningful.
     {
       const allSigValues = [];
-      for (const f of scopedFactions) {
-        for (const row of rows) {
-          const v = row.sig?.[f] || 0;
+      // Collect all sig values — from scoped factions, or all factions with sig data
+      for (const row of rows) {
+        if (!row.sig) continue;
+        const factions = sigFactions || Object.keys(row.sig).filter(k => !k.includes('_') && row.sig[k] > 0);
+        for (const f of factions) {
+          const v = row.sig[f] || 0;
           if (v > 0) allSigValues.push(v);
         }
       }
@@ -2260,10 +2267,12 @@ function runQuery() {
       const logValues = allSigValues.map(v => Math.log2(v));
       const logBreaks = logValues.length > 0 ? jenksBreaks(logValues, 5) : [];
       const breaks = logBreaks.map(b => Math.pow(2, b));
-      for (const f of scopedFactions) {
-        for (const row of rows) {
-          const v = row.sig?.[f] || 0;
-          if (v > 0 && row.sig) {
+      for (const row of rows) {
+        if (!row.sig) continue;
+        const factions = sigFactions || Object.keys(row.sig).filter(k => !k.includes('_') && row.sig[k] > 0);
+        for (const f of factions) {
+          const v = row.sig[f] || 0;
+          if (v > 0) {
             row.sig[f + '_tier'] = assignTierFromBreaks(v, breaks);
           }
         }
