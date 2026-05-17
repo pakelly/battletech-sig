@@ -51,8 +51,8 @@
 | 3 | CJF 3150 data inaccurate | Comment 2 | 🔴 | MegaMek weights may not respect MUL extinction. Mode B should filter but may not be working for Clan chassis. Investigate MUL filtering for CJF. |
 | 4 | Nova prob way too low (0.47) | Comment 2 | 🔴 | May be a tonnage-split casualty or WCD issue. Nova = 50t Clan OmniMech. Check if split affected it. |
 | 5 | Sort difference unexplained | Comment 2 | 🟡 | Default sort = weight desc; sig desc = different metric. UI doesn't explain this. Legend could mention it. |
-| 6 | Clan IS-name aliases broken | Comment 2 | 🔴 | Thor→Thorn, Nova→Supernova, Black Hawk→Black Knight, Grand Summoner→Grand Dragon. Need Clan reporting name aliases in chassis resolution. |
-| 7 | Space-in-name search broken | Comment 2 | 🔴 | "King Crab" returns nothing. Likely partial-match logic failing on multi-word names. |
+| 6 | Clan IS-name aliases broken | Comment 2 | ✅ Done v1.18.0 | Auto-built alias map from parenthetical naming. Thor→Thor (Summoner), Nova→Black Hawk (Nova), Hel→Loki Mk II (Hel), etc. |
+| 7 | Multi-word chassis search | Comment 2 | ✅ Done v1.18.0 | Auto-quoting multi-word values + alias resolution. King Crab, Grand Summoner, Timber Wolf all work. |
 
 ---
 
