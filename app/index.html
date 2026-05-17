@@ -250,10 +250,15 @@ signature = weight × max(0, z)</pre>
     </div>
 
     <div id="column-legend" class="hidden">
-      <button id="legend-dismiss" title="Dismiss">✕</button>
-      <p><strong>DR</strong> (Distinctiveness Rating) — How strongly a mech is associated with a faction. DR1 = iconic, DR5 = incidental. A mech only one faction fields scores high; a mech everyone uses scores low.</p>
-      <p><strong>Prob</strong> (Probability Weight) — How likely this mech is to actually show up in a faction's forces, accounting for both availability and the faction's weight class preferences. Higher = more battlefield presence.</p>
-      <p>For the full breakdown, hit the <strong>?</strong> button above.</p>
+      <div id="legend-header">
+        <span class="legend-summary"><strong>DR</strong> = faction distinctiveness · <strong>Prob</strong> = battlefield likelihood</span>
+        <button id="legend-toggle" title="Expand/collapse">▸</button>
+      </div>
+      <div id="legend-body" class="hidden">
+        <p><strong>DR</strong> (Distinctiveness Rating) — How strongly a mech is associated with a faction. DR1 = iconic, DR5 = incidental. A mech only one faction fields scores high; a mech everyone uses scores low.</p>
+        <p><strong>Prob</strong> (Probability Weight) — How likely this mech is to actually show up in a faction's forces, accounting for both availability and the faction's weight class preferences. Higher = more battlefield presence.</p>
+        <p>For the full breakdown, hit the <strong>?</strong> button above.</p>
+      </div>
     </div>
 
     <div id="results-area">
