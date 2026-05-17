@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.15.1';
-const DEPLOY_TIME = '20260517.1749';
+const APP_VERSION = '1.16.0';
+const DEPLOY_TIME = '20260517.1933';
 
 let DATA = null; // app-data.json
 
@@ -1103,11 +1103,21 @@ function renderSingleFaction(rows, faction, eraYear) {
   
   const thead = document.createElement('thead');
   const singleHasBV = rows.some(r => r.bvRange);
-  thead.innerHTML = `<tr><th>Chassis</th><th>Tons</th><th>Class</th>${singleHasBV ? '<th>BV</th>' : ''}<th>Weight</th><th>Usage</th></tr>`;
+  const singleHasSig = rows.some(r => r.sig?.[faction] > 0);
+  thead.innerHTML = `<tr><th>Chassis</th><th>Tons</th><th>Class</th>${singleHasBV ? '<th>BV</th>' : ''}${singleHasSig ? '<th>DR</th>' : ''}<th>Prob</th><th>Availability</th></tr>`;
   table.appendChild(thead);
   
   // Filter to rows with weight > 0
   const activeRows = rows.filter(r => (r.weights[faction] || 0) > 0);
+
+  // Default sort: DR desc (most iconic first) if sig data exists
+  if (singleHasSig) {
+    activeRows.sort((a, b) => {
+      const sa = a.sig?.[faction] || 0;
+      const sb = b.sig?.[faction] || 0;
+      return sb - sa;
+    });
+  }
 
   const tbody = document.createElement('tbody');
   table.appendChild(tbody);
@@ -1135,6 +1145,29 @@ function renderSingleFaction(rows, faction, eraYear) {
           bvCell = '<td class="stat-col bv-col">—</td>';
         }
       }
+
+      // DR cell
+      let drCell = '';
+      if (singleHasSig) {
+        const sigVal = row.sig?.[faction] || 0;
+        const sigTier = row.sig?.[faction + '_tier'] || 0;
+        if (sigVal > 0) {
+          const sigHeat = sigTierToHeat(sigTier);
+          drCell = `<td class="faction-cell ${sigHeat}" data-chassis="${escAttr(row.name)}" data-faction="${faction}"><span class="pref-value">DR${sigTier}</span><span class="sig-raw">${sigVal.toFixed(1)}</span></td>`;
+        } else {
+          drCell = `<td class="faction-cell heat-1" data-chassis="${escAttr(row.name)}" data-faction="${faction}"><span class="pref-value">DR5</span></td>`;
+        }
+      }
+
+      // Prob cell
+      const bw = row.biasedWeights?.[faction] || 0;
+      let probCell;
+      if (bw > 0) {
+        const bwCls = bwHeatClass(bw);
+        probCell = `<td class="faction-cell ${bwCls}" data-chassis="${escAttr(row.name)}" data-faction="${faction}"><span class="pref-value">${bw.toFixed(2)}</span></td>`;
+      } else {
+        probCell = `<td class="faction-cell no-data">—</td>`;
+      }
       
       const tr = document.createElement('tr');
       tr.className = 'faction-roster-row';
@@ -1143,8 +1176,9 @@ function renderSingleFaction(rows, faction, eraYear) {
         <td class="tonnage-col">${formatTonnage(row.meta)}</td>
         <td><span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>
         ${bvCell}
-        <td class="stat-col">${w.toFixed(1)}</td>
-        <td><div class="weight-bar-container"><div class="weight-bar" style="width:${pct}%"></div></div></td>
+        ${drCell}
+        ${probCell}
+        <td><div class="weight-bar-container"><div class="weight-bar" style="width:${pct}%"></div><span class="weight-bar-label">${w.toFixed(1)}</span></div></td>
       `;
       tbody.appendChild(tr);
     }

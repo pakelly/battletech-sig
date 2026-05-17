@@ -1049,6 +1049,7 @@ details[open] > .help-section-title::before {
 }
 
 .weight-bar-container {
+  position: relative;
   width: 100%;
   max-width: 200px;
   height: 16px;
@@ -1062,6 +1063,16 @@ details[open] > .help-section-title::before {
   background: var(--accent);
   border-radius: 3px;
   transition: width 0.3s;
+}
+
+.weight-bar-label {
+  position: absolute;
+  right: 4px;
+  top: 0;
+  line-height: 16px;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  pointer-events: none;
 }
 
 /* ── Mech View ── */
