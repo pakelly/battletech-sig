@@ -549,6 +549,10 @@ All text fields support the `=` and `!=` operators. Multi-value OR is supported 
 
 All string matching is case-insensitive with partial match support. Faction codes (DC, FS, CJF), full names, and aliases all work.
 
+**Chassis name aliases:** Many Clan OmniMechs have both an IS reporting name and a Clan name (e.g., "Thor (Summoner)", "Mad Cat (Timber Wolf)"). The parenthetical naming convention is auto-parsed at runtime to build an alias map. Searching for either name (e.g., `chassis=Summoner` or `chassis=Thor`) resolves to the full entry. This also handles multi-word Clan names (e.g., `chassis=Timber Wolf`, `chassis=Ice Ferret`).
+
+**Multi-word chassis names:** The query parser supports quoted values for multi-word names: `chassis="King Crab"`. Unquoted multi-word names are also handled by attempting greedy matching against known chassis names before falling back to single-token parsing.
+
 ### Shortcuts
 
 | Shortcut | Expands to |

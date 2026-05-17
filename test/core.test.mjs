@@ -940,4 +940,45 @@ describe('Chassis Resolution', () => {
     const result = F.resolveChassis('AWS');
     assert.strictEqual(result, 'Awesome');
   });
+
+  // Clan IS/Clan name aliases
+  it('resolves Clan name "Summoner" to Thor (Summoner)', () => {
+    assert.strictEqual(F.resolveChassis('Summoner'), 'Thor (Summoner)');
+  });
+
+  it('resolves IS reporting name "Thor" to Thor (Summoner)', () => {
+    assert.strictEqual(F.resolveChassis('Thor'), 'Thor (Summoner)');
+  });
+
+  it('resolves "Timber Wolf" to Mad Cat (Timber Wolf)', () => {
+    assert.strictEqual(F.resolveChassis('Timber Wolf'), 'Mad Cat (Timber Wolf)');
+  });
+
+  it('resolves "Mad Cat" to Mad Cat (Timber Wolf)', () => {
+    assert.strictEqual(F.resolveChassis('Mad Cat'), 'Mad Cat (Timber Wolf)');
+  });
+
+  it('resolves "Hellbringer" to Loki (Hellbringer)', () => {
+    assert.strictEqual(F.resolveChassis('Hellbringer'), 'Loki (Hellbringer)');
+  });
+
+  it('resolves "Hel" to Loki Mk II (Hel)', () => {
+    assert.strictEqual(F.resolveChassis('Hel'), 'Loki Mk II (Hel)');
+  });
+
+  it('resolves "Nova" to Black Hawk (Nova)', () => {
+    assert.strictEqual(F.resolveChassis('Nova'), 'Black Hawk (Nova)');
+  });
+
+  it('resolves "King Crab" to King Crab', () => {
+    assert.strictEqual(F.resolveChassis('King Crab'), 'King Crab');
+  });
+
+  it('resolves "Grand Summoner" to Thor II (Grand Summoner)', () => {
+    assert.strictEqual(F.resolveChassis('Grand Summoner'), 'Thor II (Grand Summoner)');
+  });
+
+  it('does not resolve "Thor" to Thorn (alias takes priority)', () => {
+    assert.notStrictEqual(F.resolveChassis('Thor'), 'Thorn');
+  });
 });
