@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.15.1 | 2026-05-17 17:49 UTC | pending |
-| test | 1.18.0 | 2026-05-17 20:42 UTC | pending |
+| test | 1.18.1 | 2026-05-17 23:22 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.18.1 | test | 2026-05-17 23:22 | pending | Mech view: add DR + Prob columns, sort by sig desc |
 | 1.18.0 | test | 2026-05-17 20:42 | pending | Clan name aliases + multi-word chassis search |
 | 1.17.0 | test | 2026-05-17 19:38 | pending | Split same-name chassis with different tonnages (Firestarter fix) |
 | 1.16.0 | test | 2026-05-17 19:34 | pending | Single-faction view: add DR, Prob columns; default sort by DR desc |
