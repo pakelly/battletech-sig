@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.18.0';
+const APP_VERSION = '1.18.1';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -1268,26 +1268,52 @@ function renderMechView(rows, eraYear, chassisName) {
       <div class="mech-view-meta">${formatTonnage(meta)} ${formatClass(meta)} — Intro: ${meta.intro || 'Unknown'} — ${meta.tech || ''}</div>
     `;
     
-    // Get all factions sorted by weight
+    // Get all factions sorted by sig (most distinctive first), fallback to weight
+    const hasSig = row.sig && Object.values(row.sig).some(v => typeof v === 'number' && v > 0);
     const factionWeights = Object.entries(row.weights)
       .filter(([f, w]) => w > 0)
-      .sort((a, b) => b[1] - a[1]);
-    
-    const maxW = factionWeights.length > 0 ? factionWeights[0][1] : 1;
+      .sort((a, b) => {
+        if (hasSig) return (row.sig?.[b[0]] || 0) - (row.sig?.[a[0]] || 0);
+        return b[1] - a[1];
+      });
     
     const table = document.createElement('table');
     table.className = 'data-table';
-    table.innerHTML = '<thead><tr><th>Faction</th><th>Weight</th><th>Usage</th></tr></thead>';
+    table.innerHTML = `<thead><tr><th>Faction</th>${hasSig ? '<th>DR</th>' : ''}<th>Prob</th><th>Weight</th></tr></thead>`;
     
     const tbody = document.createElement('tbody');
     for (const [f, w] of factionWeights) {
-      const pct = (w / maxW * 100);
       const fName = getFactionFullName(f);
+      
+      // DR cell
+      let drCell = '';
+      if (hasSig) {
+        const sigVal = row.sig?.[f] || 0;
+        const sigTier = row.sig?.[f + '_tier'] || 0;
+        if (sigVal > 0) {
+          const sigHeat = sigTierToHeat(sigTier);
+          drCell = `<td class="faction-cell ${sigHeat}" data-chassis="${escAttr(row.name)}" data-faction="${f}"><span class="pref-value">DR${sigTier}</span><span class="sig-raw">${sigVal.toFixed(1)}</span></td>`;
+        } else {
+          drCell = `<td class="faction-cell heat-1" data-chassis="${escAttr(row.name)}" data-faction="${f}"><span class="pref-value">DR5</span></td>`;
+        }
+      }
+
+      // Prob cell
+      const bw = row.biasedWeights?.[f] || 0;
+      let probCell;
+      if (bw > 0) {
+        const bwCls = bwHeatClass(bw);
+        probCell = `<td class="faction-cell ${bwCls}" data-chassis="${escAttr(row.name)}" data-faction="${f}"><span class="pref-value">${bw.toFixed(2)}</span></td>`;
+      } else {
+        probCell = `<td class="faction-cell no-data">—</td>`;
+      }
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="cursor:pointer" data-chassis="${escAttr(row.name)}" data-faction="${f}"><strong>${escHtml(f)}</strong> <span style="color:var(--text-dim)">${escHtml(fName)}</span></td>
+        ${drCell}
+        ${probCell}
         <td class="stat-col">${w.toFixed(1)}</td>
-        <td><div class="weight-bar-container"><div class="weight-bar" style="width:${pct}%"></div></div></td>
       `;
       tbody.appendChild(tr);
     }
