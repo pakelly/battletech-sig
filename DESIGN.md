@@ -964,3 +964,4 @@ In-app help rather than a separate docs page because:
 - **Code consolidation:** Decompose `runQuery()` monolith. Clean up dead functions (`assignTier`, `renderMechDetail`, `toRating`).
 
 - **Structured form UI:** Dropdowns and sliders layered on top of the query bar, reading/writing the same query syntax.
+- **CGL plastic filter:** A filter for chassis that exist as official Catalyst Game Labs plastic miniatures (e.g. `plastic=yes`). Highly practical for force-building — no point planning a lance around a mech you can't buy. Data sourcing is the hard part: no single authoritative list exists. Potential sources: CGL store scraping, community-maintained lists (e.g. Sarna's miniatures page), or manual curation. Could also tag which box set each mini comes from.
