@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.13.3 | 2026-05-17 00:39 UTC | pending |
-| test | 1.13.3 | 2026-05-17 00:34 UTC | pending |
+| test | 1.14.0 | 2026-05-17 15:36 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.14.0 | test | 2026-05-17 15:36 | pending | sig: always apply WCD mixing, even in single-class view |
 | 1.13.3 | prod | 2026-05-17 00:39 | pending | VERSION.md: auto-stamp 1.13.3 test deploy |
 | 1.13.3 | test | 2026-05-17 00:34 | pending | Refactor chip removal: unified generic pattern replaces per-field regexes |
 | 1.13.2 | test | 2026-05-17 00:33 | pending | Fix rating chip removal for multi-rating syntax rating=(A OR B) |
