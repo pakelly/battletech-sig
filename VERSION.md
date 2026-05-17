@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.14.1 | 2026-05-17 15:58 UTC | pending |
-| test | 1.14.5 | 2026-05-17 16:38 UTC | pending |
+| test | 1.14.6 | 2026-05-17 16:40 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.14.6 | test | 2026-05-17 16:40 | pending | Add both Hot Spots queries: Hinterlands (LC/CW/CJF/CHH/MERC) and Draconis Reach (DC/FS/RA/MERC) |
 | 1.14.5 | test | 2026-05-17 16:38 | pending | Replace Hinterlands query with Draconis Reach (DC/FS/RA/MERC 3152) |
 | 1.14.4 | test | 2026-05-17 16:34 | pending | Add Hinterlands ilClan era example query (LC/CW/CJF/MERC 3151) |
 | 1.14.3 | test | 2026-05-17 16:20 | pending | Update example queries: add Civil War, Invasion Clans; remove Zeus/DC solo |
