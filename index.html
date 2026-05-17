@@ -17,7 +17,7 @@
   <meta name="twitter:title" content="BattleTech Faction Signatures">
   <meta name="twitter:description" content="Which mechs define a faction? Explore faction identity through mech usage data — find out what makes a Kurita lance feel like Kurita.">
 
-  <link rel="stylesheet" href="style.css?v=1.15.0">
+  <link rel="stylesheet" href="style.css?v=1.15.1">
 </head>
 <body>
   <!-- Loading overlay — visible until app-data.json is loaded -->
@@ -252,9 +252,9 @@ signature = weight × max(0, z)</pre>
     <div id="column-legend" class="hidden">
       <div id="legend-header">
         <span class="legend-summary"><strong>DR</strong> = faction distinctiveness · <strong>Prob</strong> = battlefield likelihood</span>
-        <button id="legend-toggle" title="Expand/collapse">▸</button>
+        <button id="legend-toggle" class="expanded" title="Expand/collapse">▸</button>
       </div>
-      <div id="legend-body" class="hidden">
+      <div id="legend-body">
         <p><strong>DR</strong> (Distinctiveness Rating) — How strongly a mech is associated with a faction. DR1 = iconic, DR5 = incidental. A mech only one faction fields scores high; a mech everyone uses scores low.</p>
         <p><strong>Prob</strong> (Probability Weight) — How likely this mech is to actually show up in a faction's forces, accounting for both availability and the faction's weight class preferences. Higher = more battlefield presence.</p>
         <p>For the full breakdown, hit the <strong>?</strong> button above.</p>
@@ -298,6 +298,6 @@ signature = weight × max(0, z)</pre>
     <p class="footer-dim">BattleTech is a registered trademark of The Topps Company, Inc. This is an unofficial fan tool.</p>
   </footer>
 
-  <script src="app.js?v=1.15.0"></script>
+  <script src="app.js?v=1.15.1"></script>
 </body>
 </html>

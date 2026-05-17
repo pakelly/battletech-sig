@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.15.0';
-const DEPLOY_TIME = '20260517.1727';
+const APP_VERSION = '1.15.1';
+const DEPLOY_TIME = '20260517.1734';
 
 let DATA = null; // app-data.json
 
@@ -2602,10 +2602,10 @@ function initHelp() {
   const legendBody = document.getElementById('legend-body');
   if (legendHeader && legendToggle && legendBody) {
     const savedState = localStorage.getItem('bt-sig-legend-expanded');
-    // Default to collapsed
-    if (savedState === '1') {
-      legendBody.classList.remove('hidden');
-      legendToggle.classList.add('expanded');
+    // Default to expanded
+    if (savedState === '0') {
+      legendBody.classList.add('hidden');
+      legendToggle.classList.remove('expanded');
     }
     legendHeader.addEventListener('click', () => {
       const isHidden = legendBody.classList.toggle('hidden');
