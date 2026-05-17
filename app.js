@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.17.0';
-const DEPLOY_TIME = '20260517.1938';
+const APP_VERSION = '1.18.0';
+const DEPLOY_TIME = '20260517.2042';
 
 let DATA = null; // app-data.json
 
@@ -321,6 +321,25 @@ function parseQuery(queryStr) {
   // Normalize NOT prefix: "NOT field=value" → "field!=value"
   q = q.replace(/\bNOT\s+(\w[\w-]*)\s*=/gi, '$1!=');
 
+  // Auto-quote multi-word chassis names: chassis=King Crab → chassis="King Crab"
+  // Greedy match: after chassis= (not already quoted/parenthesized), try 2-4 word combos
+  // and see if they resolve to a known chassis before the regex parser splits on whitespace.
+  if (DATA?.chassis) {
+    q = q.replace(/\bchassis\s*(=|!=)\s*(?!["(])(\S+(?:\s+\S+){0,3})/gi, (full, op, val) => {
+      // Try progressively shorter multi-word combos
+      const words = val.split(/\s+/);
+      for (let len = words.length; len >= 2; len--) {
+        const candidate = words.slice(0, len).join(' ');
+        const resolved = resolveChassis(candidate);
+        if (resolved !== candidate || DATA.chassis[candidate]) {
+          const remainder = words.slice(len).join(' ');
+          return 'chassis' + op + '"' + candidate + '"' + (remainder ? ' ' + remainder : '');
+        }
+      }
+      return full; // no multi-word match, leave as-is
+    });
+  }
+
   // Parse individual field expressions
   // Tokenize: handle parenthesized OR groups
   const fieldRegex = /(\w[\w-]*)\s*(=|!=|>=|<=|>|<)\s*(\([^)]+\)|"[^"]+"|[^\s]+)/gi;
@@ -501,23 +520,58 @@ function resolveFactionGroup(name) {
   return resolved ? [resolved] : [];
 }
 
+// Chassis name alias map — built once from parenthetical naming convention
+// e.g. "Thor (Summoner)" → aliases: "thor" → "Thor (Summoner)", "summoner" → "Thor (Summoner)"
+// Stored on DATA object to survive eval/with scoping in tests.
+function getChassisAliases() {
+  if (DATA._chassisAliases) return DATA._chassisAliases;
+  DATA._chassisAliases = {};
+  if (!DATA?.chassis) return DATA._chassisAliases;
+  for (const name of Object.keys(DATA.chassis)) {
+    const match = name.match(/^(.+?)\s*\((.+)\)$/);
+    if (match) {
+      const primary = match[1].trim().toLowerCase();
+      const alt = match[2].trim().toLowerCase();
+      if (!DATA._chassisAliases[primary]) DATA._chassisAliases[primary] = name;
+      if (!DATA._chassisAliases[alt]) DATA._chassisAliases[alt] = name;
+    }
+  }
+  return DATA._chassisAliases;
+}
+
 function resolveChassis(name) {
   if (!name || !DATA) return name;
   const lower = name.toLowerCase().trim();
   
-  // Check model prefix aliases
-  const upper = name.toUpperCase();
-  if (DATA.modelPrefixes[upper]) return DATA.modelPrefixes[upper];
-  
-  // Exact match
+  // Exact match on full chassis name
   if (DATA.chassis[name]) return name;
   
-  // Case-insensitive match
+  // Case-insensitive exact match on full chassis name
   for (const ch of Object.keys(DATA.chassis)) {
     if (ch.toLowerCase() === lower) return ch;
   }
   
-  // Partial match
+  // Clan IS/Clan name aliases (exact match) — before model prefixes
+  // so "Hel" → Loki Mk II (Hel) instead of HEL prefix → Helios
+  const aliases = getChassisAliases();
+  if (aliases[lower]) return aliases[lower];
+  
+  // Check model prefix aliases (e.g. AWS → Awesome, DRG → Dragon)
+  const upper = name.toUpperCase();
+  if (DATA.modelPrefixes[upper]) return DATA.modelPrefixes[upper];
+  
+  // startsWith: check aliases first (shorter, more specific matches),
+  // then chassis names. This ensures "hel" → Loki Mk II (Hel) via alias
+  // before "hel" → Helios via chassis name startsWith.
+  for (const [alias, target] of Object.entries(aliases)) {
+    if (alias.startsWith(lower)) return target;
+  }
+  
+  for (const ch of Object.keys(DATA.chassis)) {
+    if (ch.toLowerCase().startsWith(lower)) return ch;
+  }
+  
+  // Fallback: includes match
   for (const ch of Object.keys(DATA.chassis)) {
     if (ch.toLowerCase().includes(lower)) return ch;
   }
@@ -1645,13 +1699,26 @@ function getValueSuggestions(field, lower) {
       const latestEra = DATA.eras[DATA.eras.length - 1]?.year || 3160;
       const chassisData = getChassisForEra(String(latestEra), 'on');
       const names = Object.keys(chassisData).sort();
-      return names.filter(n => n.toLowerCase().includes(lower))
-        .slice(0, 12)
+      const results = names.filter(n => n.toLowerCase().includes(lower))
+        .slice(0, 10)
         .map(n => {
           const members = chassisData[n]?._members;
           const hint = members ? members.join(', ') : (DATA.chassis[n]?.class || '');
           return { text: n, hint };
         });
+      // Also suggest from aliases (Clan names, IS reporting names)
+      if (results.length < 10) {
+        const aliases = getChassisAliases();
+        const seen = new Set(results.map(r => r.text));
+        for (const [alias, target] of Object.entries(aliases)) {
+          if (alias.includes(lower) && !seen.has(target)) {
+            seen.add(target);
+            results.push({ text: target, hint: `(${alias})` });
+            if (results.length >= 12) break;
+          }
+        }
+      }
+      return results;
     }
     case 'class':
       return ['Light', 'Medium', 'Heavy', 'Assault']
@@ -2315,6 +2382,7 @@ async function init() {
   try {
     const resp = await fetch('app-data.json?v=' + APP_VERSION);
     DATA = await resp.json();
+    // alias cache resets automatically (stored on DATA object)
     applyFamilyOverridesToData(); // apply user's saved family preferences
     
     // Show version + data info
