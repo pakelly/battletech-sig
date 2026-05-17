@@ -1378,6 +1378,37 @@ details[open] > .help-section-title::before {
   cursor: default;
 }
 
+/* ── Landing Hook ── */
+.landing-hook {
+  color: var(--text-dim);
+  font-size: 1rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+/* ── Footer ── */
+#site-footer {
+  margin-top: 3rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+#site-footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+#site-footer a:hover {
+  text-decoration: underline;
+}
+.footer-dim {
+  color: #484f58;
+  font-size: 0.7rem;
+  margin-top: 0.25rem;
+}
+
 /* ── Responsive ── */
 
 @media (max-width: 768px) {
