@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.14.7 | 2026-05-17 16:43 UTC | pending |
-| test | 1.15.0 | 2026-05-17 17:27 UTC | pending |
+| test | 1.15.1 | 2026-05-17 17:35 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.15.1 | test | 2026-05-17 17:35 | pending | Legend: default to expanded |
 | 1.15.0 | test | 2026-05-17 17:27 | pending | Legend: replace dismiss with expand/collapse toggle |
 | 1.14.9 | test | 2026-05-17 17:03 | pending | Legend: explain Prob instead of Weight, add dismiss button with localStorage persistence |
 | 1.14.8 | test | 2026-05-17 16:46 | pending | Add column legend (DR + Weight) above results, visible on query |
