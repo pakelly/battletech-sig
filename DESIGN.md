@@ -417,8 +417,8 @@ Source: `RATGenerator.generateTable()` in MegaMek, confirmed by official docs (`
 
 1. **Raw availability ratings stay untouched.** A chassis's weight reflects its rarity relative to other chassis of the same weight class, exactly as MegaMek intends.
 2. **When showing all weight classes together (mixed view):** Each chassis's display weight is multiplied by `faction_wcd[class] / sum(faction_wcd)` — the faction's proportion for that weight class. This replicates MegaMek's table-mixing.
-3. **When filtering to a single weight class:** WCD mixing is skipped entirely. You're looking at pure within-class competition, same as generating a weight-class-specific table in MegaMek.
-4. **Signature computation** uses the mixed weights (when all classes shown) since sig answers "what defines this faction's full roster."
+3. **When filtering to a single weight class:** WCD mixing is skipped for **raw weight display** — you're looking at pure within-class competition, same as generating a weight-class-specific table in MegaMek.
+4. **Signature computation always uses WCD mixing**, regardless of class filter. Sig answers "how much does this mech belong to this faction?" — that includes weight class preferences. A heavy mech in a Lyran force is more likely to appear on the battlefield than in a FedSuns force because Lyrans roll on their heavy table more often. Without WCD, a chassis with identical raw weight across all factions gets identical sig scores, losing the faction identity signal from weight class bias.
 
 **Example — DC mediums in mixed view (3039):**
 - DC weight distribution: `[4,2,3,1]` → medium share = 2/10 = 20%
@@ -748,7 +748,7 @@ Vanilla HTML/CSS/JS. No framework. Single-page app loading `app-data.json` at st
 11. **LC is the canonical Lyran code.** MegaMek uses LA (Lyran Alliance) internally; we remap to LC (Lyran Commonwealth) in the output. The Commonwealth is the default/historical faction name spanning most of the timeline. `LA`, `LC`, `lyran`, `steiner` all resolve to `LC`.
 12. **Unit quality default is cross-tier average.** When no `rating=` filter is set, weights are the mean across all equipment rating levels (clamping negatives to 0). This makes broadly-fielded mechs (no `+`/`-` modifier) naturally prominent, while niche elite or garrison mechs are appropriately discounted. Specific tiers available via `rating=A` through `rating=F`.
 13. **MegaMek weights are logarithmic.** The 1–10 scale represents `2^(n/2)` probability weight internally. All mathematical operations (averaging, weight class adjustment, z-score computation) happen in probability space. Display values are converted back to the 1–10 scale.
-14. **Weight class distribution is table-level mixing, not per-chassis adjustment.** Per-faction, per-era tonnage bias from MegaMek's force generator is applied as a display-level mixing proportion when showing all weight classes together, matching MegaMek's `generateTable()` approach. Within a single weight class view, WCD does not apply — chassis compete on raw availability only. This avoids the log-scale distortion that per-chassis probability multiplication caused (crushing low-rated chassis to zero).
+14. **Weight class distribution is table-level mixing, not per-chassis adjustment.** Per-faction, per-era tonnage bias from MegaMek's force generator is applied as a display-level mixing proportion when showing all weight classes together, matching MegaMek's `generateTable()` approach. Within a single weight class view, WCD does not apply to **raw weight display** — chassis compete on raw availability only. However, **signature always uses WCD mixing** even in single-class views, because sig answers "how much does this mech belong to this faction?" which inherently includes weight class preferences. This avoids the log-scale distortion that per-chassis probability multiplication caused (crushing low-rated chassis to zero).
 15. **Salvage is excluded.** MegaMek encodes salvage allocation (e.g., DC capturing FedSuns mechs). We deliberately omit this — salvage muddies faction identity rather than defining it. A captured mech isn't "theirs."
 
 ---
@@ -884,8 +884,7 @@ Tiers are assigned using Jenks Natural Breaks — a statistical method that find
 **How signature is computed:**
 
 ```
-effective_weight = rating × classShare    (mixed-class view)
-effective_weight = rating                  (single-class view)
+effective_weight = rating × classShare    (always, all views)
 
 z = (effective_weight - mean) / stddev    (across ALL factions, non-fielding = 0)
 
@@ -894,7 +893,7 @@ signature = effective_weight × max(0, z)
 
 The z-score measures how unusual this faction's usage is. Non-fielding factions count as 0 in the mean/stddev calculation, so a mech that only one faction fields produces a very high z-score (everyone else pulls the mean down). The product of weight × z captures both signals: the faction uses it a lot AND they stand out from the crowd. Negative z-scores (below-average usage) are clamped to 0 — if a faction uses a mech less than average, it contributes nothing to their identity.
 
-Weight class distribution (classShare) is applied before the z-score calculation. This means a faction's tonnage preferences shape their identity — Lyran heavies get boosted, Lyran lights get dampened, reflecting how the faction actually builds its forces. In single-class views (`class=Heavy`), WCD is skipped because you're already looking at within-class competition.
+Weight class distribution (classShare) is always applied before the z-score calculation, even in single-class views. This means a faction's tonnage preferences always shape their identity — Lyran heavies get boosted, Lyran lights get dampened, reflecting how the faction actually builds its forces. (Raw weight display still skips WCD in single-class views, since within-class competition is the right lens for availability comparison.)
 
 **Heat map coloring:** Faction weight cells are colored on a cool-to-warm scale based on the raw weight value. Weight 1 = coolest, weight 10 = hottest. This is independent of signature — a cell can be warm (high usage) but low signature (everyone else uses it too).
 

@@ -868,6 +868,56 @@ describe('Integrated: Commando/Wolfhound Lyran identity', () => {
 });
 
 // ════════════════════════════════════════════════════════
+// 10b. SIGNATURE ALWAYS USES WCD (even in single-class view)
+// ════════════════════════════════════════════════════════
+
+describe('Signature uses WCD even in single-class view', () => {
+  // When filtering to class=Heavy, sig should still reflect faction weight class
+  // preferences. Lyrans have a higher heavy share than FedSuns, so for a chassis
+  // with identical raw weight across both factions, LC sig should exceed FS sig.
+
+  const allFactions = Object.keys(APP_DATA.factions);
+
+  it('LC heavy sig > FS heavy sig for same raw weight (WCD boosts Lyran heavies)', () => {
+    // Simulate a heavy chassis with equal raw weight for LC and FS
+    const weights = { LC: 3, FS: 3 };
+    const mul = { LC: 1, FS: 1 };
+    // Always pass wcdParams, even though this would be a single-class query
+    const wcdParams = { chassisClass: 'Heavy', eraYear: 3039 };
+    const result = F.computeSignature(weights, mul, ['LC', 'FS'], allFactions, wcdParams);
+
+    assert.ok(result.LC > result.FS,
+      `LC heavy sig (${result.LC.toFixed(4)}) should exceed FS heavy sig (${result.FS.toFixed(4)}) due to Lyran heavy bias`);
+  });
+
+  it('sig differs across factions even with identical raw weight when WCD applied', () => {
+    // The Grasshopper bug: weight 3 for all 5 Great Houses, sig should NOT be identical
+    const weights = { DC: 3, FS: 3, LC: 3, CC: 3, FWL: 3 };
+    const mul = { DC: 1, FS: 1, LC: 1, CC: 1, FWL: 1 };
+    const wcdParams = { chassisClass: 'Heavy', eraYear: 3039 };
+    const result = F.computeSignature(weights, mul, ['DC', 'FS', 'LC', 'CC', 'FWL'], allFactions, wcdParams);
+
+    // Not all five should be equal — WCD makes them differ
+    const values = [result.DC, result.FS, result.LC, result.CC, result.FWL];
+    const allEqual = values.every(v => Math.abs(v - values[0]) < 0.0001);
+    assert.ok(!allEqual,
+      `Sig scores should differ across factions with different WCD, got: DC=${result.DC.toFixed(4)} FS=${result.FS.toFixed(4)} LC=${result.LC.toFixed(4)} CC=${result.CC.toFixed(4)} FWL=${result.FWL.toFixed(4)}`);
+  });
+
+  it('without wcdParams, identical weights produce identical sigs (the bug)', () => {
+    // Confirm the pre-fix behavior: null wcdParams → equal sigs
+    const weights = { DC: 3, FS: 3, LC: 3, CC: 3, FWL: 3 };
+    const mul = { DC: 1, FS: 1, LC: 1, CC: 1, FWL: 1 };
+    const result = F.computeSignature(weights, mul, ['DC', 'FS', 'LC', 'CC', 'FWL'], allFactions, null);
+
+    const values = [result.DC, result.FS, result.LC, result.CC, result.FWL];
+    const allEqual = values.every(v => Math.abs(v - values[0]) < 0.0001);
+    assert.ok(allEqual,
+      `Without WCD, identical weights should produce identical sigs`);
+  });
+});
+
+// ════════════════════════════════════════════════════════
 // 11. CHASSIS RESOLUTION & FAMILY NAMES
 // ════════════════════════════════════════════════════════
 
