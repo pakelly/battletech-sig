@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.13.1 | 2026-05-17 00:22 UTC | pending |
-| test | 1.13.1 | 2026-05-17 00:14 UTC | pending |
+| test | 1.13.2 | 2026-05-17 00:33 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.13.2 | test | 2026-05-17 00:33 | pending | Fix rating chip removal for multi-rating syntax rating=(A OR B) |
 | 1.13.1 | prod | 2026-05-17 00:22 | pending | VERSION.md: auto-stamp 1.13.1 test deploy |
 | 1.13.1 | test | 2026-05-17 00:14 | pending | Fix cross-tier averaging: compute in probability space (Jensen's fix) |
 | 1.13.0 | prod | 2026-05-16 20:29 | pending | VERSION.md: auto-stamp 1.13.0 test deploy |
