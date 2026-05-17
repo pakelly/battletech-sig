@@ -1378,6 +1378,21 @@ details[open] > .help-section-title::before {
   cursor: default;
 }
 
+/* ── Column Legend ── */
+#column-legend {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+#column-legend.hidden { display: none; }
+#column-legend p { margin: 0.25rem 0; }
+#column-legend strong { color: var(--text); }
+
 /* ── Landing Hook ── */
 .landing-hook {
   color: var(--text-dim);

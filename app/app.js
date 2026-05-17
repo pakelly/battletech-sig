@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.14.7';
+const APP_VERSION = '1.14.8';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -1896,16 +1896,20 @@ function runQuery() {
   const statusText = document.getElementById('status-text');
   const modeIndicator = document.getElementById('mode-indicator');
   
+  const columnLegend = document.getElementById('column-legend');
+  
   if (!queryStr) {
     landing.style.display = '';
     viewContainer.classList.add('hidden');
     document.getElementById('col-vis-bar').classList.add('hidden');
+    if (columnLegend) columnLegend.classList.add('hidden');
     document.getElementById('filter-chips').innerHTML = '';
     statusText.textContent = '';
     return;
   }
   
   landing.style.display = 'none';
+  if (columnLegend) columnLegend.classList.remove('hidden');
   
   const parsed = parseQuery(queryStr);
   renderChips(parsed);
