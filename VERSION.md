@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.18.2 | 2026-05-17 23:39 UTC | pending |
-| test | 1.18.3 | 2026-05-18 01:24 UTC | pending |
+| test | 1.18.4 | 2026-05-18 01:32 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.18.4 | test | 2026-05-18 01:32 | pending | Add families for all BattleMech/OmniMech tonnage split pairs |
 | 1.18.3 | test | 2026-05-18 01:24 | pending | Include all families in app-data (not just enabled ones) |
 | 1.18.2 | prod | 2026-05-17 23:39 | pending | VERSION.md: auto-stamp 1.18.2 test deploy |
 | 1.18.2 | test | 2026-05-17 23:33 | pending | Compute sig for all views, even without scoped factions |
