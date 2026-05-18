@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.19.0';
-const DEPLOY_TIME = '20260518.0438';
+const APP_VERSION = '1.19.1';
+const DEPLOY_TIME = '20260518.0505';
 
 let DATA = null; // app-data.json
 
@@ -320,6 +320,17 @@ function parseQuery(queryStr) {
 
   // Normalize NOT prefix: "NOT field=value" → "field!=value"
   q = q.replace(/\bNOT\s+(\w[\w-]*)\s*=/gi, '$1!=');
+
+  // Auto-quote chassis names with parenthetical suffixes: chassis=Firestarter (Omni) → chassis="Firestarter (Omni)"
+  if (DATA?.chassis) {
+    q = q.replace(/\bchassis\s*(=|!=)\s*(?!")([\w][\w\s'-]*?)\s*(\([^)]+\))/gi, (full, op, name, paren) => {
+      const candidate = (name.trim() + ' ' + paren).trim();
+      if (DATA.chassis[candidate] || resolveChassis(candidate) !== candidate) {
+        return 'chassis' + op + '"' + candidate + '"';
+      }
+      return full;
+    });
+  }
 
   // Auto-quote multi-word chassis names: chassis=King Crab → chassis="King Crab"
   // Greedy match: after chassis= (not already quoted/parenthesized), try 2-4 word combos
