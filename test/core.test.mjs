@@ -673,12 +673,10 @@ describe('MUL Data Integrity', () => {
     assert.ok(dcMechs.length > 30, `DC should have >30 mechs in 3039, got ${dcMechs.length}`);
   });
 
-  it('app-data includes sub-unit factions', () => {
-    // At least some sub-unit factions (with dots) should be present
+  it('app-data excludes sub-unit factions (dot codes filtered for size)', () => {
+    // Sub-unit factions (codes with dots) are excluded to keep app-data.json under ~15MB
     const subUnits = Object.keys(APP_DATA.factions).filter(c => c.includes('.'));
-    assert.ok(subUnits.length > 50, `Should have >50 sub-unit factions, got ${subUnits.length}`);
-    assert.ok(subUnits.includes('DC.SL'), 'DC.SL (Sword of Light) should be present');
-    assert.ok(subUnits.includes('MERC.KH'), 'MERC.KH (Kell Hounds) should be present');
+    assert.strictEqual(subUnits.length, 0, `Should have 0 sub-unit factions, got ${subUnits.length}`);
   });
 
   it('app-data includes previously-missing notable factions', () => {
@@ -689,9 +687,10 @@ describe('MUL Data Integrity', () => {
     }
   });
 
-  it('app-data has >200 total factions', () => {
+  it('app-data has >80 top-level factions', () => {
     const count = Object.keys(APP_DATA.factions).length;
-    assert.ok(count > 200, `Should have >200 factions, got ${count}`);
+    assert.ok(count > 80, `Should have >80 top-level factions, got ${count}`);
+    assert.ok(count < 200, `Should have <200 factions (sub-units filtered), got ${count}`);
   });
 });
 

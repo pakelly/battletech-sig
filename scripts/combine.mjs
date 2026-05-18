@@ -383,6 +383,8 @@ function remapFactionKeys(obj) {
   if (!obj) return obj;
   const result = {};
   for (const [k, v] of Object.entries(obj)) {
+    // Skip sub-unit factions (codes with dots)
+    if (k.includes('.')) continue;
     const newKey = remapFactionCode(k);
     // If remapped key already exists, keep the higher peak value (merge LA+LC)
     if (result[newKey] !== undefined) {
@@ -409,6 +411,11 @@ if (existsSync(factionMetaPath)) {
 // ── Faction display info + weight class distributions ──
 const FACTION_INFO = {};
 for (const [code, meta] of Object.entries(scores.factionMeta)) {
+  // Skip sub-unit factions (codes with dots like DC.SL, MERC.KH, FS.DBG)
+  // These inflate app-data.json from ~10MB to 44MB — too large for GitHub Pages.
+  // See DESIGN.md "Future Possibilities" for re-enabling as an optional toggle.
+  if (code.includes('.')) continue;
+  
   const outCode = remapFactionCode(code);
   if (FACTION_INFO[outCode]) continue; // skip if already mapped (e.g. LA after LC)
   const wcd = scores.weightClassDistributions?.[code];
@@ -484,6 +491,7 @@ for (const [eraYear, chassisEntries] of Object.entries(scores.eras)) {
     if (mulEra) {
       const mul = {};
       for (const faction of Object.keys(data.weights)) {
+        if (faction.includes('.')) continue; // skip sub-unit factions
         if (hasMulAvail(faction, mulEra, mulLookupName)) {
           mul[remapFactionCode(faction)] = 1;
         }

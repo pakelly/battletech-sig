@@ -618,14 +618,6 @@ function resolveFactionGroup(name) {
   if (lower === 'fwlstates' || lower === 'fwl states' || lower === 'fwlbreakup' || lower === 'fwl breakup') {
     return DATA?.factionGroups?.FWLStates || ['DA', 'DO', 'DTA', 'MSC', 'OP', 'RF', 'RCM', 'PR', 'MCM'];
   }
-  if (lower === 'subunits' || lower === 'sub units' || lower === 'sub-units') {
-    // Return all faction codes that contain a dot (sub-unit factions)
-    if (DATA?.factions) {
-      return Object.keys(DATA.factions).filter(code => code.includes('.'));
-    }
-    return [];
-  }
-  
   const resolved = resolveFaction(name);
   return resolved ? [resolved] : [];
 }
@@ -1826,7 +1818,6 @@ function getValueSuggestions(field, lower) {
         { text: 'HomeClans', hint: 'Homeworld Clans (incl. CCC, CB, CMG, CWI...)' },
         { text: 'Periphery', hint: 'TC, MH, OA, MC, MOC, CDP, FVC...' },
         { text: 'FWLStates', hint: 'FWL breakup: DA, DO, DTA, MSC, OP, RF, RCM, PR, MCM' },
-        { text: 'SubUnits', hint: 'Sub-unit factions (DC.SL, MERC.KH, etc.)' },
       ];
       for (const [code, info] of Object.entries(DATA.factions)) {
         items.push({ text: code, hint: info.name });
