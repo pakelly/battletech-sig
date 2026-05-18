@@ -362,7 +362,7 @@ const appData = {
   factions: FACTION_INFO,
   factionGroups: FACTION_GROUPS,
   eras: ERA_LIST,
-  families: families.filter(f => f.enabled),
+  families: families,
   modelPrefixes,
   chassis: {},
   eraData: {}
