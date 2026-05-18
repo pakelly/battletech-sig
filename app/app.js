@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.21.0';
+const APP_VERSION = '1.21.1';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -1075,6 +1075,122 @@ function getAllFactionsFromRows(rows) {
   return [...factions];
 }
 
+// ── Era Auto-Adjust ──
+
+/**
+ * Check if a faction is active in a given year using its yearsActive ranges.
+ * Returns true if the year falls within any {start, end} range.
+ * If end is omitted, faction is active from start onward.
+ */
+function isFactionActiveInYear(factionCode, year) {
+  const info = DATA?.factions[factionCode];
+  if (!info?.yearsActive || info.yearsActive.length === 0) return true; // no data = assume active
+  return info.yearsActive.some(r => year >= r.start && (r.end == null || year <= r.end));
+}
+
+/**
+ * Find the best era to auto-adjust to based on chassis and/or faction filters.
+ * Returns { year, message } or null if no adjustment needed.
+ * Only called when no year/era is explicitly set.
+ */
+function findAutoAdjustEra(chassisFilter, scopedFactions) {
+  if (!DATA) return null;
+  const eras = DATA.eras; // sorted by year
+
+  const hasChassisFilter = chassisFilter.length > 0;
+  const hasFactionFilter = scopedFactions.length > 0;
+  if (!hasChassisFilter && !hasFactionFilter) return null;
+
+  // Helper: check if a chassis exists in a given era
+  function chassisExistsInEra(eraYear) {
+    const eraData = DATA.eraData[String(eraYear)];
+    if (!eraData) return false;
+    return chassisFilter.some(cf => {
+      const lower = cf.toLowerCase();
+      return Object.keys(eraData).some(ch => ch.toLowerCase() === lower || ch.toLowerCase().includes(lower));
+    });
+  }
+
+  // Helper: check if any scoped faction is active in a year
+  function factionActiveInEra(eraYear) {
+    return scopedFactions.some(f => isFactionActiveInYear(f, eraYear));
+  }
+
+  // Check if default era (3049) works
+  const defaultWorks = (!hasChassisFilter || chassisExistsInEra(3049)) &&
+                       (!hasFactionFilter || factionActiveInEra(3049));
+  if (defaultWorks) return null;
+
+  // Find best era where both conditions are met
+  for (const era of eras) {
+    const chassisOk = !hasChassisFilter || chassisExistsInEra(era.year);
+    const factionOk = !hasFactionFilter || factionActiveInEra(era.year);
+    if (chassisOk && factionOk) {
+      // Build message
+      let msg = '';
+      if (hasChassisFilter && !hasFactionFilter) {
+        msg = `📅 Showing ${era.year} — ${chassisFilter[0]} isn't available in the default era (3049)`;
+      } else if (hasFactionFilter && !hasChassisFilter) {
+        const fCode = scopedFactions[0];
+        const fName = DATA.factions[fCode]?.name || fCode;
+        const ranges = DATA.factions[fCode]?.yearsActive || [];
+        const rangeStr = ranges.map(r => r.end ? `${r.start}–${r.end}` : `${r.start}+`).join(', ');
+        msg = `📅 Showing ${era.year} — ${fName} is active ${rangeStr}`;
+      } else {
+        msg = `📅 Showing ${era.year} — best era for ${chassisFilter[0]} + ${DATA.factions[scopedFactions[0]]?.name || scopedFactions[0]}`;
+      }
+      return { year: era.year, message: msg };
+    }
+  }
+
+  return null; // no era works for both — fall through to breadcrumbing
+}
+
+/**
+ * Build a no-results diagnostic message with clickable suggestions.
+ * Returns an HTML string, or null if no specific diagnostic applies.
+ */
+function buildNoResultsMessage(chassisFilter, scopedFactions, eraYear, parsed) {
+  if (!DATA) return null;
+  const parts = [];
+
+  // Check chassis intro year
+  if (chassisFilter.length > 0) {
+    for (const cf of chassisFilter) {
+      const resolved = resolveChassis(cf);
+      const meta = DATA.chassis[resolved];
+      if (meta?.intro && meta.intro > eraYear) {
+        const bestEra = DATA.eras.find(e => e.year >= meta.intro)?.year || meta.intro;
+        const suggestedQuery = parsed.raw.replace(/year=\d+/gi, '').trim() + ` year=${bestEra}`;
+        parts.push(`<span class="no-results-hint">${escHtml(resolved)} wasn't introduced until ${meta.intro}. <a href="#" class="era-suggestion" data-query="${escHtml(suggestedQuery.trim())}">Try year=${bestEra}</a></span>`);
+      }
+    }
+  }
+
+  // Check faction active years
+  if (scopedFactions.length > 0) {
+    for (const fCode of scopedFactions) {
+      const info = DATA.factions[fCode];
+      if (!info?.yearsActive || info.yearsActive.length === 0) continue;
+      if (!isFactionActiveInYear(fCode, eraYear)) {
+        const ranges = info.yearsActive.map(r => r.end ? `${r.start}–${r.end}` : `${r.start}+`).join(', ');
+        // Find first era in an active range
+        const bestEra = DATA.eras.find(e => isFactionActiveInYear(fCode, e.year))?.year;
+        const fName = info.name || fCode;
+        if (bestEra) {
+          const suggestedQuery = parsed.raw.replace(/year=\d+/gi, '').trim() + ` year=${bestEra}`;
+          parts.push(`<span class="no-results-hint">${escHtml(fName)} doesn't exist in era ${eraYear}. They're active ${ranges}. <a href="#" class="era-suggestion" data-query="${escHtml(suggestedQuery.trim())}">Try year=${bestEra}</a></span>`);
+        } else {
+          parts.push(`<span class="no-results-hint">${escHtml(fName)} doesn't exist in era ${eraYear}. They're active ${ranges}.</span>`);
+        }
+      }
+    }
+  }
+
+  if (parts.length > 0) return parts.join('<br>');
+  return null; // generic fallback handled by caller
+}
+
 // ── View Routing ──
 
 function determineView(parsed) {
@@ -2142,16 +2258,33 @@ function runQuery() {
   
   // Determine era
   let eraYear = null;
+  let eraExplicit = false; // true if user explicitly set year or era
+  let eraAdjustMsg = null; // auto-adjust info message
   if (parsed.year) {
     eraYear = getEraYear(parsed.year);
+    eraExplicit = true;
   } else if (parsed.era) {
     const eraEntry = DATA.eras.find(e => 
       e.mulEra?.toLowerCase() === parsed.era.toLowerCase() ||
       e.label.toLowerCase().includes(parsed.era.toLowerCase())
     );
     if (eraEntry) eraYear = eraEntry.year;
+    eraExplicit = true;
   }
-  if (!eraYear) eraYear = 3049;
+  
+  const scopedFactions = parsed.factions;
+  const chassisFilter = parsed.chassis.map(c => resolveChassis(c));
+  
+  if (!eraYear) {
+    // No explicit era — try auto-adjust based on filters
+    const autoAdj = findAutoAdjustEra(chassisFilter, scopedFactions);
+    if (autoAdj) {
+      eraYear = autoAdj.year;
+      eraAdjustMsg = autoAdj.message;
+    } else {
+      eraYear = 3049;
+    }
+  }
   currentEraYear = eraYear;
   
   const familyMode = parsed.family || 'off';
@@ -2159,8 +2292,6 @@ function runQuery() {
   const hideIndustrial = parsed.industrial !== 'show'; // hidden by default
   
   const chassisData = getChassisForEra(String(eraYear), familyMode);
-  const scopedFactions = parsed.factions;
-  const chassisFilter = parsed.chassis.map(c => resolveChassis(c));
   
   // Resolve unit quality rating indices (same for all chassis)
   let ratingIdx = null;
@@ -2427,6 +2558,45 @@ function runQuery() {
   }
   
   statusText.textContent = `${rows.length} chassis | Era: ${eraYear}`;
+  
+  // Show era auto-adjust message if applicable
+  let eraInfoEl = document.getElementById('era-adjust-info');
+  if (!eraInfoEl) {
+    eraInfoEl = document.createElement('div');
+    eraInfoEl.id = 'era-adjust-info';
+    viewContainer.parentNode.insertBefore(eraInfoEl, viewContainer);
+  }
+  if (eraAdjustMsg) {
+    eraInfoEl.innerHTML = `<p class="era-adjust-msg">${eraAdjustMsg}</p>`;
+    eraInfoEl.style.display = '';
+  } else {
+    eraInfoEl.innerHTML = '';
+    eraInfoEl.style.display = 'none';
+  }
+  
+  // No-results breadcrumbing
+  if (rows.length === 0) {
+    const diagnostic = buildNoResultsMessage(chassisFilter, scopedFactions, eraYear, parsed);
+    const container = viewContainer;
+    container.classList.remove('hidden');
+    if (diagnostic) {
+      container.innerHTML = `<div class="no-results-diagnostic"><p style="color:var(--text-dim);margin-bottom:0.5rem">No chassis found matching your query.</p>${diagnostic}</div>`;
+    } else {
+      container.innerHTML = '<p style="color:var(--text-dim)">No results — your filters matched no chassis. Try removing some filters.</p>';
+    }
+    // Wire up clickable era suggestions
+    container.querySelectorAll('.era-suggestion').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const q = link.dataset.query;
+        if (q) {
+          document.getElementById('query-bar').value = q;
+          runQuery();
+        }
+      });
+    });
+    return;
+  }
   
   // View routing
   const view = determineView(parsed);

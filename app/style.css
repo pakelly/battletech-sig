@@ -1455,6 +1455,39 @@ details[open] > .help-section-title::before {
   margin-top: 0.25rem;
 }
 
+/* ── Era Auto-Adjust & No-Results Breadcrumbing ── */
+
+.era-adjust-msg {
+  color: var(--accent, #58a6ff);
+  font-size: 0.85rem;
+  padding: 0.4rem 0.75rem;
+  margin: 0.5rem 0;
+  border-left: 3px solid var(--accent, #58a6ff);
+  background: rgba(88, 166, 255, 0.08);
+  border-radius: 0 4px 4px 0;
+}
+
+.no-results-diagnostic {
+  padding: 1rem;
+}
+
+.no-results-hint {
+  display: block;
+  color: var(--text-dim, #8b949e);
+  font-size: 0.85rem;
+  margin: 0.25rem 0;
+}
+
+.no-results-hint a.era-suggestion {
+  color: var(--accent, #58a6ff);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.no-results-hint a.era-suggestion:hover {
+  color: #79c0ff;
+}
+
 /* ── Responsive ── */
 
 @media (max-width: 768px) {

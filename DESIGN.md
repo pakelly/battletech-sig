@@ -993,6 +993,34 @@ In-app help rather than a separate docs page because:
 3. Stays in sync with the deployed version (same deploy pipeline)
 4. No separate hosting or docs framework needed
 
+## Smart Era Auto-Adjust (v1.21.1)
+
+**Problem:** Default era is 3049. Users searching for chassis or factions that don't exist in that era get blank results with no explanation. With 125 factions (many era-specific), this is a common trap.
+
+### Context-Aware Era Auto-Adjust
+
+When the user does NOT explicitly specify a year or era in their query (`parsed.year` is null AND `parsed.era` is null), and their query includes a chassis or faction filter:
+
+1. **Chassis filter only:** Check if the filtered chassis exists in the default era (3049) by looking up `DATA.eraData['3049']`. If not, find the earliest era where the chassis has data (iterate `DATA.eras` in order, check `DATA.eraData[year]` for the chassis). Show info: "📅 Showing [year] — [Chassis] isn't available in the default era (3049)"
+
+2. **Faction filter only:** Check if the filtered faction has data in 3049 using `DATA.factions[code].yearsActive`. If 3049 doesn't fall within any `{start, end}` range, find the first era year that falls within an active range. Show info: "📅 Showing [year] — [Faction] is active [start]–[end]"
+
+3. **Both chassis and faction filtered:** Find an era where BOTH exist. If no such era exists, fall through to no-results breadcrumbing.
+
+4. **Only auto-adjust when no year/era is explicitly set.** If the user typed `year=3039`, respect it even if it returns nothing.
+
+Implementation: In `runQuery()`, after the `if (!eraYear) eraYear = 3049;` block, add era auto-adjust logic. Store an `eraAdjustMsg` string that gets displayed as a subtle info banner above results.
+
+### No-Results Breadcrumbing
+
+When a query returns zero results (after all filtering in `runQuery()`), instead of the generic "No chassis found matching your query", show diagnostic messages:
+
+1. **Chassis not in era:** "No results — [Chassis] wasn't introduced until [year]. Try era [year]" with a clickable link that sets the suggested query.
+2. **Faction not in era:** "No results — [Faction] doesn't exist in [current era]. They're active [start]–[end]." with a clickable link.
+3. **Generic fallback:** "No results — your filters matched no chassis. Try removing some filters."
+
+The breadcrumb messages render as styled `<p>` elements with clickable `<a>` tags that modify the query bar and re-run the query.
+
 ## Future Possibilities
 
 - **Faction lineage / succession model:** Many factions merge, splinter, rename, or absorb others across eras. Current approach patches this case-by-case (e.g. LA/LC MUL merge → canonical LC). Needs a proper lineage map that understands rename (LC↔LA), merger (FS+LC→FC), splintering (FRR from DC), conquest-then-absorption (FRR→CGB occupation→RD), brief existence (WOB, ROS, SIC), etc. Scoring implications differ: a rename shares the same force pool, a merger combines two, a splinter starts fresh-ish. Key example: FRR goes DC→FRR→CGB/FRR→RD, with mech roster evolving at each transition.

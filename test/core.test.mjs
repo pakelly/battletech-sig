@@ -87,6 +87,9 @@ before(() => {
         resolveFactionGroup,
         resolveChassis,
         determineView,
+        findAutoAdjustEra,
+        isFactionActiveInYear,
+        buildNoResultsMessage,
         resolveWeight,
         resolveWeights,
         computeResolvedWeights,
@@ -1121,5 +1124,112 @@ describe('Chassis Resolution', () => {
 
   it('does not resolve "Thor" to Thorn (alias takes priority)', () => {
     assert.notStrictEqual(F.resolveChassis('Thor'), 'Thorn');
+  });
+});
+
+// ════════════════════════════════════════════════════════
+// ERA AUTO-ADJUST
+// ════════════════════════════════════════════════════════
+
+describe('Era Auto-Adjust', () => {
+  it('isFactionActiveInYear returns true for faction active in 3049', () => {
+    // DC (Draconis Combine) should be active in 3049
+    assert.strictEqual(F.isFactionActiveInYear('DC', 3049), true);
+  });
+
+  it('isFactionActiveInYear returns false for faction not active in given year', () => {
+    // Find a faction with yearsActive that doesn't cover 3049
+    // Wolf Empire (CWE) is active 3131-3151 based on data
+    const info = APP_DATA.factions['CWE'];
+    if (info?.yearsActive?.length > 0) {
+      const active3049 = info.yearsActive.some(r => 3049 >= r.start && (r.end == null || 3049 <= r.end));
+      if (!active3049) {
+        assert.strictEqual(F.isFactionActiveInYear('CWE', 3049), false);
+      }
+    }
+  });
+
+  it('isFactionActiveInYear returns true for faction with no yearsActive data', () => {
+    // Factions without yearsActive should be assumed active
+    assert.strictEqual(F.isFactionActiveInYear('NONEXISTENT_FACTION', 3049), true);
+  });
+
+  it('findAutoAdjustEra returns null when no filters', () => {
+    assert.strictEqual(F.findAutoAdjustEra([], []), null);
+  });
+
+  it('findAutoAdjustEra returns null when chassis exists in 3049', () => {
+    // Atlas exists in 3049
+    const result = F.findAutoAdjustEra(['Atlas'], []);
+    assert.strictEqual(result, null);
+  });
+
+  it('findAutoAdjustEra returns null when faction is active in 3049', () => {
+    const result = F.findAutoAdjustEra([], ['DC']);
+    assert.strictEqual(result, null);
+  });
+
+  it('findAutoAdjustEra adjusts for faction not in 3049', () => {
+    // Find a faction that is NOT active in 3049
+    const cwe = APP_DATA.factions['CWE'];
+    if (cwe?.yearsActive?.length > 0) {
+      const active3049 = cwe.yearsActive.some(r => 3049 >= r.start && (r.end == null || 3049 <= r.end));
+      if (!active3049) {
+        const result = F.findAutoAdjustEra([], ['CWE']);
+        assert.ok(result, 'should return an adjustment');
+        assert.ok(result.year > 3049, 'should adjust to a later era');
+        assert.ok(result.message.includes('CWE') || result.message.includes('Wolf Empire'), 'message should mention the faction');
+      }
+    }
+  });
+
+  it('findAutoAdjustEra adjusts for chassis not in default era', () => {
+    // Find a chassis that has intro > 3049 (doesn't exist in 3049 era data)
+    // Firestarter (Omni) introduced in 3072
+    const fs = APP_DATA.chassis['Firestarter (Omni)'];
+    if (fs && fs.intro > 3049) {
+      const result = F.findAutoAdjustEra(['Firestarter (Omni)'], []);
+      assert.ok(result, 'should return an adjustment');
+      assert.ok(result.year >= fs.intro || result.year >= 3049, 'should adjust to era with data');
+      assert.ok(result.message.includes('Firestarter (Omni)'), 'message should mention the chassis');
+    }
+  });
+});
+
+// ════════════════════════════════════════════════════════
+// NO-RESULTS BREADCRUMBING
+// ════════════════════════════════════════════════════════
+
+describe('No-Results Breadcrumbing', () => {
+  it('buildNoResultsMessage returns null when no specific diagnostic applies', () => {
+    // Atlas exists in 3049, DC active in 3049 — no diagnostic needed
+    const parsed = F.parseQuery('faction=DC chassis=Atlas');
+    const result = F.buildNoResultsMessage(['Atlas'], ['DC'], 3049, parsed);
+    assert.strictEqual(result, null);
+  });
+
+  it('buildNoResultsMessage returns diagnostic for chassis not yet introduced', () => {
+    // Use a chassis with intro > 3049
+    const fs = APP_DATA.chassis['Firestarter (Omni)'];
+    if (fs && fs.intro > 3049) {
+      const parsed = F.parseQuery('chassis=Firestarter (Omni)');
+      const result = F.buildNoResultsMessage(['Firestarter (Omni)'], [], 3049, parsed);
+      assert.ok(result, 'should return a message');
+      assert.ok(result.includes('introduced'), 'should mention introduction');
+      assert.ok(result.includes('Firestarter (Omni)'), 'should mention chassis name');
+    }
+  });
+
+  it('buildNoResultsMessage returns diagnostic for inactive faction', () => {
+    const cwe = APP_DATA.factions['CWE'];
+    if (cwe?.yearsActive?.length > 0) {
+      const active3049 = cwe.yearsActive.some(r => 3049 >= r.start && (r.end == null || 3049 <= r.end));
+      if (!active3049) {
+        const parsed = F.parseQuery('faction=CWE');
+        const result = F.buildNoResultsMessage([], ['CWE'], 3049, parsed);
+        assert.ok(result, 'should return a message');
+        assert.ok(result.includes('active') || result.includes('exist'), 'should mention activity');
+      }
+    }
   });
 });
