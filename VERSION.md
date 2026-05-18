@@ -4,13 +4,14 @@
 
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
-| prod | 1.19.2 | 2026-05-18 05:38 UTC | pending |
+| prod | 1.20.0 | 2026-05-18 15:55 UTC | pending |
 | test | 1.19.2 | 2026-05-18 05:24 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.20.0 | prod | 2026-05-18 15:55 | pending | v1.20.0: mm-data integration — richer chassis/faction metadata |
 | 1.19.2 | prod | 2026-05-18 05:38 | pending | VERSION.md: auto-stamp 1.19.2 test deploy |
 | 1.19.2 | test | 2026-05-18 05:24 | pending | fix: parseValueList paren stripping + chip removal for spaced values |
 | 1.19.1 | test | 2026-05-18 05:05 | pending | Fix parser: chassis=X (Y) auto-quoted for parenthetical names |
