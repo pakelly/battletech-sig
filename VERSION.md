@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.18.2 | 2026-05-17 23:39 UTC | pending |
-| test | 1.19.1 | 2026-05-18 05:05 UTC | pending |
+| test | 1.19.2 | 2026-05-18 05:24 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.19.2 | test | 2026-05-18 05:24 | pending | fix: parseValueList paren stripping + chip removal for spaced values |
 | 1.19.1 | test | 2026-05-18 05:05 | pending | Fix parser: chassis=X (Y) auto-quoted for parenthetical names |
 | 1.19.0 | test | 2026-05-18 04:38 | pending | Fix BM/Omni chassis split: use MegaMek's own separation instead of MUL tonnage heuristic |
 | 1.18.5 | test | 2026-05-18 03:33 | pending | Add faction aliases: Scorpion Empire, Rassalhague Dominion, Sea Fox, etc |
