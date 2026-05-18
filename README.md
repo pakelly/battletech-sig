@@ -17,6 +17,22 @@ cd app && bash serve.sh
 # Open http://localhost:8080
 ```
 
+## Updating Data
+
+To pull the latest MegaMek data and rebuild `app-data.json`:
+
+```bash
+bash scripts/update-mm-data.sh
+```
+
+This script:
+- Clones `mm-data` if missing (sparse checkout of only the paths we need)
+- Pulls the latest upstream data if it already exists
+- Runs the full build pipeline
+- Reports whether `app-data.json` changed
+
+The script does **not** commit or deploy — review changes before committing.
+
 ## Data Sources
 
 - **MegaMek Force Generator** — Weighted mech availability per faction per era. Community-curated from the `MegaMek/mm-data` repository. CC BY-NC-SA 4.0.

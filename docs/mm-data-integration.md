@@ -1,6 +1,6 @@
 # mm-data Integration Plan
 
-**Status:** In progress (Phase 1)
+**Status:** Complete (all 4 phases)
 **Started:** 2026-05-18
 **Upstream:** [`MegaMek/mm-data`](https://github.com/MegaMek/mm-data) — the canonical MegaMek data repository (CC BY-NC-SA 4.0)
 
@@ -41,9 +41,13 @@ The `mm-data` repo consolidates all MegaMek data in one place with a stable stru
   - Full faction names (currently hardcoded in app)
 - Surface in the app: faction lifespan indicators, richer tooltip info, smarter autocomplete
 
-### Phase 4: Automate updates
-- Script or cron job to pull latest mm-data, rebuild `app-data.json`, and flag if data changed
-- Optionally: GitHub Action that auto-rebuilds when mm-data releases a new version
+### Phase 4: Automate updates ✅
+- `scripts/update-mm-data.sh` — idempotent script that:
+  - Clones mm-data (sparse checkout) if missing, or pulls latest via `--ff-only`
+  - Runs the full build pipeline (`scripts/build.sh`)
+  - Detects whether `app-data.json` changed and prints a summary
+  - Does NOT auto-commit or deploy — human reviews first
+- No cron jobs or GitHub Actions needed at this stage
 
 ## Data mapping
 
