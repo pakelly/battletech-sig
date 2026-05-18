@@ -760,6 +760,18 @@ Vanilla HTML/CSS/JS. No framework. Single-page app loading `app-data.json` at st
 
 ---
 
+## Filter Chips
+
+Active query filters are displayed as removable chips below the query bar. Each chip shows a human-readable label (e.g., `chassis=Firestarter (Omni)`) and an × button to remove that filter.
+
+**Chip removal:** Each chip stores the **raw query fragment** that produced it (the exact substring from the query bar that the parser consumed). Clicking × does a literal string removal of that raw fragment from the query bar, then re-runs the query. No regex reconstruction needed — the parser already knows what it matched.
+
+**Implementation:** The parser's field regex tracks `lastIndex` to capture the raw matched substring for each field. This raw text is stored as a `data-raw` attribute on the chip's × button. On click, the raw text is spliced out of the query bar value.
+
+**`parseValueList` paren handling:** OR-group values like `(DC OR FS)` need outer parens stripped. The stripping only acts when the value has **both** a leading `(` and trailing `)` as a matching pair — `value.replace(/^\((.+)\)$/, '$1')`. This preserves legitimate parens in values like `Firestarter (Omni)`.
+
+---
+
 ## Quick Filter Insert
 
 A secondary input field below the query bar and filter chips for composing one filter expression at a time, then inserting it into the main query.

@@ -236,6 +236,53 @@ describe('Query Parser', () => {
     assert.deepStrictEqual(p.class, { op: '=', values: ['heavy'] });
     assert.strictEqual(p.sort[0].field, 'spread');
   });
+
+  // ── Parenthesized chassis names (Omni, Clan names) ──
+
+  it('preserves closing paren in chassis names like Firestarter (Omni)', () => {
+    const p = F.parseQuery('chassis="Firestarter (Omni)"');
+    assert.ok(p.chassis.includes('Firestarter (Omni)'), `Expected "Firestarter (Omni)" but got ${JSON.stringify(p.chassis)}`);
+  });
+
+  it('preserves closing paren in unquoted chassis with auto-quoting', () => {
+    const p = F.parseQuery('chassis=Firestarter (Omni)');
+    assert.ok(p.chassis.includes('Firestarter (Omni)'), `Expected "Firestarter (Omni)" but got ${JSON.stringify(p.chassis)}`);
+  });
+
+  // Known limitation: OR groups with parens inside values hit the regex parser's
+  // \([^)]+\) pattern which terminates at the first ')'. Would require a real
+  // tokenizer to fix (see DESIGN.md "Boolean query language (Level 3)").
+  // For now, users should query parenthesized chassis individually, not in OR groups.
+  it('documents OR group limitation with parens in names', () => {
+    const p = F.parseQuery('chassis=(Atlas OR "Firestarter (Omni)")');
+    assert.ok(p.chassis.includes('Atlas'));
+    // Firestarter (Omni) gets truncated — known parser limitation
+    // assert.ok(p.chassis.includes('Firestarter (Omni)'));
+  });
+
+  it('still unwraps simple OR groups without inner parens', () => {
+    const p = F.parseQuery('faction=(DC OR FS)');
+    assert.ok(p.factions.includes('DC'));
+    assert.ok(p.factions.includes('FS'));
+  });
+
+  // ── Raw match tracking for chip removal ──
+
+  it('tracks raw match text for each parsed field', () => {
+    const p = F.parseQuery('faction=DC year=3055 sig>5');
+    assert.ok(p.rawMatches, 'parseQuery should return rawMatches');
+    assert.ok(p.rawMatches.faction, 'rawMatches should include faction');
+    assert.ok(p.rawMatches.year, 'rawMatches should include year');
+    assert.ok(p.rawMatches.sig, 'rawMatches should include sig');
+  });
+
+  it('raw match for chassis with parens captures the full query fragment', () => {
+    const p = F.parseQuery('chassis="Firestarter (Omni)" year=3055');
+    assert.ok(p.rawMatches.chassis, 'rawMatches should include chassis');
+    // The raw match should be removable from the original query to leave the rest
+    const remaining = 'chassis="Firestarter (Omni)" year=3055'.replace(p.rawMatches.chassis, '').trim();
+    assert.strictEqual(remaining, 'year=3055');
+  });
 });
 
 describe('Faction Aliases', () => {

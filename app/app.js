@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.19.1';
+const APP_VERSION = '1.19.2';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -269,7 +269,8 @@ function parseQuery(queryStr) {
     tech: null,        // 'clan' | 'is' | 'mixed'
     mode: 'B',
     sort: [],          // [{field, dir}]
-    raw: queryStr
+    raw: queryStr,
+    rawMatches: {}     // field → raw query substring that produced it (for chip removal)
   };
 
   if (!queryStr || !queryStr.trim()) return result;
@@ -279,6 +280,7 @@ function parseQuery(queryStr) {
   // Extract sort clause first
   const sortMatch = q.match(/\bsort\s+by\s+(.+)$/i);
   if (sortMatch) {
+    result.rawMatches.sort = sortMatch[0]; // capture raw sort fragment for chip removal
     q = q.slice(0, sortMatch.index).trim();
     const sortParts = sortMatch[1].split(',').map(s => s.trim());
     for (const part of sortParts) {
@@ -364,6 +366,10 @@ function parseQuery(queryStr) {
     return full;
   });
 
+  // Capture normalized query (after NOT→!=, auto-quoting, sort extraction)
+  // Used by chip removal to find raw match text reliably
+  result.normalizedQuery = q;
+
   // Parse individual field expressions
   // Tokenize: handle parenthesized OR groups
   const fieldRegex = /(\w[\w-]*)\s*(=|!=|>=|<=|>|<)\s*(\([^)]+\)|"[^"]+"|[^\s]+)/gi;
@@ -373,6 +379,7 @@ function parseQuery(queryStr) {
     const field = match[1].toLowerCase();
     const op = match[2];
     let value = match[3];
+    const rawMatch = match[0]; // full matched substring for chip removal
     
     // Remove quotes
     value = value.replace(/^"|"$/g, '');
@@ -474,6 +481,22 @@ function parseQuery(queryStr) {
         break;
       }
     }
+
+    // Store raw match text for chip removal — map to canonical chip field names
+    const canonicalField = (field === 'signature' || field === 'dr' || field === 'distinctiveness') ? 'sig'
+      : (field === 'tonnage') ? 'tons'
+      : (field === 'battlevalue') ? 'bv'
+      : (field === 'avgpref' || field === 'avg-pref' || field === 'avgweight') ? 'avg-weight'
+      : field.match(/^([a-z]+)-(pref|preference|weight)$/) ? field.replace(/-(pref|preference)$/, '-weight')
+      : field.match(/^([a-z]+)-(signature|dr|distinctiveness)$/) ? field.replace(/-(signature|dr|distinctiveness)$/, '-sig')
+      : field;
+    // For fields that can appear multiple times (bv, factionWeight, factionSig),
+    // concatenate raw matches separated by space
+    if (result.rawMatches[canonicalField]) {
+      result.rawMatches[canonicalField] += ' ' + rawMatch;
+    } else {
+      result.rawMatches[canonicalField] = rawMatch;
+    }
   }
 
   return result;
@@ -481,7 +504,9 @@ function parseQuery(queryStr) {
 
 function parseValueList(value) {
   // Handle "(X OR Y OR Z)" and bare values
-  value = value.replace(/^\(|\)$/g, '');
+  // Only strip parens when they form a matching outer pair — preserves
+  // legitimate parens in values like "Firestarter (Omni)"
+  value = value.replace(/^\((.+)\)$/, '$1');
   return value.split(/\s+OR\s+/i).map(v => v.trim().replace(/^"|"$/g, ''));
 }
 
@@ -1854,7 +1879,7 @@ function renderChips(parsed) {
     container.appendChild(el);
   }
   
-  // Chip removal
+  // Chip removal — re-parse query to get raw match, then literal splice
   container.addEventListener('click', (e) => {
     const remove = e.target.closest('.chip-remove');
     if (!remove) return;
@@ -1865,66 +1890,24 @@ function renderChips(parsed) {
 
 function removeFieldFromQuery(field) {
   const bar = document.getElementById('query-bar');
-  let q = bar.value;
-  
-  // Unified field removal using two generic patterns:
-  // 1. "sort by ..." — special case, always at end
-  // 2. Everything else: [NOT] <fieldName> <operator> <value>
-  //    where value can be: (parenthesized group), "quoted string", or bare word/number
-  //
-  // Field aliases map to canonical names for matching.
-  
-  if (field === 'sort') {
-    q = q.replace(/\bsort\s+by\s+.+$/gi, '').trim();
-    bar.value = q;
+  // Re-parse to get the normalized query and raw match for this field
+  const parsed = parseQuery(bar.value);
+  const raw = parsed.rawMatches[field];
+  if (!raw) {
+    // Fallback: if no raw match found, clear and re-run
     runQuery();
     return;
   }
-  
-  // Map field name to all recognized aliases for that field
-  const fieldAliases = {
-    'faction': ['faction'],
-    'chassis': ['chassis'],
-    'class': ['class'],
-    'type': ['type'],
-    'tech': ['tech'],
-    'spread': ['spread'],
-    'span': ['span'],
-    'avg-weight': ['avg-weight', 'avg-pref'],
-    'weight': ['weight'],
-    'sig': ['sig', 'signature', 'dr', 'distinctiveness'],
-    'tons': ['tons', 'tonnage'],
-    'bv': ['bv', 'battlevalue'],
-    'year': ['year'],
-    'era': ['era'],
-    'rating': ['rating'],
-    'mode': ['mode'],
-    'family': ['family'],
-    'industrial': ['industrial'],
-  };
-  
-  // Handle faction-specific filters (e.g. DC-weight>5, FS-sig>3, DC-dr>2)
-  const factionFieldMatch = field.match(/^([A-Z]+)-(weight|sig|dr)$/i);
-  if (factionFieldMatch) {
-    const fCode = factionFieldMatch[1];
-    const metric = factionFieldMatch[2];
-    const aliases = metric === 'weight' ? 'weight|pref|preference' : 'sig|signature|dr|distinctiveness';
-    const pat = new RegExp(`\\b${fCode}[-\\s](?:${aliases})\\s*[><=!]+\\s*[\\d.]+`, 'gi');
-    q = q.replace(pat, '').replace(/\s+/g, ' ').trim();
-    bar.value = q;
-    runQuery();
-    return;
+  // Remove the raw match from the normalized query (which the parser already cleaned up)
+  let q = parsed.normalizedQuery || bar.value;
+  // Re-add sort clause if it exists and we're not removing sort
+  if (field !== 'sort' && parsed.rawMatches.sort) {
+    q = q + ' ' + parsed.rawMatches.sort;
   }
-  
-  // Build regex from aliases
-  // Generic value pattern: parenthesized group, quoted string, or bare token (word/number/dot)
-  const aliases = fieldAliases[field] || [field];
-  const namePattern = aliases.map(a => a.replace(/[-]/g, '[-]')).join('|');
-  const pat = new RegExp(
-    `\\b(?:NOT\\s+)?(?:${namePattern})\\s*[><=!]+\\s*(?:\\([^)]+\\)|"[^"]+"|[^\\s]+)`,
-    'gi'
-  );
-  q = q.replace(pat, '').replace(/\s+/g, ' ').trim();
+  const idx = q.indexOf(raw);
+  if (idx !== -1) {
+    q = (q.slice(0, idx) + q.slice(idx + raw.length)).replace(/\s+/g, ' ').trim();
+  }
   bar.value = q;
   runQuery();
 }
