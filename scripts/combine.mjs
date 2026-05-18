@@ -304,8 +304,13 @@ function weightClass(tonnage) {
 // ── Faction groups ──
 const FACTION_GROUPS = {
   GreatHouses: ['DC', 'FS', 'FWL', 'LC', 'CC'],
-  Clans: ['CW', 'CJF', 'CGB', 'CSJ', 'CHH', 'CNC', 'CSV', 'CDS', 'CSR', 'CBS', 'CCO', 'CFM', 'CGS', 'CIH', 'CSA'],
-  Periphery: ['TC', 'MH', 'OA', 'MC']
+  Clans: ['CW', 'CJF', 'CGB', 'CSJ', 'CHH', 'CNC', 'CSV', 'CDS', 'CSR', 'CBS', 'CCO', 'CFM', 'CGS', 'CIH', 'CSA',
+    'CWIE', 'CWE', 'CSL', 'CCC', 'CB', 'CMG', 'CWI', 'CWOV'],
+  InvasionClans: ['CW', 'CJF', 'CGB', 'CSJ'],
+  HomeClans: ['CBS', 'CCO', 'CFM', 'CGS', 'CIH', 'CSA', 'CSV', 'CCC', 'CB', 'CMG', 'CWI', 'CWOV', 'CSL'],
+  ISClans: ['CW', 'CJF', 'CGB', 'CSJ', 'CHH', 'CNC', 'CDS', 'CSR', 'RD', 'RA', 'CWIE', 'CWE'],
+  Periphery: ['TC', 'MH', 'OA', 'MC', 'MOC', 'CDP', 'FVC', 'RWR', 'TD', 'GV'],
+  FWLStates: ['DA', 'DO', 'DTA', 'MSC', 'OP', 'RF', 'RCM', 'PR', 'MCM'],
 };
 
 // Map faction codes to their general MUL pool
@@ -313,15 +318,38 @@ const FACTION_GROUPS = {
 // CLAN covers all Clan factions; PERI covers periphery states
 const IS_FACTIONS = new Set([
   ...FACTION_GROUPS.GreatHouses, 'LA', 'FC', 'FRR', 'CS', 'WOB', 'SIC', 'ROS',
-  'MERC', 'KH', 'WD', 'SL', 'SLR', 'TH'
+  'MERC', 'SL', 'SLR', 'TH',
+  // FWL breakup states
+  'DA', 'DO', 'DTA', 'MSC', 'OP', 'RF', 'RCM', 'PR', 'MCM',
+  // Other IS factions
+  'ARDC', 'CM', 'Stone', 'RR', 'SLIE', 'SL3', 'BLORD', 'CP', 'PoR', 'TA', 'UHC',
+  // General IS pool
+  'IS',
 ]);
-const CLAN_FACTIONS = new Set(FACTION_GROUPS.Clans);
-const PERI_FACTIONS = new Set(FACTION_GROUPS.Periphery);
+const CLAN_FACTIONS = new Set([
+  ...FACTION_GROUPS.Clans,
+  'SOC', 'SE', 'CEI', 'RD', 'RA', 'CIR',
+  // General Clan pool
+  'CLAN',
+]);
+const PERI_FACTIONS = new Set([
+  ...FACTION_GROUPS.Periphery,
+  'PIR', 'BAN', 'PP', 'TB',
+  // General Periphery pool
+  'Periphery',
+]);
 
 function getGeneralPool(factionCode) {
   if (IS_FACTIONS.has(factionCode)) return 'IS';
   if (CLAN_FACTIONS.has(factionCode)) return 'CLAN';
   if (PERI_FACTIONS.has(factionCode)) return 'PERI';
+  // Sub-unit factions (e.g. DC.SL, MERC.KH) inherit pool from parent
+  if (factionCode.includes('.')) {
+    const parent = factionCode.split('.')[0];
+    if (IS_FACTIONS.has(parent)) return 'IS';
+    if (CLAN_FACTIONS.has(parent)) return 'CLAN';
+    if (PERI_FACTIONS.has(parent)) return 'PERI';
+  }
   return null;
 }
 

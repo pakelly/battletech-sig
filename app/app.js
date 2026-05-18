@@ -46,6 +46,58 @@ const FACTION_ALIASES = {
   'sl': 'SL', 'star league': 'SL',
   'slr': 'SLR', 'star league royal': 'SLR',
   'th': 'TH', 'terran hegemony': 'TH',
+  // Additional Clans
+  'cwie': 'CWIE', 'clan wolf in exile': 'CWIE', 'wolf in exile': 'CWIE',
+  'cwe': 'CWE', 'wolf empire': 'CWE',
+  'csl': 'CSL', 'stone lion': 'CSL', 'clan stone lion': 'CSL',
+  'ccc': 'CCC', 'cloud cobra': 'CCC', 'clan cloud cobra': 'CCC',
+  'cb': 'CB', 'burrock': 'CB', 'clan burrock': 'CB',
+  'cmg': 'CMG', 'mongoose': 'CMG', 'clan mongoose': 'CMG',
+  'cwi': 'CWI', 'widowmaker': 'CWI', 'clan widowmaker': 'CWI',
+  'cwov': 'CWOV', 'wolverine': 'CWOV', 'clan wolverine': 'CWOV',
+  'soc': 'SOC', 'the society': 'SOC', 'society': 'SOC',
+  'cir': 'CIR',
+  // Scorpion Empire
+  'se': 'SE', 'scorpion empire': 'SE',
+  'cei': 'CEI', 'escorpion imperio': 'CEI',
+  // Additional Periphery
+  'moc': 'MOC', 'magistracy of canopus': 'MOC',
+  'cdp': 'CDP', 'calderon protectorate': 'CDP',
+  'fvc': 'FVC', 'filtvelt coalition': 'FVC', 'filtvelt': 'FVC',
+  'rwr': 'RWR', 'rim worlds republic': 'RWR', 'rim worlds': 'RWR',
+  'td': 'TD', 'tortuga dominions': 'TD', 'tortuga': 'TD',
+  'gv': 'GV', 'greater valkyrate': 'GV', 'valkyrate': 'GV',
+  // FWL breakup states
+  'da': 'DA', 'duchy of andurien': 'DA', 'andurien': 'DA',
+  'do': 'DO', 'duchy of oriente': 'DO',
+  'dta': 'DTA', 'duchy of tamarind': 'DTA', 'tamarind': 'DTA',
+  'msc': 'MSC', 'marik-stewart': 'MSC', 'marik-stewart commonwealth': 'MSC',
+  'op': 'OP', 'oriente protectorate': 'OP',
+  'rf': 'RF', 'regulan fiefs': 'RF', 'regulan': 'RF',
+  'rcm': 'RCM', 'rim commonality': 'RCM',
+  'pr': 'PR', 'principality of regulus': 'PR', 'regulus': 'PR',
+  'mcm': 'MCM', 'marik commonwealth': 'MCM',
+  // Other IS factions
+  'ardc': 'ARDC', 'arc-royal': 'ARDC', 'arc-royal defense cordon': 'ARDC',
+  'cm': 'CM', 'chaos march': 'CM',
+  'stone': 'Stone', "stone's coalition": 'Stone',
+  'rr': 'RR', 'republic remnant': 'RR',
+  'slie': 'SLIE', 'star league in exile': 'SLIE',
+  'sl3': 'SL3',
+  'ban': 'BAN', 'bandit caste': 'BAN', 'bandits': 'BAN',
+  'cp': 'CP', 'clan protectorate': 'CP',
+  'pir': 'PIR', 'pirates': 'PIR',
+  'pp': 'PP', 'pentagon powers': 'PP',
+  'blord': 'BLORD', 'blessed order': 'BLORD',
+  'por': 'PoR', 'principality of rasalhague': 'PoR',
+  'ta': 'TA', 'terran alliance': 'TA',
+  'tb': 'TB', 'the barrens': 'TB', 'barrens': 'TB',
+  'uhc': 'UHC', 'united hindu collective': 'UHC',
+  // General pools (use 'isgeneral'/'clangeneral'/'peripherygeneral' to get the pool factions directly;
+  // 'is'/'clans'/'periphery' resolve to group shortcuts via resolveFactionGroup)
+  'isgeneral': 'IS', 'inner sphere general': 'IS', 'is general': 'IS',
+  'clangeneral': 'CLAN', 'clan general': 'CLAN',
+  'peripherygeneral': 'Periphery', 'periphery general': 'Periphery',
 };
 
 // ── Unit Quality Rating Resolution ──
@@ -555,14 +607,23 @@ function resolveFactionGroup(name) {
   }
   if (lower === 'isclans' || lower === 'is clans' || lower === 'innersphereclans' || lower === 'inner sphere clans') {
     // Clans with significant Inner Sphere presence
-    return ['CW', 'CJF', 'CGB', 'CSJ', 'CHH', 'CNC', 'CDS', 'CSR', 'RD', 'RA'];
+    return DATA?.factionGroups?.ISClans || ['CW', 'CJF', 'CGB', 'CSJ', 'CHH', 'CNC', 'CDS', 'CSR', 'RD', 'RA', 'CWIE', 'CWE'];
   }
   if (lower === 'homeclans' || lower === 'home clans' || lower === 'homeworldclans' || lower === 'homeworld clans') {
-    // Clans that remained in the homeworlds
-    return ['CBS', 'CCO', 'CFM', 'CGS', 'CIH', 'CSA', 'CSV'];
+    return DATA?.factionGroups?.HomeClans || ['CBS', 'CCO', 'CFM', 'CGS', 'CIH', 'CSA', 'CSV', 'CCC', 'CB', 'CMG', 'CWI', 'CWOV', 'CSL'];
   }
   if (lower === 'periphery') {
     return DATA?.factionGroups?.Periphery || [];
+  }
+  if (lower === 'fwlstates' || lower === 'fwl states' || lower === 'fwlbreakup' || lower === 'fwl breakup') {
+    return DATA?.factionGroups?.FWLStates || ['DA', 'DO', 'DTA', 'MSC', 'OP', 'RF', 'RCM', 'PR', 'MCM'];
+  }
+  if (lower === 'subunits' || lower === 'sub units' || lower === 'sub-units') {
+    // Return all faction codes that contain a dot (sub-unit factions)
+    if (DATA?.factions) {
+      return Object.keys(DATA.factions).filter(code => code.includes('.'));
+    }
+    return [];
   }
   
   const resolved = resolveFaction(name);
@@ -1761,9 +1822,11 @@ function getValueSuggestions(field, lower) {
         { text: 'InnerSphere', hint: 'All IS factions (non-Clan, non-Periphery)' },
         { text: 'Clans', hint: 'All Clan factions' },
         { text: 'InvasionClans', hint: 'CW, CJF, CGB, CSJ' },
-        { text: 'ISClans', hint: 'Clans in the IS (CW, CJF, CGB, CSJ, CHH, CNC, CDS, CSR, RD, RA)' },
-        { text: 'HomeClans', hint: 'Homeworld Clans (CBS, CCO, CFM, CGS, CIH, CSA, CSV)' },
-        { text: 'Periphery', hint: 'TC, MH, OA, MC' },
+        { text: 'ISClans', hint: 'Clans in the IS (incl. CWIE, CWE, RD, RA)' },
+        { text: 'HomeClans', hint: 'Homeworld Clans (incl. CCC, CB, CMG, CWI...)' },
+        { text: 'Periphery', hint: 'TC, MH, OA, MC, MOC, CDP, FVC...' },
+        { text: 'FWLStates', hint: 'FWL breakup: DA, DO, DTA, MSC, OP, RF, RCM, PR, MCM' },
+        { text: 'SubUnits', hint: 'Sub-unit factions (DC.SL, MERC.KH, etc.)' },
       ];
       for (const [code, info] of Object.entries(DATA.factions)) {
         items.push({ text: code, hint: info.name });

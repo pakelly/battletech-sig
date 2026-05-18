@@ -559,7 +559,12 @@ All string matching is case-insensitive with partial match support. Faction code
 |----------|-----------|
 | `faction=GreatHouses` | DC, FS, FWL, LC, CC |
 | `faction=Clans` | All Clan factions |
+| `faction=InvasionClans` | CW, CJF, CGB, CSJ |
+| `faction=HomeClans` | CBS, CCO, CFM, CGS, CIH, CSA, CSV, CCC, CB, CMG, CWI, CWOV, CSL |
+| `faction=ISClans` | CW, CJF, CGB, CSJ, CHH, CNC, CDS, CSR, RD, RA, CWIE, CWE |
 | `faction=Periphery` | All periphery factions |
+| `faction=FWLStates` | DA, DO, DTA, MSC, OP, RF, RCM, PR, MCM |
+| `faction=SubUnits` | All sub-unit factions (e.g., DC.SL, MERC.KH) |
 
 ### Sort Syntax
 

@@ -109,6 +109,34 @@ describe('Query Parser', () => {
     assert.strictEqual(p.factions.length, 5);
   });
 
+  it('expands FWLStates shortcut', () => {
+    const p = F.parseQuery('faction=FWLStates');
+    assert.ok(p.factions.includes('DA'));
+    assert.ok(p.factions.includes('DO'));
+    assert.ok(p.factions.includes('MSC'));
+    assert.ok(p.factions.includes('OP'));
+    assert.ok(p.factions.includes('RF'));
+    assert.strictEqual(p.factions.length, 9);
+  });
+
+  it('expands HomeClans shortcut to include absorbed clans', () => {
+    const p = F.parseQuery('faction=HomeClans');
+    assert.ok(p.factions.includes('CBS'));
+    assert.ok(p.factions.includes('CCC'));
+    assert.ok(p.factions.includes('CB'));
+    assert.ok(p.factions.includes('CSL'));
+    assert.ok(p.factions.length >= 13);
+  });
+
+  it('expands ISClans shortcut to include Wolf in Exile and Wolf Empire', () => {
+    const p = F.parseQuery('faction=ISClans');
+    assert.ok(p.factions.includes('CW'));
+    assert.ok(p.factions.includes('CWIE'));
+    assert.ok(p.factions.includes('CWE'));
+    assert.ok(p.factions.includes('RD'));
+    assert.ok(p.factions.includes('RA'));
+  });
+
   it('parses year', () => {
     const p = F.parseQuery('year=3039');
     assert.strictEqual(p.year, 3039);
@@ -306,6 +334,27 @@ describe('Faction Aliases', () => {
     const p = F.parseQuery('faction=LA');
     assert.ok(p.factions.includes('LC'));
     assert.ok(!p.factions.includes('LA'));
+  });
+
+  it('resolves new clan faction aliases', () => {
+    assert.strictEqual(F.resolveFaction('wolf in exile'), 'CWIE');
+    assert.strictEqual(F.resolveFaction('cloud cobra'), 'CCC');
+    assert.strictEqual(F.resolveFaction('stone lion'), 'CSL');
+    assert.strictEqual(F.resolveFaction('wolverine'), 'CWOV');
+  });
+
+  it('resolves FWL breakup state aliases', () => {
+    assert.strictEqual(F.resolveFaction('andurien'), 'DA');
+    assert.strictEqual(F.resolveFaction('regulan'), 'RF');
+    assert.strictEqual(F.resolveFaction('tamarind'), 'DTA');
+    assert.strictEqual(F.resolveFaction('marik-stewart'), 'MSC');
+  });
+
+  it('resolves other new faction aliases', () => {
+    assert.strictEqual(F.resolveFaction('pirates'), 'PIR');
+    assert.strictEqual(F.resolveFaction('bandit caste'), 'BAN');
+    assert.strictEqual(F.resolveFaction('filtvelt'), 'FVC');
+    assert.strictEqual(F.resolveFaction('chaos march'), 'CM');
   });
 });
 
@@ -622,6 +671,27 @@ describe('MUL Data Integrity', () => {
       return (weights.DC || 0) > 0;
     });
     assert.ok(dcMechs.length > 30, `DC should have >30 mechs in 3039, got ${dcMechs.length}`);
+  });
+
+  it('app-data includes sub-unit factions', () => {
+    // At least some sub-unit factions (with dots) should be present
+    const subUnits = Object.keys(APP_DATA.factions).filter(c => c.includes('.'));
+    assert.ok(subUnits.length > 50, `Should have >50 sub-unit factions, got ${subUnits.length}`);
+    assert.ok(subUnits.includes('DC.SL'), 'DC.SL (Sword of Light) should be present');
+    assert.ok(subUnits.includes('MERC.KH'), 'MERC.KH (Kell Hounds) should be present');
+  });
+
+  it('app-data includes previously-missing notable factions', () => {
+    // Spot-check a selection of factions that were previously filtered out
+    const expected = ['CWIE', 'CWE', 'CSL', 'CCC', 'MOC', 'CDP', 'DA', 'MSC', 'OP', 'PIR', 'BAN', 'CM'];
+    for (const code of expected) {
+      assert.ok(APP_DATA.factions[code], `Faction ${code} should be in app-data`);
+    }
+  });
+
+  it('app-data has >200 total factions', () => {
+    const count = Object.keys(APP_DATA.factions).length;
+    assert.ok(count > 200, `Should have >200 factions, got ${count}`);
   });
 });
 

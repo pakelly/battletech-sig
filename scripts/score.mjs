@@ -29,20 +29,8 @@ for (const fam of families) {
   }
 }
 
-// Which factions are "major" — have entries in mul-faction-map (the ones we show by default)
-const mulFactionMap = JSON.parse(readFileSync(join(ROOT, 'data/mul-faction-map.json'), 'utf8'));
-const majorFactions = new Set(Object.keys(mulFactionMap).filter(k => k !== '_description'));
-
-// Filter to major factions only for the parent-level factions in weights
-function filterToMajorFactions(factionWeights) {
-  const result = {};
-  for (const [f, w] of Object.entries(factionWeights)) {
-    if (majorFactions.has(f)) {
-      result[f] = w;
-    }
-  }
-  return result;
-}
+// All factions with data are included — no filtering by "major" status.
+// The UI handles grouping and display; the data pipeline passes everything through.
 
 const output = {
   _meta: {
@@ -55,18 +43,14 @@ const output = {
   eras: {}
 };
 
-// Copy faction metadata for major factions
+// Copy all faction metadata
 for (const [code, meta] of Object.entries(resolved.factionMeta)) {
-  if (majorFactions.has(code)) {
-    output.factionMeta[code] = meta;
-  }
+  output.factionMeta[code] = meta;
 }
 
-// Copy weight class distributions for major factions
+// Copy all weight class distributions
 for (const [code, wcd] of Object.entries(resolved.weightClassDistributions || {})) {
-  if (majorFactions.has(code)) {
-    output.weightClassDistributions[code] = wcd;
-  }
+  output.weightClassDistributions[code] = wcd;
 }
 
 // Process each era
@@ -74,16 +58,15 @@ for (const [eraYear, chassisData] of Object.entries(resolved.eras)) {
   const eraOut = {};
   
   for (const [chassisName, data] of Object.entries(chassisData)) {
-    const majorFactionWeights = filterToMajorFactions(data.factions || {});
-    if (Object.keys(majorFactionWeights).length === 0) continue;
+    const factionWeights = data.factions || {};
+    if (Object.keys(factionWeights).length === 0) continue;
     
-    // Filter variant weights to major factions too
+    // Pass through all variant weights
     const variants = {};
     if (data.variants) {
       for (const [varName, varFactions] of Object.entries(data.variants)) {
-        const filtered = filterToMajorFactions(varFactions);
-        if (Object.keys(filtered).length > 0) {
-          variants[varName] = filtered;
+        if (Object.keys(varFactions).length > 0) {
+          variants[varName] = varFactions;
         }
       }
     }
@@ -91,7 +74,7 @@ for (const [eraYear, chassisData] of Object.entries(resolved.eras)) {
     eraOut[chassisName] = {
       unitType: data.unitType || 'Mek',
       omni: data.omni || null,
-      weights: majorFactionWeights,
+      weights: factionWeights,
       variants: Object.keys(variants).length > 0 ? variants : undefined,
       family: familyMap[chassisName] || undefined
     };
