@@ -161,8 +161,13 @@ for (const file of mulFiles) {
   }
 }
 
-// ── Detect tonnage conflicts (same chassis name, different tonnages) ──
-// Collect ALL tonnages seen per chassis from MUL data, plus variant→tonnage map
+// ── Handle "(Omni)" suffixed chassis from MegaMek ──
+// MegaMek's ingest creates separate entries for BattleMech vs OmniMech when they share
+// a name (e.g., "Firestarter" and "Firestarter (Omni)"). We need to:
+// 1. Map MUL metadata to these entries using tonnage to distinguish
+// 2. Map MUL availability lookups using the base name
+
+// Collect per-chassis tonnage sets from MUL for disambiguation
 const chassisTonnages = {};  // { chassisName: Set<tonnage> }
 const variantTonnage = {};   // { variantDesignation: tonnage }
 for (const file of mulFiles) {
@@ -179,57 +184,50 @@ for (const file of mulFiles) {
   }
 }
 
-// Build split map: for chassis with multiple tonnages, determine the "primary" (earliest/lightest)
-// and create suffixed names for the others
-const chassisSplitMap = {}; // { originalName: { tonnage: newName } }
-const tonnageConflicts = Object.entries(chassisTonnages).filter(([, tons]) => tons.size > 1);
-for (const [name, tonSet] of tonnageConflicts) {
-  const tons = [...tonSet].sort((a, b) => a - b);
-  const primary = tons[0]; // lightest = primary (keeps original name)
-  chassisSplitMap[name] = {};
-  for (const t of tons) {
-    if (t === primary) {
-      chassisSplitMap[name][t] = name; // original name
-    } else {
-      chassisSplitMap[name][t] = `${name} [${t}]`; // suffixed
+// Build MUL metadata for "(Omni)" entries
+// The base name exists in chassisMeta from MUL (set to first tonnage seen).
+// For "(Omni)" entries, find the OTHER tonnage from MUL.
+const omniSuffixed = Object.keys(scores.eras).flatMap(era =>
+  Object.keys(scores.eras[era]).filter(k => k.endsWith(' (Omni)'))
+);
+const omniBaseNames = [...new Set(omniSuffixed.map(k => k.replace(' (Omni)', '')))];
+
+for (const baseName of omniBaseNames) {
+  const omniName = baseName + ' (Omni)';
+  const tonSet = chassisTonnages[baseName];
+  const baseMeta = chassisMeta[baseName] || {};
+
+  if (tonSet && tonSet.size >= 2) {
+    // Different tonnages: BM gets lighter, Omni gets heavier
+    const tons = [...tonSet].sort((a, b) => a - b);
+    const bmTonnage = tons[0];
+    const omniTonnage = tons[tons.length - 1];
+
+    if (chassisMeta[baseName]) {
+      chassisMeta[baseName] = { ...chassisMeta[baseName], tonnage: bmTonnage };
     }
-  }
-  // Fix chassisMeta: set primary tonnage on the original name, create entries for others
-  if (chassisMeta[name]) {
-    const origMeta = chassisMeta[name];
-    // Re-scan MUL entries for per-tonnage metadata
-    for (const t of tons) {
-      const splitName = chassisSplitMap[name][t];
-      if (t === primary) {
-        chassisMeta[splitName] = { ...origMeta, tonnage: t };
-      } else {
-        // Find intro date and tech for this tonnage's variants
-        let introDate = null, tech = origMeta.tech, type = origMeta.type;
-        for (const [v, vt] of Object.entries(variantTonnage)) {
-          if (vt === t && v.startsWith(name.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, ''))) {
-            const vm = variantMeta[v];
-            if (vm?.intro && (!introDate || vm.intro < introDate)) introDate = vm.intro;
-          }
-        }
-        chassisMeta[splitName] = { tonnage: t, introDate: introDate || origMeta.introDate, tech, type };
+
+    let introDate = null;
+    for (const [v, vt] of Object.entries(variantTonnage)) {
+      if (vt === omniTonnage) {
+        const vm = variantMeta[v];
+        if (vm?.intro && (!introDate || vm.intro < introDate)) introDate = vm.intro;
       }
     }
+    chassisMeta[omniName] = {
+      tonnage: omniTonnage,
+      introDate: introDate || baseMeta.introDate,
+      tech: baseMeta.tech,
+      type: baseMeta.type
+    };
+  } else {
+    // Same tonnage (or no MUL data): Omni entry shares the same tonnage as BM
+    chassisMeta[omniName] = { ...baseMeta };
   }
-}
-if (tonnageConflicts.length > 0) {
-  console.log(`Tonnage conflicts split: ${tonnageConflicts.map(([n, t]) => `${n} (${[...t].join('/')}t)`).join(', ')}`);
 }
 
-// Helper: resolve a chassis name + variant to its split name (if applicable)
-function resolveSplitName(chassisName, variantName) {
-  if (!chassisSplitMap[chassisName]) return chassisName;
-  if (variantName && variantTonnage[variantName]) {
-    const t = variantTonnage[variantName];
-    return chassisSplitMap[chassisName][t] || chassisName;
-  }
-  // No variant info — default to primary (lightest)
-  const tons = Object.keys(chassisSplitMap[chassisName]).map(Number).sort((a, b) => a - b);
-  return chassisSplitMap[chassisName][tons[0]] || chassisName;
+if (omniBaseNames.length > 0) {
+  console.log(`BM/Omni splits from MegaMek: ${omniBaseNames.join(', ')}`);
 }
 
 // Build cumulative availability: once a faction gets a chassis, they keep it
@@ -385,99 +383,45 @@ for (const [eraYear, chassisEntries] of Object.entries(scores.eras)) {
   for (const [chassisName, data] of Object.entries(chassisEntries)) {
     
     // If this chassis has a tonnage split, partition variants by tonnage
-    if (chassisSplitMap[chassisName] && data.variants) {
-      const splitEntries = {}; // { splitName: { variants: {}, weights: data.weights } }
-      
-      // Group variants by their split name
+    allChassis.add(chassisName);
+    
+    const entry = { w: remapFactionKeys(data.weights) };
+    
+    if (data.variants && Object.keys(data.variants).length > 0) {
+      const vOut = {};
       for (const [varName, factionWeights] of Object.entries(data.variants)) {
-        const splitName = resolveSplitName(chassisName, varName);
-        if (!splitEntries[splitName]) splitEntries[splitName] = { variants: {} };
-        splitEntries[splitName].variants[varName] = factionWeights;
+        const meta = variantMeta[varName];
+        vOut[varName] = {
+          w: remapFactionKeys(factionWeights),
+          ...(meta?.bv != null ? { bv: meta.bv } : {}),
+          ...(meta?.intro != null ? { intro: meta.intro } : {})
+        };
       }
-      
-      // Also handle unresolvable variants (not in MUL) — assign to primary
-      const primaryName = resolveSplitName(chassisName, null);
-      if (!splitEntries[primaryName]) splitEntries[primaryName] = { variants: {} };
-      
-      // Emit a separate chassis entry for each split
-      for (const [splitName, splitData] of Object.entries(splitEntries)) {
-        allChassis.add(splitName);
-        
-        // Chassis-level weights are shared (MegaMek doesn't split them)
-        // Use the full chassis weights for each split entry
-        const entry = { w: remapFactionKeys(data.weights) };
-        
-        if (Object.keys(splitData.variants).length > 0) {
-          const vOut = {};
-          for (const [varName, factionWeights] of Object.entries(splitData.variants)) {
-            const meta = variantMeta[varName];
-            vOut[varName] = {
-              w: remapFactionKeys(factionWeights),
-              ...(meta?.bv != null ? { bv: meta.bv } : {}),
-              ...(meta?.intro != null ? { intro: meta.intro } : {})
-            };
-          }
-          entry.v = vOut;
-        }
-        
-        // MUL availability per faction (cumulative) — use original chassis name for lookup
-        if (mulEra) {
-          const mul = {};
-          for (const faction of Object.keys(data.weights)) {
-            if (hasMulAvail(faction, mulEra, chassisName)) {
-              mul[remapFactionCode(faction)] = 1;
-            }
-          }
-          if (Object.keys(mul).length > 0) {
-            entry.mul = mul;
-          }
-        }
-        
-        const famName = chassisToFamily[splitName] || chassisToFamily[chassisName];
-        if (famName) entry.fam = famName;
-        
-        eraOut[splitName] = entry;
-      }
-    } else {
-      // Normal (non-split) chassis
-      allChassis.add(chassisName);
-      
-      const entry = { w: remapFactionKeys(data.weights) };
-      
-      if (data.variants && Object.keys(data.variants).length > 0) {
-        const vOut = {};
-        for (const [varName, factionWeights] of Object.entries(data.variants)) {
-          const meta = variantMeta[varName];
-          vOut[varName] = {
-            w: remapFactionKeys(factionWeights),
-            ...(meta?.bv != null ? { bv: meta.bv } : {}),
-            ...(meta?.intro != null ? { intro: meta.intro } : {})
-          };
-        }
-        entry.v = vOut;
-      }
-      
-      // MUL availability per faction (cumulative)
-      if (mulEra) {
-        const mul = {};
-        for (const faction of Object.keys(data.weights)) {
-          if (hasMulAvail(faction, mulEra, chassisName)) {
-            mul[remapFactionCode(faction)] = 1;
-          }
-        }
-        if (Object.keys(mul).length > 0) {
-          entry.mul = mul;
-        }
-      }
-      
-      // Stamp family membership from chassis-families.json config
-      const famName = chassisToFamily[chassisName];
-      if (famName) {
-        entry.fam = famName;
-      }
-      
-      eraOut[chassisName] = entry;
+      entry.v = vOut;
     }
+    
+    // MUL availability per faction (cumulative)
+    // For "(Omni)" entries, look up MUL using the base name (MUL doesn't suffix)
+    const mulLookupName = chassisName.replace(' (Omni)', '');
+    if (mulEra) {
+      const mul = {};
+      for (const faction of Object.keys(data.weights)) {
+        if (hasMulAvail(faction, mulEra, mulLookupName)) {
+          mul[remapFactionCode(faction)] = 1;
+        }
+      }
+      if (Object.keys(mul).length > 0) {
+        entry.mul = mul;
+      }
+    }
+    
+    // Stamp family membership from chassis-families.json config
+    const famName = chassisToFamily[chassisName] || chassisToFamily[mulLookupName];
+    if (famName) {
+      entry.fam = famName;
+    }
+    
+    eraOut[chassisName] = entry;
   }
   
   appData.eraData[eraYear] = eraOut;
@@ -495,19 +439,7 @@ for (const [eraYear, chassisEntries] of Object.entries(scores.eras)) {
 for (const name of allChassis) {
   const meta = chassisMeta[name];
   const tonnage = meta?.tonnage || null;
-  // For split chassis: only the heavier (non-primary) entry is the OmniMech
-  // For non-split: use MegaMek omni flag as before
-  let isOmni = false;
-  if (chassisSplitMap[name]) {
-    // This is the primary (unsuffixed) name of a split chassis — it's the BattleMech, not Omni
-    isOmni = false;
-  } else {
-    // Check if this is a suffixed split entry (e.g., "Firestarter [45]")
-    const isSplitSuffix = Object.values(chassisSplitMap).some(map =>
-      Object.values(map).includes(name) && name !== Object.values(map).find((_, i) => Object.keys(map)[i] === String(Math.min(...Object.keys(map).map(Number))))
-    );
-    isOmni = isSplitSuffix || !!omniMap[name];
-  }
+  const isOmni = !!omniMap[name];
   appData.chassis[name] = {
     tons: tonnage,
     class: weightClass(tonnage),

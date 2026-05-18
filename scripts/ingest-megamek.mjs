@@ -256,14 +256,45 @@ for (const eraFile of eraFiles) {
       }
     }
     
-    rawData[era][chassisName] = {
-      unitType,
-      omni,
-      factions: chassisAvail,
-      variants,
-    };
+    // Collect entries, tagging omni status. We'll disambiguate name collisions after.
+    const tempKey = omni ? chassisName + '\x00omni' : chassisName;
+    
+    if (rawData[era][tempKey]) {
+      Object.assign(rawData[era][tempKey].variants, variants);
+      for (const [f, a] of Object.entries(chassisAvail)) {
+        if (!rawData[era][tempKey].factions[f]) {
+          rawData[era][tempKey].factions[f] = a;
+        }
+      }
+    } else {
+      rawData[era][tempKey] = {
+        unitType,
+        omni,
+        factions: chassisAvail,
+        variants,
+      };
+    }
   }
   
+  console.log(`Era ${era}: ${Object.keys(rawData[era]).length} mech chassis (pre-disambiguation)`);
+  
+  // Disambiguate: only suffix "(Omni)" when both BM and Omni exist for the same name
+  const disambiguated = {};
+  for (const [tempKey, data] of Object.entries(rawData[era])) {
+    const isOmni = tempKey.includes('\x00omni');
+    const baseName = tempKey.replace('\x00omni', '');
+    const hasBoth = rawData[era][baseName] && rawData[era][baseName + '\x00omni'];
+    
+    let finalKey;
+    if (hasBoth) {
+      finalKey = isOmni ? baseName + ' (Omni)' : baseName;
+    } else {
+      finalKey = baseName; // no collision, use original name
+    }
+    
+    disambiguated[finalKey] = data;
+  }
+  rawData[era] = disambiguated;
   console.log(`Era ${era}: ${Object.keys(rawData[era]).length} mech chassis`);
 }
 

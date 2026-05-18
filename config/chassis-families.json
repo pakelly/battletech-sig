@@ -3,7 +3,7 @@
     "groupName": "Arctic Wolf Family",
     "chassis": [
       "Arctic Wolf",
-      "Arctic Wolf II"
+      "Arctic Wolf (Omni)"
     ],
     "enabled": false,
     "autoDetected": true
@@ -22,7 +22,7 @@
     "groupName": "Blackjack Family",
     "chassis": [
       "Blackjack",
-      "Blackjack [50]"
+      "Blackjack (Omni)"
     ],
     "enabled": false,
     "autoDetected": true
@@ -40,7 +40,34 @@
     "groupName": "Centurion Family",
     "chassis": [
       "Centurion",
-      "Centurion [55]"
+      "Centurion (Omni)"
+    ],
+    "enabled": false,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Cougar Family",
+    "chassis": [
+      "Cougar",
+      "Cougar (Omni)"
+    ],
+    "enabled": false,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Crossbow Family",
+    "chassis": [
+      "Crossbow",
+      "Crossbow (Omni)"
+    ],
+    "enabled": false,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Deimos Family",
+    "chassis": [
+      "Deimos",
+      "Deimos (Omni)"
     ],
     "enabled": false,
     "autoDetected": true
@@ -77,25 +104,16 @@
     "groupName": "Firestarter Family",
     "chassis": [
       "Firestarter",
-      "Firestarter [45]"
+      "Firestarter (Omni)"
     ],
     "enabled": false,
     "autoDetected": true
   },
   {
-    "groupName": "Flea Family",
+    "groupName": "Flamberge Family",
     "chassis": [
-      "Flea",
-      "Flea [20]"
-    ],
-    "enabled": false,
-    "autoDetected": true
-  },
-  {
-    "groupName": "Galahad Family",
-    "chassis": [
-      "Galahad",
-      "Galahad [60]"
+      "Flamberge",
+      "Flamberge (Omni)"
     ],
     "enabled": false,
     "autoDetected": true
@@ -114,15 +132,6 @@
     "chassis": [
       "Thor (Summoner)",
       "Thor II (Grand Summoner)"
-    ],
-    "enabled": false,
-    "autoDetected": true
-  },
-  {
-    "groupName": "Griffin Family",
-    "chassis": [
-      "Griffin",
-      "Griffin [60]"
     ],
     "enabled": false,
     "autoDetected": true
@@ -191,8 +200,7 @@
     "groupName": "JagerMech Family",
     "chassis": [
       "JagerMech",
-      "JagerMech III",
-      "JagerMech [70]"
+      "JagerMech III"
     ],
     "enabled": false,
     "autoDetected": true
@@ -303,8 +311,7 @@
     "groupName": "Rifleman Family",
     "chassis": [
       "Rifleman",
-      "Rifleman II",
-      "Rifleman [60]"
+      "Rifleman II"
     ],
     "enabled": false,
     "autoDetected": true
@@ -320,15 +327,6 @@
     "autoDetected": true
   },
   {
-    "groupName": "Shadow Hawk Family",
-    "chassis": [
-      "Shadow Hawk",
-      "Shadow Hawk [55]"
-    ],
-    "enabled": false,
-    "autoDetected": true
-  },
-  {
     "groupName": "Skinwalker Variants",
     "chassis": [
       "Ryoken III (Skinwalker)",
@@ -338,20 +336,10 @@
     "autoDetected": true
   },
   {
-    "groupName": "Stag Family",
-    "chassis": [
-      "Stag",
-      "Stag II"
-    ],
-    "enabled": false,
-    "autoDetected": true
-  },
-  {
     "groupName": "Stalker Family",
     "chassis": [
       "Stalker",
-      "Stalker II",
-      "Stalker [85]"
+      "Stalker II"
     ],
     "enabled": false,
     "autoDetected": true
@@ -417,15 +405,6 @@
     "chassis": [
       "Ursus",
       "Ursus II"
-    ],
-    "enabled": false,
-    "autoDetected": true
-  },
-  {
-    "groupName": "Warlord Family",
-    "chassis": [
-      "Warlord",
-      "Warlord [80]"
     ],
     "enabled": false,
     "autoDetected": true
