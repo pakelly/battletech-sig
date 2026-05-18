@@ -3,3 +3,6 @@ node_modules/
 
 # Large raw MUL data files (keep app-data.json which is the built output)
 mul-*.json
+
+# MegaMek upstream data (cloned separately, not committed)
+mm-data/

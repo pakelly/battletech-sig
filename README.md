@@ -5,11 +5,14 @@ A tool for BattleTech hobbyists to explore faction identity through mech usage d
 ## Quick Start
 
 ```bash
-# Generate data
-node scripts/score.mjs
-node scripts/combine.mjs
+# 1. Clone upstream MegaMek data (one-time setup)
+git clone --depth 1 --filter=blob:none --sparse https://github.com/MegaMek/mm-data.git mm-data
+cd mm-data && git sparse-checkout set data/forcegenerator && cd ..
 
-# Serve the app
+# 2. Generate data
+bash scripts/build.sh
+
+# 3. Serve the app
 cd app && bash serve.sh
 # Open http://localhost:8080
 ```

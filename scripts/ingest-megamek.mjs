@@ -10,7 +10,23 @@ import fs from 'fs';
 import path from 'path';
 import { XMLParser } from 'fast-xml-parser';
 
-const DATA_DIR = path.resolve(import.meta.dirname, '..', 'data', 'megamek');
+// Support --mm-data-path flag or MM_DATA_PATH env var
+// Default: mm-data/data/forcegenerator/ relative to project root
+const mmDataArg = process.argv.find(a => a.startsWith('--mm-data-path='));
+const MM_DATA_BASE = mmDataArg
+  ? mmDataArg.split('=')[1]
+  : (process.env.MM_DATA_PATH || path.resolve(import.meta.dirname, '..', 'mm-data'));
+
+const DATA_DIR = path.resolve(MM_DATA_BASE, 'data', 'forcegenerator');
+
+// Verify mm-data is available
+if (!fs.existsSync(DATA_DIR)) {
+  console.error(`ERROR: MegaMek data not found at ${DATA_DIR}`);
+  console.error('Clone the mm-data repo: git clone --depth 1 --filter=blob:none --sparse https://github.com/MegaMek/mm-data.git mm-data');
+  console.error('Then: cd mm-data && git sparse-checkout set data/forcegenerator');
+  process.exit(1);
+}
+
 const OUT_DIR  = path.resolve(import.meta.dirname, '..', 'output');
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
