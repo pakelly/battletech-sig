@@ -4,13 +4,14 @@
 
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
-| prod | 1.21.1 | 2026-05-18 18:49 UTC | pending |
+| prod | 1.21.1 | 2026-05-18 19:08 UTC | pending |
 | test | 1.21.1 | 2026-05-18 18:51 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.21.1 | prod | 2026-05-18 19:08 | pending | VERSION.md: auto-stamp 1.21.1 test deploy |
 | 1.21.1 | test | 2026-05-18 18:51 | pending | fix: help panel tables scrollable on mobile |
 | 1.21.1 | prod | 2026-05-18 18:49 | pending | VERSION.md: auto-stamp 1.21.1 test deploy |
 | 1.21.1 | test | 2026-05-18 18:38 | pending | docs: audit and update DESIGN.md against v1.21.1 implementation |
