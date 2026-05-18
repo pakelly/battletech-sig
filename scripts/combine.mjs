@@ -536,6 +536,54 @@ for (const name of allChassis) {
   };
 }
 
+// ── Build faction index and encode faction keys as numeric indices ──
+// Collect all faction codes that appear in eraData weight/mul/variant objects
+{
+  const factionSet = new Set();
+  for (const eraEntries of Object.values(appData.eraData)) {
+    for (const entry of Object.values(eraEntries)) {
+      if (entry.w) for (const k of Object.keys(entry.w)) factionSet.add(k);
+      if (entry.mul) for (const k of Object.keys(entry.mul)) factionSet.add(k);
+      if (entry.v) {
+        for (const varData of Object.values(entry.v)) {
+          if (varData.w) for (const k of Object.keys(varData.w)) factionSet.add(k);
+        }
+      }
+    }
+  }
+  const factionIndex = [...factionSet].sort();
+  const codeToIdx = {};
+  for (let i = 0; i < factionIndex.length; i++) {
+    codeToIdx[factionIndex[i]] = String(i);
+  }
+
+  // Replace faction code keys with numeric index keys
+  function encodeFactionKeys(obj) {
+    if (!obj) return obj;
+    const result = {};
+    for (const [k, v] of Object.entries(obj)) {
+      const idx = codeToIdx[k];
+      result[idx !== undefined ? idx : k] = v;
+    }
+    return result;
+  }
+
+  for (const eraEntries of Object.values(appData.eraData)) {
+    for (const entry of Object.values(eraEntries)) {
+      if (entry.w) entry.w = encodeFactionKeys(entry.w);
+      if (entry.mul) entry.mul = encodeFactionKeys(entry.mul);
+      if (entry.v) {
+        for (const varData of Object.values(entry.v)) {
+          if (varData.w) varData.w = encodeFactionKeys(varData.w);
+        }
+      }
+    }
+  }
+
+  appData.factionIndex = factionIndex;
+  console.log(`Faction index: ${factionIndex.length} codes encoded as numeric keys`);
+}
+
 // Copy to app/ directory too
 writeFileSync(join(ROOT, 'output/app-data.json'), JSON.stringify(appData));
 writeFileSync(join(ROOT, 'app/app-data.json'), JSON.stringify(appData));

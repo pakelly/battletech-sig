@@ -698,6 +698,7 @@ MUL ingestion pulls per-faction data AND the three general pools (IS General, Cl
 ```
 {
   _meta: { generated, description },
+  factionIndex: ["AML", "ARDC", "BAN", ...],  // sorted faction codes; numeric keys in eraData reference this
   factions: { code: { name, clan, periphery, minor, wcd: { year: [L,M,H,A] } } },
   factionGroups: { GreatHouses: [...], Clans: [...], Periphery: [...] },
   eras: [{ year, label, mulEra }],
@@ -707,14 +708,25 @@ MUL ingestion pulls per-faction data AND the three general pools (IS General, Cl
   eraData: {
     year: {
       chassisName: {
-        w: { factionCode: weight },     // raw weights
-        v: { variantName: { w: { factionCode: weight }, bv: number|null, intro: number|null } },  // variant data
-        mul: { factionCode: 1 },         // MUL confirmation flags
-        fam: "familyGroupName"           // if part of a family
+        w: { "15": weight, "22": weight },  // keys are numeric indices into factionIndex
+        v: { variantName: { w: { "15": weight }, bv: number|null, intro: number|null } },
+        mul: { "15": 1 },                    // MUL confirmation flags (indexed)
+        fam: "familyGroupName"
       }
     }
   }
 }
+```
+
+#### Faction Index Compression
+
+Faction codes (e.g., "MERC", "ARDC", "DC") are repeated as object keys hundreds of thousands of times in `eraData`. To reduce file size, `combine.mjs` builds a `factionIndex` array — an alphabetically sorted list of all faction codes appearing in weight data — and replaces faction-code keys with their numeric index (as string keys).
+
+**On-disk format:** `{ "w": { "15": [5,0], "22": [3,"+"] } }` where `factionIndex[15]` = "DC", `factionIndex[22]` = "FS".
+
+**Runtime decoding:** `app.js` calls `decodeFactionIndex(DATA)` immediately after loading, which replaces all numeric keys back to faction codes in-place. All downstream code works with faction codes transparently. Tests perform the same decoding after loading `app-data.json`.
+
+This saves ~0.5MB from the JSON output by replacing multi-character faction codes with shorter numeric indices.
 ```
 
 ### Scoring Computation

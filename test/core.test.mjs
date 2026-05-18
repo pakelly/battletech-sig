@@ -29,6 +29,31 @@ let APP_DATA;
 before(() => {
   APP_DATA = JSON.parse(readFileSync(resolve(ROOT, 'app/app-data.json'), 'utf8'));
 
+  // Decode faction index (numeric keys → faction codes) — mirrors app.js decodeFactionIndex
+  if (APP_DATA.factionIndex) {
+    const fi = APP_DATA.factionIndex;
+    function decodeFactionWeights(obj) {
+      if (!obj) return obj;
+      const result = {};
+      for (const [idx, val] of Object.entries(obj)) {
+        const code = fi[idx];
+        result[code !== undefined ? code : idx] = val;
+      }
+      return result;
+    }
+    for (const eraEntries of Object.values(APP_DATA.eraData)) {
+      for (const entry of Object.values(eraEntries)) {
+        if (entry.w) entry.w = decodeFactionWeights(entry.w);
+        if (entry.mul) entry.mul = decodeFactionWeights(entry.mul);
+        if (entry.v) {
+          for (const varData of Object.values(entry.v)) {
+            if (varData.w) varData.w = decodeFactionWeights(varData.w);
+          }
+        }
+      }
+    }
+  }
+
   // Minimal DOM/browser stubs
   const stubEl = () => ({ value: '', classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } }, style: {}, innerHTML: '', textContent: '', appendChild() {}, addEventListener() {}, querySelectorAll: () => [], querySelector: () => null, closest: () => null, dataset: {} });
   const g = {

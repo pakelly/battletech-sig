@@ -1,9 +1,44 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.20.0';
+const APP_VERSION = '1.21.0';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
+
+// ── Faction Index Decoding ──
+// app-data.json stores faction keys in eraData as numeric indices (string keys "0","1",...)
+// referencing DATA.factionIndex. This saves ~3MB. Decode on load so all downstream code
+// works with faction codes (DC, FS, etc.) transparently.
+
+function decodeFactionWeights(indexedObj, factionIndex) {
+  if (!indexedObj || !factionIndex) return indexedObj;
+  const result = {};
+  for (const [idx, val] of Object.entries(indexedObj)) {
+    const code = factionIndex[idx];
+    if (code !== undefined) {
+      result[code] = val;
+    } else {
+      result[idx] = val; // fallback: already a faction code (shouldn't happen)
+    }
+  }
+  return result;
+}
+
+function decodeFactionIndex(data) {
+  if (!data.factionIndex || !data.eraData) return;
+  const fi = data.factionIndex;
+  for (const eraEntries of Object.values(data.eraData)) {
+    for (const entry of Object.values(eraEntries)) {
+      if (entry.w) entry.w = decodeFactionWeights(entry.w, fi);
+      if (entry.mul) entry.mul = decodeFactionWeights(entry.mul, fi);
+      if (entry.v) {
+        for (const varData of Object.values(entry.v)) {
+          if (varData.w) varData.w = decodeFactionWeights(varData.w, fi);
+        }
+      }
+    }
+  }
+}
 
 // ── Faction code aliases ──
 const FACTION_ALIASES = {
@@ -2478,6 +2513,7 @@ async function init() {
   try {
     const resp = await fetch('app-data.json?v=' + APP_VERSION);
     DATA = await resp.json();
+    decodeFactionIndex(DATA); // expand numeric faction indices back to codes
     // alias cache resets automatically (stored on DATA object)
     applyFamilyOverridesToData(); // apply user's saved family preferences
     
