@@ -1,0 +1,152 @@
+MekFile vs MUL Comparison Report
+================================
+Generated: 2026-05-18T13:54:30.054Z
+
+## CHASSIS COMPARISON
+
+Mekfile chassis: 731
+MUL chassis:     628
+In both:         577
+Mekfile only:    154
+MUL only:        51
+
+## TONNAGE CONSISTENCY (shared chassis)
+
+Match:       570
+Mismatch:    5
+One-sided:   2
+
+### Tonnage Mismatches
+  JagerMech: mekfile=65t, MUL=70t
+  Firestarter: mekfile=35t, MUL=45t
+  Gladiator: mekfile=95t, MUL=55t
+  Galahad: mekfile=60t, MUL=50t
+  Viper: mekfile=75t, MUL=70t
+
+## VARIANT COMPARISON
+
+Mekfile variants: 3217
+MUL variants:     2634
+In both:          2490
+Mekfile only:     727
+MUL only:         144
+
+## PREFIX COMPARISON
+
+Mekfile prefixes: 495
+MUL prefixes:     405
+
+## BV AVAILABILITY
+
+BV in .mtf files: NO — MegaMek calculates BV at runtime from loadout.
+All BV fields in mekfile-metadata.json are null.
+MUL provides BV for 2520 variants.
+LIMITATION: We still need MUL or a BV calculator for Battle Value data.
+
+## CHASSIS IN MEKFILES BUT NOT MUL (sample, first 50)
+
+  'Battle Tripod' (60t, Mixed, intro 3134)
+  'Gestalt' (45t, Inner Sphere, intro 3078)
+  'Harvester Tripod' (90t, Mixed, intro 3136)
+  'Scout Tripod' (30t, Mixed, intro 3132)
+  'Wing' Wraith (55t, Inner Sphere/Mixed, intro 3110)
+  Araña (40t, Clan, intro 3087)
+  Arbiter (35t, Inner Sphere, intro 3074)
+  Baboon (20t, Clan, intro 2871)
+  Black Hawk (50t, Clan, intro 2870)
+  Bombard (50t, Inner Sphere/Mixed, intro 3054)
+  Bull Shark (95t, Mixed/Clan, intro 3012)
+  Burrower (65t, Inner Sphere, intro 3115)
+  Buster (50t, Inner Sphere, intro 2615)
+  Butcherbird (20t, Clan, intro 3147)
+  Carbine (30t, Inner Sphere/Mixed, intro 2691)
+  CattleMaster (25t, Inner Sphere, intro 3024)
+  Cauldron-Born (65t, Clan, intro 3049)
+  Cazador (35t, Clan, intro 3145)
+  Chaffee (15t, Inner Sphere, intro 3081)
+  Colossus (95t, Inner Sphere, intro 3053)
+  Copper (25t, Inner Sphere, intro 2619)
+  Corsair (95t, Inner Sphere, intro 3035)
+  Crosscut (30t, Inner Sphere/Clan, intro 2650)
+  Cudgel (80t, Inner Sphere, intro 3053)
+  Daedalus (45t, Inner Sphere, intro 2750)
+  Daishi (100t, Clan, intro 3010)
+  Dasher (20t, Clan, intro 2874)
+  Deep Lord (65t, Inner Sphere, intro 3085)
+  Demeter (30t, Inner Sphere, intro 3130)
+  DemolitionMech (35t, Inner Sphere, intro 2513)
+  Dig King (35t, Inner Sphere, intro 2573)
+  Dig Lord (65t, Inner Sphere, intro 3057)
+  Diomede (100t, Inner Sphere, intro 3084)
+  Dragonfly (40t, Clan, intro 2940)
+  Exo (10t, Inner Sphere, intro 3080)
+  Fenris (45t, Clan, intro 2948)
+  Flashfire (30t, Inner Sphere, intro 3054)
+  ForestryMech (25t, Inner Sphere, intro 2865)
+  Fwltur (35t, Inner Sphere, intro 3081)
+  Gauss-Buster (50t, Inner Sphere, intro 3090)
+  Gladiator-B (95t, Clan, intro 2873)
+  Goshawk (55t, Clan, intro 2850)
+  Great Turtle (100t, Inner Sphere, intro 3067)
+  Grendel (45t, Clan, intro 3052)
+  Grommet (75t, Inner Sphere, intro 3000)
+  Grotesque (Mongrel) (80t, Clan, intro 3040)
+  Ground Pounder (65t, Inner Sphere, intro 3125)
+  Guard (15t, Inner Sphere, intro 2914)
+  Gulon (25t, Clan/Inner Sphere, intro 3000)
+  Hachiwara (70t, Inner Sphere, intro 3064)
+  ... and 104 more
+
+## CHASSIS IN MUL BUT NOT MEKFILES (sample, first 50)
+
+  Baboon (Howler) (20t, Clan, intro 2871)
+  Behemoth (Stone Rhino) (100t, Clan, intro 2846)
+  Black Hawk (Nova) (50t, Clan, intro 2870)
+  Butcherbird (Ion Sparrow) (20t, Clan, intro 3147)
+  Cauldron-Born (Ebon Jaguar) (65t, Clan, intro 3049)
+  Cougar-X (35t, Mixed, intro 3086)
+  Cougar-XR (35t, Mixed, intro 3070)
+  Daishi (Dire Wolf) (100t, Clan, intro 3010)
+  Dasher (Fire Moth) (20t, Clan, intro 2874)
+  Dragonfly (Viper) (40t, Clan, intro 2940)
+  Fenris (Ice Ferret) (45t, Clan, intro 2948)
+  Galahad (Glass Spider) (60t, Clan, intro 2834)
+  Gestalt (45t, Inner Sphere, intro 3078)
+  Gladiator (Executioner) (95t, Clan, intro 3001)
+  Gladiator-B (Executioner-B) (95t, Clan, intro 2873)
+  Goshawk (Vapor Eagle) (55t, Clan, intro 2850)
+  Grendel (Mongrel) (45t, Clan, intro 3052)
+  Hankyu (Arctic Cheetah) (30t, Clan, intro 3037)
+  Hellhound (Conjurer) (50t, Clan, intro 2829)
+  Hellhound II (Hellcat) (50t, Clan, intro 3133)
+  Hellhound II-P (Hellcat-P) (50t, Clan, intro 3065)
+  Hybrid Rifleman (60t, Mixed, intro 3024)
+  Koshi (Mist Lynx) (25t, Clan, intro 2926)
+  Kraken (Bane) (100t, Clan, intro 2827)
+  Loki (Hellbringer) (65t, Clan, intro 2926)
+  Mad Cat (Timber Wolf) (75t, Clan, intro 2945)
+  Mad Cat Mk IV (Savage Wolf) (75t, Clan, intro 3136)
+  Mad Cat Mk IV (Savage Wolf) PR (75t, Clan, intro 3130)
+  Man O' War (Gargoyle) (80t, Clan, intro 2945)
+  Masakari (Warhawk) (85t, Clan, intro 2999)
+  Nobori-nin (Huntsman) (50t, Clan, intro 3049)
+  Peregrine (Horned Owl) (35t, Clan, intro 2835)
+  Phoenix Hawk L "Fenikkusu Taka" (35t, Inner Sphere, intro 3116)
+  Puma (Adder) (35t, Clan, intro 3010)
+  Roadrunner (Emerald Harrier) (15t, Clan, intro 2920)
+  Ryoken (Stormcrow) (55t, Clan, intro 2930)
+  Ryoken III (Skinwalker) (55t, Clan, intro 3147)
+  Ryoken III-XP (Skinwalker) (55t, Mixed, intro 3143)
+  Schwerer Gustav (100t, Mixed, intro 3073)
+  Star Adder (Blood Asp) (90t, Clan, intro 3060)
+  Thor (Summoner) (70t, Clan, intro 2872)
+  Thor II (Grand Summoner) (70t, Clan, intro 3093)
+  Tian-zong (75t, Inner Sphere, intro 3090)
+  Uller (Kit Fox) (30t, Clan, intro 2890)
+  Viper (Black Python) (75t, Clan, intro 3051)
+  Vixen (Incubus) (30t, Clan, intro 2954)
+  Vulture (Mad Dog) (60t, Clan, intro 2963)
+  Vulture Mk III (Mad Dog Mk III) (60t, Clan, intro 3109)
+  Vulture Mk IV (Mad Dog Mk IV) (60t, Clan, intro 3136)
+  Wendigo VP (50t, Clan, intro 3134)
+  ... and 1 more
