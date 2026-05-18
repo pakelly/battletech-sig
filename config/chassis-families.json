@@ -19,10 +19,28 @@
     "autoDetected": true
   },
   {
+    "groupName": "Blackjack Family",
+    "chassis": [
+      "Blackjack",
+      "Blackjack [50]"
+    ],
+    "enabled": false,
+    "autoDetected": true
+  },
+  {
     "groupName": "Catapult Family",
     "chassis": [
       "Catapult",
       "Catapult II"
+    ],
+    "enabled": false,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Centurion Family",
+    "chassis": [
+      "Centurion",
+      "Centurion [55]"
     ],
     "enabled": false,
     "autoDetected": true
@@ -56,6 +74,33 @@
     "autoDetected": true
   },
   {
+    "groupName": "Firestarter Family",
+    "chassis": [
+      "Firestarter",
+      "Firestarter [45]"
+    ],
+    "enabled": false,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Flea Family",
+    "chassis": [
+      "Flea",
+      "Flea [20]"
+    ],
+    "enabled": false,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Galahad Family",
+    "chassis": [
+      "Galahad",
+      "Galahad [60]"
+    ],
+    "enabled": false,
+    "autoDetected": true
+  },
+  {
     "groupName": "Grand Crusader Family",
     "chassis": [
       "Grand Crusader",
@@ -69,6 +114,15 @@
     "chassis": [
       "Thor (Summoner)",
       "Thor II (Grand Summoner)"
+    ],
+    "enabled": false,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Griffin Family",
+    "chassis": [
+      "Griffin",
+      "Griffin [60]"
     ],
     "enabled": false,
     "autoDetected": true
@@ -137,7 +191,8 @@
     "groupName": "JagerMech Family",
     "chassis": [
       "JagerMech",
-      "JagerMech III"
+      "JagerMech III",
+      "JagerMech [70]"
     ],
     "enabled": false,
     "autoDetected": true
@@ -248,17 +303,8 @@
     "groupName": "Rifleman Family",
     "chassis": [
       "Rifleman",
-      "Rifleman II"
-    ],
-    "enabled": false,
-    "autoDetected": true
-  },
-  {
-    "groupName": "Timber Wolf Family",
-    "chassis": [
-      "Mad Cat (Timber Wolf)",
-      "Mad Cat Mk IV (Savage Wolf)",
-      "Mad Cat Mk IV PR (Savage Wolf)"
+      "Rifleman II",
+      "Rifleman [60]"
     ],
     "enabled": false,
     "autoDetected": true
@@ -269,6 +315,15 @@
       "Shadow Cat",
       "Shadow Cat II",
       "Shadow Cat III"
+    ],
+    "enabled": false,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Shadow Hawk Family",
+    "chassis": [
+      "Shadow Hawk",
+      "Shadow Hawk [55]"
     ],
     "enabled": false,
     "autoDetected": true
@@ -295,7 +350,8 @@
     "groupName": "Stalker Family",
     "chassis": [
       "Stalker",
-      "Stalker II"
+      "Stalker II",
+      "Stalker [85]"
     ],
     "enabled": false,
     "autoDetected": true
@@ -314,6 +370,16 @@
     "chassis": [
       "Templar",
       "Templar III"
+    ],
+    "enabled": false,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Timber Wolf Family",
+    "chassis": [
+      "Mad Cat (Timber Wolf)",
+      "Mad Cat Mk IV (Savage Wolf)",
+      "Mad Cat Mk IV PR (Savage Wolf)"
     ],
     "enabled": false,
     "autoDetected": true
@@ -351,6 +417,15 @@
     "chassis": [
       "Ursus",
       "Ursus II"
+    ],
+    "enabled": false,
+    "autoDetected": true
+  },
+  {
+    "groupName": "Warlord Family",
+    "chassis": [
+      "Warlord",
+      "Warlord [80]"
     ],
     "enabled": false,
     "autoDetected": true
