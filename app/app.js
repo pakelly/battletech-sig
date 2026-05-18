@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.18.4';
+const APP_VERSION = '1.18.5';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -21,15 +21,15 @@ const FACTION_ALIASES = {
   'cjf': 'CJF', 'jade falcon': 'CJF', 'clan jade falcon': 'CJF',
   'cgb': 'CGB', 'ghost bear': 'CGB', 'clan ghost bear': 'CGB',
   'csj': 'CSJ', 'smoke jaguar': 'CSJ', 'clan smoke jaguar': 'CSJ',
-  'chh': 'CHH', 'hells horses': 'CHH', "hell's horses": 'CHH',
-  'cnc': 'CNC', 'nova cat': 'CNC',
-  'csv': 'CSV', 'steel viper': 'CSV',
-  'cds': 'CDS', 'diamond shark': 'CDS',
-  'csr': 'CSR', 'snow raven': 'CSR',
+  'chh': 'CHH', 'hells horses': 'CHH', "hell's horses": 'CHH', "clan hell's horses": 'CHH', 'clan hells horses': 'CHH',
+  'cnc': 'CNC', 'nova cat': 'CNC', 'clan nova cat': 'CNC', 'spirit cats': 'CNC',
+  'csv': 'CSV', 'steel viper': 'CSV', 'clan steel viper': 'CSV',
+  'cds': 'CDS', 'diamond shark': 'CDS', 'sea fox': 'CDS', 'clan sea fox': 'CDS', 'clan diamond shark': 'CDS',
+  'csr': 'CSR', 'snow raven': 'CSR', 'clan snow raven': 'CSR',
   'cbs': 'CBS', 'blood spirit': 'CBS',
   'cco': 'CCO', 'coyote': 'CCO',
   'cfm': 'CFM', 'fire mandrill': 'CFM',
-  'cgs': 'CGS', 'goliath scorpion': 'CGS',
+  'cgs': 'CGS', 'goliath scorpion': 'CGS', 'clan goliath scorpion': 'CGS', 'scorpion empire': 'CGS', 'scorpion': 'CGS',
   'cih': 'CIH', 'ice hellion': 'CIH',
   'csa': 'CSA', 'star adder': 'CSA',
   'merc': 'MERC', 'mercenary': 'MERC', 'mercs': 'MERC',
@@ -41,8 +41,8 @@ const FACTION_ALIASES = {
   'wd': 'WD', "wolf's dragoons": 'WD', 'dragoons': 'WD',
   'ros': 'ROS', 'republic': 'ROS', 'republic of the sphere': 'ROS',
   'sic': 'SIC', 'st. ives': 'SIC', 'st ives': 'SIC',
-  'rd': 'RD', 'rasalhague dominion': 'RD',
-  'ra': 'RA', 'raven alliance': 'RA',
+  'rd': 'RD', 'rasalhague dominion': 'RD', 'rassalhague dominion': 'RD', 'dominion': 'RD',
+  'ra': 'RA', 'raven alliance': 'RA', 'clan raven alliance': 'RA',
   'sl': 'SL', 'star league': 'SL',
   'slr': 'SLR', 'star league royal': 'SLR',
   'th': 'TH', 'terran hegemony': 'TH',
@@ -339,6 +339,19 @@ function parseQuery(queryStr) {
       return full; // no multi-word match, leave as-is
     });
   }
+
+  // Auto-quote multi-word faction names: faction=scorpion empire → faction="scorpion empire"
+  q = q.replace(/\bfaction\s*(=|!=)\s*(?!["(])(\S+(?:\s+\S+){0,3})/gi, (full, op, val) => {
+    const words = val.split(/\s+/);
+    for (let len = words.length; len >= 2; len--) {
+      const candidate = words.slice(0, len).join(' ');
+      if (FACTION_ALIASES[candidate.toLowerCase()]) {
+        const remainder = words.slice(len).join(' ');
+        return 'faction' + op + '"' + candidate + '"' + (remainder ? ' ' + remainder : '');
+      }
+    }
+    return full;
+  });
 
   // Parse individual field expressions
   // Tokenize: handle parenthesized OR groups
