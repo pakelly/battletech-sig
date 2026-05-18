@@ -79,7 +79,7 @@
           <details>
             <summary class="help-section-title">Columns — What am I looking at?</summary>
             <div class="help-section-content">
-              <table class="help-table">
+              <div class="help-table-wrap"><table class="help-table">
                 <thead><tr><th>Column</th><th>Description</th></tr></thead>
                 <tbody>
                   <tr><td><strong>Chassis</strong></td><td>Mech name (or family name if merging is on). Click to see variant breakdown.</td></tr>
@@ -90,7 +90,7 @@
                   <tr><td><strong>[Faction] BW</strong></td><td>Biased Weight — effective probability including weight class distribution. Hidden by default (☰).</td></tr>
                   <tr><td><strong>Spread</strong></td><td>Difference between highest and lowest raw weight across scoped factions. Hidden by default.</td></tr>
                 </tbody>
-              </table>
+              </table></div>
 
               <h4>Distinctiveness ratings</h4>
               <ul>
@@ -116,7 +116,7 @@ signature = weight × max(0, z)</pre>
             <summary class="help-section-title">Query Language</summary>
             <div class="help-section-content">
               <h4>Filters</h4>
-              <table class="help-table">
+              <div class="help-table-wrap"><table class="help-table">
                 <thead><tr><th>Filter</th><th>Example</th><th>What it does</th></tr></thead>
                 <tbody>
                   <tr><td><code>faction=</code></td><td><code>faction=DC</code>, <code>faction=GreatHouses</code></td><td>Which factions to compare. Codes, names, or groups.</td></tr>
@@ -134,7 +134,7 @@ signature = weight × max(0, z)</pre>
                   <tr><td><code>family=</code></td><td><code>family=off</code></td><td>Toggle chassis family merging.</td></tr>
                   <tr><td><code>industrial=</code></td><td><code>industrial=show</code></td><td>Show IndustrialMechs (hidden by default).</td></tr>
                 </tbody>
-              </table>
+              </table></div>
 
               <h4>Operators</h4>
               <p><code>=</code>, <code>!=</code>, <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code>. Text fields support <code>OR</code>: <code>class=(Light OR Medium)</code>.</p>
@@ -148,7 +148,7 @@ signature = weight × max(0, z)</pre>
               </ul>
 
               <h4>Faction groups</h4>
-              <table class="help-table help-table-compact">
+              <div class="help-table-wrap"><table class="help-table help-table-compact">
                 <thead><tr><th>Shortcut</th><th>Factions</th></tr></thead>
                 <tbody>
                   <tr><td><code>GreatHouses</code></td><td>DC, FS, FWL, LC, CC</td></tr>
@@ -156,7 +156,7 @@ signature = weight × max(0, z)</pre>
                   <tr><td><code>InnerSphere</code></td><td>All IS factions</td></tr>
                   <tr><td><code>Periphery</code></td><td>All periphery factions</td></tr>
                 </tbody>
-              </table>
+              </table></div>
 
               <h4>Faction-specific filters</h4>
               <p><code>DC-sig&gt;5</code> — only chassis where DC's distinctiveness exceeds 5<br>
@@ -167,7 +167,7 @@ signature = weight × max(0, z)</pre>
           <details>
             <summary class="help-section-title">Settings</summary>
             <div class="help-section-content">
-              <table class="help-table">
+              <div class="help-table-wrap"><table class="help-table">
                 <thead><tr><th>Setting</th><th>What it controls</th></tr></thead>
                 <tbody>
                   <tr><td><strong>Chassis families</strong></td><td>Related chassis (e.g. Dragon + Grand Dragon) scored as one entry. Per-family toggles available.</td></tr>
@@ -175,7 +175,7 @@ signature = weight × max(0, z)</pre>
                   <tr><td><strong>Data Mode A/B</strong></td><td>A = raw MegaMek. B (default) = filtered by MUL canon availability.</td></tr>
                   <tr><td><strong>Column visibility (☰)</strong></td><td>Show/hide individual columns. BW and Spread hidden by default.</td></tr>
                 </tbody>
-              </table>
+              </table></div>
             </div>
           </details>
 
