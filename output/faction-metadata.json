@@ -1,0 +1,4274 @@
+{
+  "AA": {
+    "key": "AA",
+    "name": "Augustine Alliance",
+    "yearsActive": [
+      {
+        "start": 3139
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 255,
+      "green": 102,
+      "blue": 153
+    }
+  },
+  "AB": {
+    "key": "AB",
+    "name": "Azami Brotherhood",
+    "yearsActive": [
+      {
+        "start": 2450,
+        "end": 2516
+      },
+      {
+        "start": 3075,
+        "end": 3081
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "AB"
+    ],
+    "color": {
+      "red": 238,
+      "green": 66,
+      "blue": 244
+    }
+  },
+  "ABN": {
+    "key": "ABN",
+    "name": "Abandoned",
+    "yearsActive": null,
+    "tags": [
+      "SPECIAL",
+      "ABANDONED",
+      "INACTIVE",
+      "CHAOS",
+      "AGGREGATE"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "A"
+    ],
+    "color": {
+      "red": 0,
+      "green": 0,
+      "blue": 0
+    }
+  },
+  "AC": {
+    "key": "AC",
+    "name": "Azami Caliphate",
+    "yearsActive": [
+      {
+        "start": 2450,
+        "end": 2516
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "AC"
+    ],
+    "color": {
+      "red": 66,
+      "green": 244,
+      "blue": 66
+    }
+  },
+  "ACPS": {
+    "key": "ACPS",
+    "name": "Asian Co-Prosperity Sphere",
+    "yearsActive": [
+      {
+        "start": 2022,
+        "end": 2100
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 0,
+      "green": 20,
+      "blue": 220
+    }
+  },
+  "AE": {
+    "key": "AE",
+    "name": "Amaris Empire",
+    "yearsActive": [
+      {
+        "start": 2767,
+        "end": 2779
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "AE"
+    ],
+    "color": {
+      "red": 142,
+      "green": 74,
+      "blue": 123
+    }
+  },
+  "AG": {
+    "key": "AG",
+    "name": "Alliance of Galedon",
+    "yearsActive": [
+      {
+        "start": 2302,
+        "end": 2319
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "AG"
+    ],
+    "color": {
+      "red": 128,
+      "green": 66,
+      "blue": 244
+    }
+  },
+  "AML": {
+    "key": "AML",
+    "name": "Alyina Mercantile League",
+    "yearsActive": [
+      {
+        "start": 3151
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "AML"
+    ],
+    "color": {
+      "red": 47,
+      "green": 124,
+      "blue": 50
+    }
+  },
+  "ARC": {
+    "key": "ARC",
+    "name": "Aurigan Coalition",
+    "yearsActive": [
+      {
+        "start": 2910,
+        "end": 3028
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "LENIENT",
+      "MINOR",
+      "PERIPHERY",
+      "GENEROUS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "AuC"
+    ],
+    "color": {
+      "red": 255,
+      "green": 36,
+      "blue": 0
+    }
+  },
+  "ARD": {
+    "key": "ARD",
+    "name": "Aurigan Directorate",
+    "yearsActive": [
+      {
+        "start": 3022,
+        "end": 3025
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "PERIPHERY",
+      "PLAYABLE"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "AuD"
+    ],
+    "color": {
+      "red": 103,
+      "green": 140,
+      "blue": 73
+    }
+  },
+  "ARDC": {
+    "key": "ARDC",
+    "name": "Arc-Royal Defense Cordon",
+    "yearsActive": [
+      {
+        "start": 3058,
+        "end": 3067
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 218,
+      "green": 165,
+      "blue": 32
+    }
+  },
+  "ARL": {
+    "key": "ARL",
+    "name": "Arc-Royal Liberty Coalition",
+    "yearsActive": [
+      {
+        "start": 3151
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "ALC"
+    ],
+    "color": {
+      "red": 39,
+      "green": 212,
+      "blue": 200
+    }
+  },
+  "AXP": {
+    "key": "AXP",
+    "name": "Axumite Providence",
+    "yearsActive": [
+      {
+        "start": 2392,
+        "end": 3075
+      }
+    ],
+    "tags": [
+      "DEEP_PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "AP"
+    ],
+    "color": {
+      "red": 153,
+      "green": 50,
+      "blue": 204
+    }
+  },
+  "Alf": {
+    "key": "Alf",
+    "name": "Alfirk",
+    "yearsActive": null,
+    "tags": [
+      "MINOR",
+      "DEEP_PERIPHERY",
+      "SPECIAL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 103,
+      "green": 169,
+      "blue": 57
+    }
+  },
+  "BAN": {
+    "key": "BAN",
+    "name": "Bandit Caste",
+    "yearsActive": [
+      {
+        "start": 2830
+      }
+    ],
+    "tags": [
+      "CLAN",
+      "AGGREGATE"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": null
+  },
+  "BC": {
+    "key": "BC",
+    "name": "Buena Collective",
+    "yearsActive": [
+      {
+        "start": 3146,
+        "end": 3148
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 0,
+      "green": 130,
+      "blue": 186
+    }
+  },
+  "BH": {
+    "key": "BH",
+    "name": "Butte Hold",
+    "yearsActive": [
+      {
+        "start": 3018,
+        "end": 3028
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": null
+  },
+  "BLORD": {
+    "key": "BLORD",
+    "name": "Blessed Order",
+    "yearsActive": [
+      {
+        "start": 3128,
+        "end": 3141
+      }
+    ],
+    "tags": [],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": null
+  },
+  "BoS": {
+    "key": "BoS",
+    "name": "Barony of Strang",
+    "yearsActive": [
+      {
+        "start": 2779,
+        "end": 3049
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 164,
+      "green": 54,
+      "blue": 149
+    }
+  },
+  "CB": {
+    "key": "CB",
+    "name": "Clan Burrock",
+    "yearsActive": [
+      {
+        "start": 2807,
+        "end": 3059
+      },
+      {
+        "start": 3072,
+        "end": 3074
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CBR"
+    ],
+    "color": {
+      "red": 122,
+      "green": 122,
+      "blue": 71
+    }
+  },
+  "CBS": {
+    "key": "CBS",
+    "name": "Clan Blood Spirit",
+    "yearsActive": [
+      {
+        "start": 2807,
+        "end": 3082
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CBS"
+    ],
+    "color": {
+      "red": 255,
+      "green": 99,
+      "blue": 71
+    }
+  },
+  "CC": {
+    "key": "CC",
+    "name": "Capellan Confederation",
+    "yearsActive": [
+      {
+        "start": 2367
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MAJOR",
+      "IS",
+      "STINGY",
+      "CONTROLLING"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CC"
+    ],
+    "color": {
+      "red": 0,
+      "green": 127,
+      "blue": 14
+    }
+  },
+  "CCC": {
+    "key": "CCC",
+    "name": "Clan Cloud Cobra",
+    "yearsActive": [
+      {
+        "start": 2807,
+        "end": 3085
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CCC"
+    ],
+    "color": {
+      "red": 147,
+      "green": 112,
+      "blue": 219
+    }
+  },
+  "CCO": {
+    "key": "CCO",
+    "name": "Clan Coyote",
+    "yearsActive": [
+      {
+        "start": 2807,
+        "end": 3085
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CCY"
+    ],
+    "color": {
+      "red": 0,
+      "green": 0,
+      "blue": 205
+    }
+  },
+  "CCom": {
+    "key": "CCom",
+    "name": "Capellan Commonality",
+    "yearsActive": [
+      {
+        "start": 2310,
+        "end": 2367
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CCom"
+    ],
+    "color": {
+      "red": 242,
+      "green": 145,
+      "blue": 197
+    }
+  },
+  "CCon": {
+    "key": "CCon",
+    "name": "Coreward Confederacy",
+    "yearsActive": null,
+    "tags": [
+      "DEEP_PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 255,
+      "green": 0,
+      "blue": 0
+    }
+  },
+  "CDP": {
+    "key": "CDP",
+    "name": "Calderon Protectorate",
+    "yearsActive": [
+      {
+        "start": 3066
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CDP"
+    ],
+    "color": {
+      "red": 0,
+      "green": 128,
+      "blue": 128
+    }
+  },
+  "CDS": {
+    "key": "CDS",
+    "name": "Clan Sea Fox",
+    "yearsActive": [
+      {
+        "start": 2807
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CDS",
+      "CSF"
+    ],
+    "color": {
+      "red": 181,
+      "green": 191,
+      "blue": 209
+    }
+  },
+  "CEI": {
+    "key": "CEI",
+    "name": "Escorpión Imperio",
+    "yearsActive": [
+      {
+        "start": 3080,
+        "end": 3141
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "DEEP_PERIPHERY",
+      "STINGY",
+      "CLAN",
+      "CONTROLLING",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "EI"
+    ],
+    "color": {
+      "red": 104,
+      "green": 125,
+      "blue": 11
+    }
+  },
+  "CFM": {
+    "key": "CFM",
+    "name": "Clan Fire Mandrill",
+    "yearsActive": [
+      {
+        "start": 2807,
+        "end": 3073
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CFM"
+    ],
+    "color": {
+      "red": 208,
+      "green": 82,
+      "blue": 23
+    }
+  },
+  "CGB": {
+    "key": "CGB",
+    "name": "Clan Ghost Bear",
+    "yearsActive": [
+      {
+        "start": 2807,
+        "end": 3103
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MAJOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CGB",
+      "GBD"
+    ],
+    "color": {
+      "red": 191,
+      "green": 232,
+      "blue": 255
+    }
+  },
+  "CGS": {
+    "key": "CGS",
+    "name": "Clan Goliath Scorpion",
+    "yearsActive": [
+      {
+        "start": 2807,
+        "end": 3080
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CGS"
+    ],
+    "color": {
+      "red": 104,
+      "green": 125,
+      "blue": 11
+    }
+  },
+  "CH": {
+    "key": "CH",
+    "name": "Capellan Hegemony",
+    "yearsActive": [
+      {
+        "start": 2270,
+        "end": 2310
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CH"
+    ],
+    "color": {
+      "red": 2,
+      "green": 166,
+      "blue": 79
+    }
+  },
+  "CHH": {
+    "key": "CHH",
+    "name": "Clan Hell's Horses",
+    "yearsActive": [
+      {
+        "start": 2807
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CHH"
+    ],
+    "color": {
+      "red": 250,
+      "green": 166,
+      "blue": 26
+    }
+  },
+  "CI": {
+    "key": "CI",
+    "name": "Chainelane Isles",
+    "yearsActive": null,
+    "tags": [
+      "MINOR",
+      "DEEP_PERIPHERY",
+      "SPECIAL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CI"
+    ],
+    "color": {
+      "red": 255,
+      "green": 80,
+      "blue": 93
+    }
+  },
+  "CIH": {
+    "key": "CIH",
+    "name": "Clan Ice Hellion",
+    "yearsActive": [
+      {
+        "start": 2807,
+        "end": 3074
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CIH"
+    ],
+    "color": {
+      "red": 248,
+      "green": 248,
+      "blue": 255
+    }
+  },
+  "CIR": {
+    "key": "CIR",
+    "name": "Circinus Federation",
+    "yearsActive": [
+      {
+        "start": 2785,
+        "end": 3081
+      }
+    ],
+    "tags": [
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CF"
+    ],
+    "color": {
+      "red": 198,
+      "green": 36,
+      "blue": 58
+    }
+  },
+  "CJF": {
+    "key": "CJF",
+    "name": "Clan Jade Falcon",
+    "yearsActive": [
+      {
+        "start": 2807
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MAJOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CJF"
+    ],
+    "color": {
+      "red": 174,
+      "green": 214,
+      "blue": 112
+    }
+  },
+  "CLAN": {
+    "key": "CLAN",
+    "name": "All Clans",
+    "yearsActive": [
+      {
+        "start": 2807
+      }
+    ],
+    "tags": [
+      "SPECIAL",
+      "CLAN",
+      "BATCHALL",
+      "AGGREGATE"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "C"
+    ],
+    "color": {
+      "red": 139,
+      "green": 69,
+      "blue": 19
+    }
+  },
+  "CM": {
+    "key": "CM",
+    "name": "Chaos March",
+    "yearsActive": [
+      {
+        "start": 3057,
+        "end": 3069
+      }
+    ],
+    "tags": [
+      "IS",
+      "SMALL",
+      "CHAOS",
+      "AGGREGATE"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 169,
+      "green": 169,
+      "blue": 169
+    }
+  },
+  "CMG": {
+    "key": "CMG",
+    "name": "Clan Mongoose",
+    "yearsActive": [
+      {
+        "start": 2807,
+        "end": 2868
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CMN"
+    ],
+    "color": {
+      "red": 100,
+      "green": 149,
+      "blue": 237
+    }
+  },
+  "CNC": {
+    "key": "CNC",
+    "name": "Clan Nova Cat",
+    "yearsActive": [
+      {
+        "start": 2807,
+        "end": 3143
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CNC"
+    ],
+    "color": {
+      "red": 255,
+      "green": 204,
+      "blue": 51
+    }
+  },
+  "CP": {
+    "key": "CP",
+    "name": "Clan Protectorate",
+    "yearsActive": [
+      {
+        "start": 3138
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 153,
+      "green": 255,
+      "blue": 51
+    }
+  },
+  "CRep": {
+    "key": "CRep",
+    "name": "Capellan Republic",
+    "yearsActive": [
+      {
+        "start": 2194,
+        "end": 2270
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 2,
+      "green": 166,
+      "blue": 79
+    }
+  },
+  "CS": {
+    "key": "CS",
+    "name": "SLCOMNET",
+    "yearsActive": [
+      {
+        "start": 2784,
+        "end": 3081
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MAJOR",
+      "IS",
+      "INACTIVE",
+      "CONTROLLING",
+      "GENEROUS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CS"
+    ],
+    "color": {
+      "red": 255,
+      "green": 250,
+      "blue": 240
+    }
+  },
+  "CSA": {
+    "key": "CSA",
+    "name": "Clan Star Adder",
+    "yearsActive": [
+      {
+        "start": 2807,
+        "end": 3085
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CSA"
+    ],
+    "color": {
+      "red": 218,
+      "green": 165,
+      "blue": 32
+    }
+  },
+  "CSJ": {
+    "key": "CSJ",
+    "name": "Clan Smoke Jaguar",
+    "yearsActive": [
+      {
+        "start": 2807,
+        "end": 3060
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CSJ"
+    ],
+    "color": {
+      "red": 153,
+      "green": 153,
+      "blue": 153
+    }
+  },
+  "CSL": {
+    "key": "CSL",
+    "name": "Clan Stone Lion",
+    "yearsActive": [
+      {
+        "start": 3075,
+        "end": 3085
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CSL"
+    ],
+    "color": {
+      "red": 250,
+      "green": 166,
+      "blue": 26
+    }
+  },
+  "CSR": {
+    "key": "CSR",
+    "name": "Clan Snow Raven",
+    "yearsActive": [
+      {
+        "start": 2807,
+        "end": 3082
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CSR"
+    ],
+    "color": {
+      "red": 0,
+      "green": 158,
+      "blue": 155
+    }
+  },
+  "CSV": {
+    "key": "CSV",
+    "name": "Clan Steel Viper",
+    "yearsActive": [
+      {
+        "start": 2807,
+        "end": 3075
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CSV"
+    ],
+    "color": {
+      "red": 59,
+      "green": 100,
+      "blue": 96
+    }
+  },
+  "CTL": {
+    "key": "CTL",
+    "name": "Chesterton Trade League",
+    "yearsActive": [
+      {
+        "start": 2193,
+        "end": 2220
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CTF"
+    ],
+    "color": {
+      "red": 184,
+      "green": 134,
+      "blue": 22
+    }
+  },
+  "CW": {
+    "key": "CW",
+    "name": "Clan Wolf",
+    "yearsActive": [
+      {
+        "start": 2807,
+        "end": 3142
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MAJOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CWF"
+    ],
+    "color": {
+      "red": 214,
+      "green": 112,
+      "blue": 61
+    }
+  },
+  "CWE": {
+    "key": "CWE",
+    "name": "Wolf Empire",
+    "yearsActive": [
+      {
+        "start": 3143
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "WE"
+    ],
+    "color": {
+      "red": 214,
+      "green": 112,
+      "blue": 61
+    }
+  },
+  "CWI": {
+    "key": "CWI",
+    "name": "Clan Widowmaker",
+    "yearsActive": [
+      {
+        "start": 2807,
+        "end": 2834
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CWM"
+    ],
+    "color": {
+      "red": 222,
+      "green": 184,
+      "blue": 135
+    }
+  },
+  "CWIE": {
+    "key": "CWIE",
+    "name": "Clan Wolf-in-Exile",
+    "yearsActive": [
+      {
+        "start": 3057,
+        "end": 3151
+      }
+    ],
+    "tags": [
+      "SMALL",
+      "CLAN",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CWX"
+    ],
+    "color": {
+      "red": 160,
+      "green": 82,
+      "blue": 45
+    }
+  },
+  "CWOV": {
+    "key": "CWOV",
+    "name": "Clan Wolverine",
+    "yearsActive": [
+      {
+        "start": 2807,
+        "end": 2823
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "CLAN"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CWV"
+    ],
+    "color": {
+      "red": 143,
+      "green": 188,
+      "blue": 143
+    }
+  },
+  "ChP": {
+    "key": "ChP",
+    "name": "Chisholm Protectorate",
+    "yearsActive": [
+      {
+        "start": 2265,
+        "end": 2397
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 224,
+      "green": 104,
+      "blue": 32
+    }
+  },
+  "CvW": {
+    "key": "CvW",
+    "name": "Covenant Worlds",
+    "yearsActive": [
+      {
+        "start": 3137
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 102,
+      "green": 51,
+      "blue": 51
+    }
+  },
+  "DA": {
+    "key": "DA",
+    "name": "Duchy of Andurien",
+    "yearsActive": [
+      {
+        "start": 3030,
+        "end": 3040
+      },
+      {
+        "start": 3079
+      }
+    ],
+    "tags": [
+      "LENIENT",
+      "MINOR",
+      "IS",
+      "STINGY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "DA"
+    ],
+    "color": {
+      "red": 148,
+      "green": 148,
+      "blue": 255
+    }
+  },
+  "DC": {
+    "key": "DC",
+    "name": "Draconis Combine",
+    "yearsActive": [
+      {
+        "start": 2319
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MAJOR",
+      "IS",
+      "STINGY",
+      "CONTROLLING"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "DC"
+    ],
+    "color": {
+      "red": 237,
+      "green": 28,
+      "blue": 36
+    }
+  },
+  "DGM": {
+    "key": "DGM",
+    "name": "Duchy of Graham-Marik",
+    "yearsActive": [
+      {
+        "start": 3079,
+        "end": 3082
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "DGM"
+    ],
+    "color": {
+      "red": 143,
+      "green": 190,
+      "blue": 192
+    }
+  },
+  "DIS": {
+    "key": "DIS",
+    "name": "Disputed",
+    "yearsActive": null,
+    "tags": [
+      "SPECIAL",
+      "CHAOS",
+      "AGGREGATE"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "D"
+    ],
+    "color": {
+      "red": 192,
+      "green": 192,
+      "blue": 192
+    }
+  },
+  "DO": {
+    "key": "DO",
+    "name": "Duchy of Oriente",
+    "yearsActive": [
+      {
+        "start": 3079,
+        "end": 3086
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "DO"
+    ],
+    "color": {
+      "red": 163,
+      "green": 112,
+      "blue": 120
+    }
+  },
+  "DS": {
+    "key": "DS",
+    "name": "Duchy of Small",
+    "yearsActive": [
+      {
+        "start": 3057,
+        "end": 3066
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "DS"
+    ],
+    "color": {
+      "red": 107,
+      "green": 142,
+      "blue": 35
+    }
+  },
+  "DT": {
+    "key": "DT",
+    "name": "Duchy of Tamarind",
+    "yearsActive": [
+      {
+        "start": 3071,
+        "end": 3078
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "DT"
+    ],
+    "color": {
+      "red": 158,
+      "green": 60,
+      "blue": 147
+    }
+  },
+  "DTA": {
+    "key": "DTA",
+    "name": "Duchy of Tamarind-Abbey",
+    "yearsActive": [
+      {
+        "start": 3071,
+        "end": 3139
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "DTA"
+    ],
+    "color": {
+      "red": 99,
+      "green": 94,
+      "blue": 165
+    }
+  },
+  "DoL": {
+    "key": "DoL",
+    "name": "Duchy of Liao",
+    "yearsActive": [
+      {
+        "start": 2315,
+        "end": 2367
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "DL"
+    ],
+    "color": {
+      "red": 2,
+      "green": 166,
+      "blue": 79
+    }
+  },
+  "DoO": {
+    "key": "DoO",
+    "name": "Duchy of Orloff",
+    "yearsActive": [
+      {
+        "start": 3079,
+        "end": 3086
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "DoO"
+    ],
+    "color": {
+      "red": 164,
+      "green": 94,
+      "blue": 126
+    }
+  },
+  "EF": {
+    "key": "EF",
+    "name": "Elysian Fields",
+    "yearsActive": [
+      {
+        "end": 3049
+      }
+    ],
+    "tags": [
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "EF"
+    ],
+    "color": {
+      "red": 255,
+      "green": 0,
+      "blue": 255
+    }
+  },
+  "FC": {
+    "key": "FC",
+    "name": "Federated Commonwealth",
+    "yearsActive": [
+      {
+        "start": 3028,
+        "end": 3067
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "IS",
+      "SUPER",
+      "GENEROUS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "FCF",
+      "FCL"
+    ],
+    "color": {
+      "red": 255,
+      "green": 221,
+      "blue": 0
+    }
+  },
+  "FCo": {
+    "key": "FCo",
+    "name": "Ferris Collective",
+    "yearsActive": null,
+    "tags": [
+      "MINOR",
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "FCo"
+    ],
+    "color": {
+      "red": 191,
+      "green": 171,
+      "blue": 120
+    }
+  },
+  "FFR": {
+    "key": "FFR",
+    "name": "Finmark Free Republic",
+    "yearsActive": [
+      {
+        "start": 2779,
+        "end": 2802
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "FFR"
+    ],
+    "color": {
+      "red": 191,
+      "green": 171,
+      "blue": 120
+    }
+  },
+  "FID": {
+    "key": "FID",
+    "name": "Fidelis",
+    "yearsActive": [
+      {
+        "start": 3060,
+        "end": 3081
+      },
+      {
+        "start": 3151
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "CLAN"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 153,
+      "green": 153,
+      "blue": 153
+    }
+  },
+  "FOR": {
+    "key": "FOR",
+    "name": "Fiefdom of Randis",
+    "yearsActive": [
+      {
+        "start": 2988
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 30,
+      "green": 144,
+      "blue": 255
+    }
+  },
+  "FR": {
+    "key": "FR",
+    "name": "Fronc Reaches",
+    "yearsActive": [
+      {
+        "start": 3066
+      }
+    ],
+    "tags": [
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "FrR"
+    ],
+    "color": {
+      "red": 128,
+      "green": 169,
+      "blue": 127
+    }
+  },
+  "FRR": {
+    "key": "FRR",
+    "name": "Free Rasalhague Republic",
+    "yearsActive": [
+      {
+        "start": 3034,
+        "end": 3103
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MINOR",
+      "IS",
+      "CONTROLLING",
+      "GENEROUS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "FR"
+    ],
+    "color": {
+      "red": 128,
+      "green": 168,
+      "blue": 191
+    }
+  },
+  "FS": {
+    "key": "FS",
+    "name": "Federated Suns",
+    "yearsActive": [
+      {
+        "start": 2317
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MAJOR",
+      "IS",
+      "GENEROUS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "FS"
+    ],
+    "color": {
+      "red": 255,
+      "green": 221,
+      "blue": 0
+    }
+  },
+  "FVC": {
+    "key": "FVC",
+    "name": "Filtvelt Coalition",
+    "yearsActive": [
+      {
+        "start": 3072
+      }
+    ],
+    "tags": [
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "FvC"
+    ],
+    "color": {
+      "red": 255,
+      "green": 228,
+      "blue": 181
+    }
+  },
+  "FWL": {
+    "key": "FWL",
+    "name": "Free Worlds League",
+    "yearsActive": [
+      {
+        "start": 2271
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MAJOR",
+      "IS",
+      "CONTROLLING",
+      "GENEROUS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "FWL"
+    ],
+    "color": {
+      "red": 164,
+      "green": 54,
+      "blue": 149
+    }
+  },
+  "FWLR": {
+    "key": "FWLR",
+    "name": "Free Worlds League Rebels",
+    "yearsActive": null,
+    "tags": [
+      "IS",
+      "REBEL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 68,
+      "green": 212,
+      "blue": 228
+    }
+  },
+  "FoO": {
+    "key": "FoO",
+    "name": "Federation of Oriente",
+    "yearsActive": [
+      {
+        "start": 2241,
+        "end": 2271
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "FO"
+    ],
+    "color": {
+      "red": 163,
+      "green": 112,
+      "blue": 120
+    }
+  },
+  "FoS": {
+    "key": "FoS",
+    "name": "Federation of Skye",
+    "yearsActive": [
+      {
+        "start": 2299,
+        "end": 2341
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "FoS"
+    ],
+    "color": {
+      "red": 66,
+      "green": 217,
+      "blue": 244
+    }
+  },
+  "GDL": {
+    "key": "GDL",
+    "name": "Galatean Defense League",
+    "yearsActive": [
+      {
+        "start": 3144,
+        "end": 3151
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 102,
+      "green": 255,
+      "blue": 255
+    }
+  },
+  "GL": {
+    "key": "GL",
+    "name": "Galatean League",
+    "yearsActive": [
+      {
+        "start": 3144
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "GL"
+    ],
+    "color": {
+      "red": 102,
+      "green": 255,
+      "blue": 255
+    }
+  },
+  "GV": {
+    "key": "GV",
+    "name": "Greater Valkyrate",
+    "yearsActive": [
+      {
+        "start": 3028,
+        "end": 3049
+      }
+    ],
+    "tags": [
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "GV"
+    ],
+    "color": {
+      "red": 255,
+      "green": 105,
+      "blue": 180
+    }
+  },
+  "HL": {
+    "key": "HL",
+    "name": "Hanseatic League",
+    "yearsActive": [
+      {
+        "start": 2891,
+        "end": 3141
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "DEEP_PERIPHERY",
+      "STINGY",
+      "CONTROLLING"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "HL"
+    ],
+    "color": {
+      "red": 219,
+      "green": 112,
+      "blue": 147
+    }
+  },
+  "IC": {
+    "key": "IC",
+    "name": "Ingersoll Concordium",
+    "yearsActive": [
+      {
+        "start": 2200,
+        "end": 2272
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "IC"
+    ],
+    "color": {
+      "red": 50,
+      "green": 180,
+      "blue": 100
+    }
+  },
+  "IE": {
+    "key": "IE",
+    "name": "Interstellar Expeditions",
+    "yearsActive": null,
+    "tags": [
+      "PERIPHERY",
+      "CHAOS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "IE"
+    ],
+    "color": {
+      "red": 255,
+      "green": 255,
+      "blue": 102
+    }
+  },
+  "IND": {
+    "key": "IND",
+    "name": "Independent",
+    "yearsActive": null,
+    "tags": [
+      "IS",
+      "SMALL",
+      "CHAOS",
+      "AGGREGATE",
+      "SPECIAL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "I"
+    ],
+    "color": {
+      "red": 191,
+      "green": 179,
+      "blue": 153
+    }
+  },
+  "IP": {
+    "key": "IP",
+    "name": "Illyrian Palatinate",
+    "yearsActive": [
+      {
+        "start": 2350,
+        "end": 3063
+      }
+    ],
+    "tags": [
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "IP"
+    ],
+    "color": {
+      "red": 181,
+      "green": 191,
+      "blue": 209
+    }
+  },
+  "IS": {
+    "key": "IS",
+    "name": "Inner Sphere - General",
+    "yearsActive": null,
+    "tags": [
+      "IS",
+      "AGGREGATE",
+      "SPECIAL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": null
+  },
+  "IoS": {
+    "key": "IoS",
+    "name": "Isle of Skye",
+    "yearsActive": [
+      {
+        "start": 3151
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "IoS"
+    ],
+    "color": {
+      "red": 93,
+      "green": 133,
+      "blue": 147
+    }
+  },
+  "JF": {
+    "key": "JF",
+    "name": "JàrnFòlk",
+    "yearsActive": null,
+    "tags": [
+      "MINOR",
+      "DEEP_PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "JF"
+    ],
+    "color": {
+      "red": 153,
+      "green": 50,
+      "blue": 204
+    }
+  },
+  "KE": {
+    "key": "KE",
+    "name": "Khwarazm Empire",
+    "yearsActive": [
+      {
+        "start": 3047,
+        "end": 3049
+      },
+      {
+        "start": 3152
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "DEEP_PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 80,
+      "green": 80,
+      "blue": 80
+    }
+  },
+  "KP": {
+    "key": "KP",
+    "name": "Kittery Prefecture",
+    "yearsActive": [
+      {
+        "start": 3072,
+        "end": 3081
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "KP"
+    ],
+    "color": {
+      "red": 224,
+      "green": 126,
+      "blue": 39
+    }
+  },
+  "LA": {
+    "key": "LA",
+    "name": "Lyran Commonwealth",
+    "yearsActive": [
+      {
+        "start": 2341
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "LENIENT",
+      "MAJOR",
+      "IS",
+      "GENEROUS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "LA",
+      "LC"
+    ],
+    "color": {
+      "red": 0,
+      "green": 114,
+      "blue": 188
+    }
+  },
+  "LL": {
+    "key": "LL",
+    "name": "Lothian League",
+    "yearsActive": [
+      {
+        "start": 2815,
+        "end": 3055
+      },
+      {
+        "start": 3087
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "LL"
+    ],
+    "color": {
+      "red": 255,
+      "green": 140,
+      "blue": 0
+    }
+  },
+  "LR": {
+    "key": "LR",
+    "name": "Liao Republic",
+    "yearsActive": [
+      {
+        "start": 2189,
+        "end": 2315
+      }
+    ],
+    "tags": [
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "LR"
+    ],
+    "color": {
+      "red": 2,
+      "green": 166,
+      "blue": 79
+    }
+  },
+  "MA": {
+    "key": "MA",
+    "name": "Mosiro Archipelago",
+    "yearsActive": [
+      {
+        "start": 3079,
+        "end": 3104
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "MA"
+    ],
+    "color": {
+      "red": 164,
+      "green": 54,
+      "blue": 149
+    }
+  },
+  "MALC": {
+    "key": "MALC",
+    "name": "Malthus Confederation",
+    "yearsActive": [
+      {
+        "start": 3151
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "MaC"
+    ],
+    "color": {
+      "red": 93,
+      "green": 133,
+      "blue": 147
+    }
+  },
+  "MBA": {
+    "key": "MBA",
+    "name": "Mercenary Bonding Authority",
+    "yearsActive": [
+      {
+        "start": 3133
+      }
+    ],
+    "tags": [
+      "CLAN",
+      "MERC",
+      "SPECIAL",
+      "CORPORATION"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 169,
+      "green": 169,
+      "blue": 169
+    }
+  },
+  "MC": {
+    "key": "MC",
+    "name": "Malagrotta Cooperative",
+    "yearsActive": [
+      {
+        "start": 3073,
+        "end": 3079
+      }
+    ],
+    "tags": [
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "MC"
+    ],
+    "color": {
+      "red": 218,
+      "green": 112,
+      "blue": 214
+    }
+  },
+  "MCM": {
+    "key": "MCM",
+    "name": "Marik Commonwealth",
+    "yearsActive": [
+      {
+        "start": 3079,
+        "end": 3082
+      }
+    ],
+    "tags": [
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "MCM"
+    ],
+    "color": {
+      "red": 164,
+      "green": 54,
+      "blue": 149
+    }
+  },
+  "ME": {
+    "key": "ME",
+    "name": "Muskegon Coalition",
+    "yearsActive": [
+      {
+        "start": 2163,
+        "end": 2318
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "MuC"
+    ],
+    "color": {
+      "red": 27,
+      "green": 229,
+      "blue": 195
+    }
+  },
+  "MERC": {
+    "key": "MERC",
+    "name": "Mercenary",
+    "yearsActive": null,
+    "tags": [
+      "MERC",
+      "PLAYABLE",
+      "AGGREGATE",
+      "SPECIAL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 169,
+      "green": 169,
+      "blue": 169
+    }
+  },
+  "MG": {
+    "key": "MG",
+    "name": "Mercenary Guild",
+    "yearsActive": [
+      {
+        "end": 2789
+      }
+    ],
+    "tags": [
+      "IS",
+      "MERC",
+      "SPECIAL",
+      "CORPORATION"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": null
+  },
+  "MH": {
+    "key": "MH",
+    "name": "Marian Hegemony",
+    "yearsActive": [
+      {
+        "start": 2920
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "PERIPHERY",
+      "STINGY",
+      "CONTROLLING"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "MH"
+    ],
+    "color": {
+      "red": 246,
+      "green": 140,
+      "blue": 71
+    }
+  },
+  "MM": {
+    "key": "MM",
+    "name": "Mica Majority",
+    "yearsActive": [
+      {
+        "start": 2855
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 240,
+      "green": 230,
+      "blue": 140
+    }
+  },
+  "MOC": {
+    "key": "MOC",
+    "name": "Magistracy of Canopus",
+    "yearsActive": [
+      {
+        "start": 2530
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "LENIENT",
+      "PERIPHERY",
+      "GENEROUS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "MOC"
+    ],
+    "color": {
+      "red": 77,
+      "green": 168,
+      "blue": 153
+    }
+  },
+  "MRB": {
+    "key": "MRB",
+    "name": "Mercenary Review Board",
+    "yearsActive": [
+      {
+        "start": 2789,
+        "end": 3052
+      }
+    ],
+    "tags": [
+      "IS",
+      "MERC",
+      "SPECIAL",
+      "CORPORATION"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 169,
+      "green": 169,
+      "blue": 169
+    }
+  },
+  "MRBC": {
+    "key": "MRBC",
+    "name": "Mercenary Review and Bonding Commission",
+    "yearsActive": [
+      {
+        "start": 3052,
+        "end": 3133
+      }
+    ],
+    "tags": [
+      "IS",
+      "MERC",
+      "SPECIAL",
+      "CORPORATION"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 169,
+      "green": 169,
+      "blue": 169
+    }
+  },
+  "MRep": {
+    "key": "MRep",
+    "name": "Marik Republic",
+    "yearsActive": [
+      {
+        "start": 2241,
+        "end": 2246
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "MR"
+    ],
+    "color": {
+      "red": 143,
+      "green": 190,
+      "blue": 192
+    }
+  },
+  "MSC": {
+    "key": "MSC",
+    "name": "Marik-Stewart Commonwealth",
+    "yearsActive": [
+      {
+        "start": 3082,
+        "end": 3138
+      }
+    ],
+    "tags": [
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "MSC"
+    ],
+    "color": {
+      "red": 117,
+      "green": 65,
+      "blue": 113
+    }
+  },
+  "MV": {
+    "key": "MV",
+    "name": "Morgraine's Valkyrate",
+    "yearsActive": [
+      {
+        "start": 3021,
+        "end": 3028
+      }
+    ],
+    "tags": [
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "MV"
+    ],
+    "color": {
+      "red": 255,
+      "green": 105,
+      "blue": 180
+    }
+  },
+  "Mara": {
+    "key": "Mara",
+    "name": "Marlette Association",
+    "yearsActive": [
+      {
+        "start": 2278,
+        "end": 2324
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "MarA"
+    ],
+    "color": {
+      "red": 27,
+      "green": 98,
+      "blue": 229
+    }
+  },
+  "MiC": {
+    "key": "MiC",
+    "name": "Milton Combine",
+    "yearsActive": [
+      {
+        "start": 3137,
+        "end": 3139
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 255,
+      "green": 0,
+      "blue": 51
+    }
+  },
+  "NC": {
+    "key": "NC",
+    "name": "Nueva Castile",
+    "yearsActive": [
+      {
+        "start": 2392,
+        "end": 3080
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "DEEP_PERIPHERY",
+      "STINGY",
+      "CONTROLLING"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "NC"
+    ],
+    "color": {
+      "red": 0,
+      "green": 255,
+      "blue": 0
+    }
+  },
+  "NCR": {
+    "key": "NCR",
+    "name": "New Colony Region",
+    "yearsActive": [
+      {
+        "start": 3060,
+        "end": 3066
+      }
+    ],
+    "tags": [
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "NCR"
+    ],
+    "color": {
+      "red": 32,
+      "green": 178,
+      "blue": 170
+    }
+  },
+  "NDC": {
+    "key": "NDC",
+    "name": "New Delphi Compact",
+    "yearsActive": null,
+    "tags": [
+      "DEEP_PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "NDC"
+    ],
+    "color": {
+      "red": 127,
+      "green": 151,
+      "blue": 139
+    }
+  },
+  "NIOPS": {
+    "key": "NIOPS",
+    "name": "Niops Association",
+    "yearsActive": [
+      {
+        "start": 2760
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 205,
+      "green": 173,
+      "blue": 0
+    }
+  },
+  "NOC": {
+    "key": "NOC",
+    "name": "New Oberon Confederation",
+    "yearsActive": null,
+    "tags": [
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "NOC"
+    ],
+    "color": {
+      "red": 231,
+      "green": 178,
+      "blue": 50
+    }
+  },
+  "NONE": {
+    "key": "NONE",
+    "name": "Unexplored",
+    "yearsActive": null,
+    "tags": [
+      "SPECIAL",
+      "PERIPHERY",
+      "ABANDONED",
+      "INACTIVE",
+      "CHAOS",
+      "AGGREGATE"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 0,
+      "green": 0,
+      "blue": 0
+    }
+  },
+  "OA": {
+    "key": "OA",
+    "name": "Outworlds Alliance",
+    "yearsActive": [
+      {
+        "start": 2413,
+        "end": 3082
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "LENIENT",
+      "PERIPHERY",
+      "STINGY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "OA"
+    ],
+    "color": {
+      "red": 217,
+      "green": 198,
+      "blue": 153
+    }
+  },
+  "OC": {
+    "key": "OC",
+    "name": "Oberon Confederation",
+    "yearsActive": [
+      {
+        "start": 2775,
+        "end": 2795
+      },
+      {
+        "start": 3012,
+        "end": 3049
+      }
+    ],
+    "tags": [
+      "PERIPHERY",
+      "STINGY",
+      "CONTROLLING"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "OC"
+    ],
+    "color": {
+      "red": 50,
+      "green": 205,
+      "blue": 50
+    }
+  },
+  "OMA": {
+    "key": "OMA",
+    "name": "Ozawa Mercantile Association",
+    "yearsActive": [
+      {
+        "start": 2200,
+        "end": 2303
+      }
+    ],
+    "tags": [
+      "TRADER"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "OMA"
+    ],
+    "color": {
+      "red": 206,
+      "green": 244,
+      "blue": 66
+    }
+  },
+  "OP": {
+    "key": "OP",
+    "name": "Oriente Protectorate",
+    "yearsActive": [
+      {
+        "start": 3086,
+        "end": 3139
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "OP"
+    ],
+    "color": {
+      "red": 163,
+      "green": 112,
+      "blue": 120
+    }
+  },
+  "OZP": {
+    "key": "OZP",
+    "name": "Ohrensen-Zion Province",
+    "yearsActive": [
+      {
+        "start": 3078,
+        "end": 3081
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "OZP"
+    ],
+    "color": {
+      "red": 160,
+      "green": 165,
+      "blue": 94
+    }
+  },
+  "PC": {
+    "key": "PC",
+    "name": "Protectorate Coalition",
+    "yearsActive": [
+      {
+        "start": 3136,
+        "end": 3144
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 51,
+      "green": 51,
+      "blue": 102
+    }
+  },
+  "PD": {
+    "key": "PD",
+    "name": "Protectorate of Donegal",
+    "yearsActive": [
+      {
+        "start": 2313,
+        "end": 2341
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "PD"
+    ],
+    "color": {
+      "red": 66,
+      "green": 244,
+      "blue": 143
+    }
+  },
+  "PG": {
+    "key": "PG",
+    "name": "Principality of Gibson",
+    "yearsActive": [
+      {
+        "start": 3079,
+        "end": 3086
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "PG"
+    ],
+    "color": {
+      "red": 250,
+      "green": 250,
+      "blue": 250
+    }
+  },
+  "PIR": {
+    "key": "PIR",
+    "name": "Pirate",
+    "yearsActive": null,
+    "tags": [
+      "PLAYABLE",
+      "PIRATE",
+      "AGGREGATE",
+      "SPECIAL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 128,
+      "green": 40,
+      "blue": 0
+    }
+  },
+  "PP": {
+    "key": "PP",
+    "name": "Pentagon Powers",
+    "yearsActive": [
+      {
+        "start": 2801,
+        "end": 2822
+      }
+    ],
+    "tags": [],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": null
+  },
+  "PR": {
+    "key": "PR",
+    "name": "Principality of Regulus",
+    "yearsActive": [
+      {
+        "start": 3079,
+        "end": 3086
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "PR"
+    ],
+    "color": {
+      "red": 192,
+      "green": 143,
+      "blue": 189
+    }
+  },
+  "PSI": {
+    "key": "PSI",
+    "name": "Piracy Success Index",
+    "yearsActive": null,
+    "tags": [
+      "PIRATE",
+      "SPECIAL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": null
+  },
+  "Periphery": {
+    "key": "Periphery",
+    "name": "Periphery",
+    "yearsActive": null,
+    "tags": [
+      "PERIPHERY",
+      "AGGREGATE",
+      "SPECIAL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": null
+  },
+  "PoR": {
+    "key": "PoR",
+    "name": "Principality of Rasalhague",
+    "yearsActive": [
+      {
+        "start": 2260,
+        "end": 2510
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "PoR"
+    ],
+    "color": {
+      "red": 128,
+      "green": 168,
+      "blue": 191
+    }
+  },
+  "RA": {
+    "key": "RA",
+    "name": "Raven Alliance",
+    "yearsActive": [
+      {
+        "start": 3083
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "PERIPHERY",
+      "CLAN",
+      "CONTROLLING",
+      "GENEROUS",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "RA"
+    ],
+    "color": {
+      "red": 25,
+      "green": 120,
+      "blue": 110
+    }
+  },
+  "RCM": {
+    "key": "RCM",
+    "name": "Rim Commonality",
+    "yearsActive": [
+      {
+        "start": 3075,
+        "end": 3139
+      }
+    ],
+    "tags": [
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "RCM"
+    ],
+    "color": {
+      "red": 95,
+      "green": 158,
+      "blue": 160
+    }
+  },
+  "RD": {
+    "key": "RD",
+    "name": "Rasalhague Dominion",
+    "yearsActive": [
+      {
+        "start": 3103
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MINOR",
+      "IS",
+      "CLAN",
+      "CONTROLLING",
+      "GENEROUS",
+      "BATCHALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "RD"
+    ],
+    "color": {
+      "red": 191,
+      "green": 232,
+      "blue": 255
+    }
+  },
+  "REB": {
+    "key": "REB",
+    "name": "Rebels",
+    "yearsActive": null,
+    "tags": [
+      "REBEL",
+      "AGGREGATE",
+      "SPECIAL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 192,
+      "green": 192,
+      "blue": 192
+    }
+  },
+  "RF": {
+    "key": "RF",
+    "name": "Regulan Fiefs",
+    "yearsActive": [
+      {
+        "start": 3086
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "RF"
+    ],
+    "color": {
+      "red": 255,
+      "green": 51,
+      "blue": 51
+    }
+  },
+  "RFS": {
+    "key": "RFS",
+    "name": "Regulan Free States",
+    "yearsActive": [
+      {
+        "start": 3079,
+        "end": 3086
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "RFS"
+    ],
+    "color": {
+      "red": 164,
+      "green": 54,
+      "blue": 149
+    }
+  },
+  "RIM": {
+    "key": "RIM",
+    "name": "Rim Collection",
+    "yearsActive": [
+      {
+        "start": 3048
+      }
+    ],
+    "tags": [
+      "PERIPHERY",
+      "SMALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "RC"
+    ],
+    "color": {
+      "red": 95,
+      "green": 158,
+      "blue": 160
+    }
+  },
+  "RON": {
+    "key": "RON",
+    "name": "Ronin",
+    "yearsActive": null,
+    "tags": [
+      "MINOR",
+      "IS",
+      "AGGREGATE",
+      "SPECIAL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 237,
+      "green": 28,
+      "blue": 36
+    }
+  },
+  "ROS": {
+    "key": "ROS",
+    "name": "Republic of the Sphere",
+    "yearsActive": [
+      {
+        "start": 3081,
+        "end": 3151
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MAJOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "RS"
+    ],
+    "color": {
+      "red": 164,
+      "green": 164,
+      "blue": 122
+    }
+  },
+  "RP": {
+    "key": "RP",
+    "name": "Regulan Principality",
+    "yearsActive": [
+      {
+        "start": 2243,
+        "end": 3086
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 255,
+      "green": 51,
+      "blue": 51
+    }
+  },
+  "RPG": {
+    "key": "RPG",
+    "name": "Rim Provisional Government",
+    "yearsActive": [
+      {
+        "start": 2575,
+        "end": 2596
+      }
+    ],
+    "tags": [
+      "PERIPHERY",
+      "SMALL"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 164,
+      "green": 113,
+      "blue": 215
+    }
+  },
+  "RR": {
+    "key": "RR",
+    "name": "Republic Remnant",
+    "yearsActive": [
+      {
+        "start": 3135,
+        "end": 3151
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "TR"
+    ],
+    "color": {
+      "red": 164,
+      "green": 164,
+      "blue": 122
+    }
+  },
+  "RT": {
+    "key": "RT",
+    "name": "Rim Territories",
+    "yearsActive": [
+      {
+        "start": 3087
+      }
+    ],
+    "tags": [
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "RT"
+    ],
+    "color": {
+      "red": 175,
+      "green": 238,
+      "blue": 238
+    }
+  },
+  "RTR": {
+    "key": "RTR",
+    "name": "Republic Territories",
+    "yearsActive": [
+      {
+        "start": 3135,
+        "end": 3149
+      }
+    ],
+    "tags": [
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 164,
+      "green": 164,
+      "blue": 122
+    }
+  },
+  "RU": {
+    "key": "RU",
+    "name": "Ragnarok Union",
+    "yearsActive": null,
+    "tags": [
+      "MINOR",
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "RU"
+    ],
+    "color": {
+      "red": 211,
+      "green": 189,
+      "blue": 72
+    }
+  },
+  "RWR": {
+    "key": "RWR",
+    "name": "Rim Worlds Republic",
+    "yearsActive": [
+      {
+        "start": 2250,
+        "end": 2769
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "PERIPHERY",
+      "STINGY",
+      "CONTROLLING"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "RW"
+    ],
+    "color": {
+      "red": 164,
+      "green": 168,
+      "blue": 122
+    }
+  },
+  "SA": {
+    "key": "SA",
+    "name": "Senatorial Alliance",
+    "yearsActive": [
+      {
+        "start": 3135,
+        "end": 3138
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "SA"
+    ],
+    "color": {
+      "red": 255,
+      "green": 102,
+      "blue": 153
+    }
+  },
+  "SC": {
+    "key": "SC",
+    "name": "Stewart Commonality",
+    "yearsActive": [
+      {
+        "start": 3079,
+        "end": 3082
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "SC"
+    ],
+    "color": {
+      "red": 76,
+      "green": 0,
+      "blue": 153
+    }
+  },
+  "SCon": {
+    "key": "SCon",
+    "name": "Stewart Confederation",
+    "yearsActive": [
+      {
+        "start": 2259,
+        "end": 3082
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 76,
+      "green": 0,
+      "blue": 153
+    }
+  },
+  "SE": {
+    "key": "SE",
+    "name": "Scorpion Empire",
+    "yearsActive": [
+      {
+        "start": 3141
+      }
+    ],
+    "tags": [
+      "PERIPHERY",
+      "CLAN"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "SE"
+    ],
+    "color": null
+  },
+  "SH": {
+    "key": "SH",
+    "name": "Sirian Holds",
+    "yearsActive": [
+      {
+        "start": 3057,
+        "end": 3058
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS",
+      "CHAOS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "SH"
+    ],
+    "color": {
+      "red": 190,
+      "green": 80,
+      "blue": 180
+    }
+  },
+  "SHC": {
+    "key": "SHC",
+    "name": "Silver Hawk Coalition",
+    "yearsActive": [
+      {
+        "start": 3079,
+        "end": 3084
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "SHC"
+    ],
+    "color": {
+      "red": 255,
+      "green": 0,
+      "blue": 127
+    }
+  },
+  "SIC": {
+    "key": "SIC",
+    "name": "St. Ives Compact",
+    "yearsActive": [
+      {
+        "start": 3029,
+        "end": 3063
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "LENIENT",
+      "MINOR",
+      "IS",
+      "GENEROUS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "SIC"
+    ],
+    "color": {
+      "red": 153,
+      "green": 198,
+      "blue": 237
+    }
+  },
+  "SIMA": {
+    "key": "SIMA",
+    "name": "St. Ives Mercantile Association",
+    "yearsActive": [
+      {
+        "start": 2245,
+        "end": 2367
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 153,
+      "green": 198,
+      "blue": 237
+    }
+  },
+  "SIS": {
+    "key": "SIS",
+    "name": "Sian Supremacy",
+    "yearsActive": [
+      {
+        "start": 2250,
+        "end": 2367
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "SiS"
+    ],
+    "color": {
+      "red": 145,
+      "green": 166,
+      "blue": 242
+    }
+  },
+  "SKC": {
+    "key": "SKC",
+    "name": "Styk Commonality",
+    "yearsActive": [
+      {
+        "start": 3057,
+        "end": 3063
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "SKC"
+    ],
+    "color": {
+      "red": 0,
+      "green": 139,
+      "blue": 139
+    }
+  },
+  "SL": {
+    "key": "SL",
+    "name": "Star League",
+    "yearsActive": [
+      {
+        "start": 2571,
+        "end": 2780
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "IS",
+      "SUPER",
+      "CONTROLLING",
+      "GENEROUS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "SL",
+      "SLDF"
+    ],
+    "color": {
+      "red": 176,
+      "green": 196,
+      "blue": 222
+    }
+  },
+  "SL3": {
+    "key": "SL3",
+    "name": "Star League (Clan Wolf)",
+    "yearsActive": [
+      {
+        "start": 3151
+      }
+    ],
+    "tags": [],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": null
+  },
+  "SLIE": {
+    "key": "SLIE",
+    "name": "Exodus Fleet",
+    "yearsActive": [
+      {
+        "start": 2784,
+        "end": 2801
+      }
+    ],
+    "tags": [
+      "IS",
+      "PLAYABLE"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "SLIE"
+    ],
+    "color": {
+      "red": 176,
+      "green": 196,
+      "blue": 222
+    }
+  },
+  "SOC": {
+    "key": "SOC",
+    "name": "The Society",
+    "yearsActive": [
+      {
+        "start": 3072,
+        "end": 3075
+      }
+    ],
+    "tags": [
+      "CLAN"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 147,
+      "green": 112,
+      "blue": 219
+    }
+  },
+  "SP": {
+    "key": "SP",
+    "name": "Sarna Protectorate",
+    "yearsActive": [
+      {
+        "start": 3062,
+        "end": 3066
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 184,
+      "green": 134,
+      "blue": 11
+    }
+  },
+  "SSUP": {
+    "key": "SSUP",
+    "name": "Sarna Supremacy",
+    "yearsActive": [
+      {
+        "start": 2176,
+        "end": 2367
+      },
+      {
+        "start": 3057,
+        "end": 3058
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "SS"
+    ],
+    "color": {
+      "red": 184,
+      "green": 134,
+      "blue": 11
+    }
+  },
+  "ST": {
+    "key": "ST",
+    "name": "Saiph Triumvirate",
+    "yearsActive": [
+      {
+        "start": 3057,
+        "end": 3068
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "ST"
+    ],
+    "color": {
+      "red": 128,
+      "green": 128,
+      "blue": 0
+    }
+  },
+  "ShA": {
+    "key": "ShA",
+    "name": "Shiloh Alliance",
+    "yearsActive": [
+      {
+        "start": 3135,
+        "end": 3144
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 97,
+      "green": 26,
+      "blue": 92
+    }
+  },
+  "Stone": {
+    "key": "Stone",
+    "name": "Stone's Coalition",
+    "yearsActive": [
+      {
+        "start": 3073,
+        "end": 3081
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "CoF"
+    ],
+    "color": {
+      "red": 164,
+      "green": 164,
+      "blue": 122
+    }
+  },
+  "TA": {
+    "key": "TA",
+    "name": "Terran Alliance",
+    "yearsActive": [
+      {
+        "start": 2086,
+        "end": 2315
+      }
+    ],
+    "tags": [
+      "MAJOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "TA"
+    ],
+    "color": {
+      "red": 164,
+      "green": 164,
+      "blue": 122
+    }
+  },
+  "TB": {
+    "key": "TB",
+    "name": "Republic of the Barrens",
+    "yearsActive": [
+      {
+        "start": 3100
+      }
+    ],
+    "tags": [
+      "PERIPHERY",
+      "CHAOS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "RB"
+    ],
+    "color": {
+      "red": 255,
+      "green": 255,
+      "blue": 224
+    }
+  },
+  "TC": {
+    "key": "TC",
+    "name": "Taurian Concordat",
+    "yearsActive": [
+      {
+        "start": 2335
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "PERIPHERY",
+      "STINGY",
+      "CONTROLLING"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "TC"
+    ],
+    "color": {
+      "red": 181,
+      "green": 58,
+      "blue": 33
+    }
+  },
+  "TCC": {
+    "key": "TCC",
+    "name": "Terracap Confederation",
+    "yearsActive": [
+      {
+        "start": 3057,
+        "end": 3068
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "TCC"
+    ],
+    "color": {
+      "red": 233,
+      "green": 150,
+      "blue": 122
+    }
+  },
+  "TD": {
+    "key": "TD",
+    "name": "Tortuga Dominions",
+    "yearsActive": [
+      {
+        "start": 2785
+      }
+    ],
+    "tags": [
+      "PIRATE",
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "TD"
+    ],
+    "color": {
+      "red": 34,
+      "green": 139,
+      "blue": 34
+    }
+  },
+  "TFR": {
+    "key": "TFR",
+    "name": "Tikonov Free Republic",
+    "yearsActive": [
+      {
+        "start": 3029,
+        "end": 3031
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS",
+      "STINGY",
+      "CONTROLLING"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "TFR"
+    ],
+    "color": {
+      "red": 255,
+      "green": 160,
+      "blue": 122
+    }
+  },
+  "TGU": {
+    "key": "TGU",
+    "name": "Tikonov Grand Union",
+    "yearsActive": [
+      {
+        "start": 2243,
+        "end": 2367
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "TGU"
+    ],
+    "color": {
+      "red": 255,
+      "green": 160,
+      "blue": 122
+    }
+  },
+  "TH": {
+    "key": "TH",
+    "name": "Terran Hegemony",
+    "yearsActive": [
+      {
+        "start": 2315,
+        "end": 2788
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "IS",
+      "SUPER",
+      "CONTROLLING",
+      "GENEROUS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "TH"
+    ],
+    "color": {
+      "red": 223,
+      "green": 122,
+      "blue": 41
+    }
+  },
+  "THW": {
+    "key": "THW",
+    "name": "Taurian Homeworlds",
+    "yearsActive": [
+      {
+        "start": 2253,
+        "end": 2335
+      }
+    ],
+    "tags": [
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "THW"
+    ],
+    "color": {
+      "red": 181,
+      "green": 58,
+      "blue": 33
+    }
+  },
+  "THa": {
+    "key": "THa",
+    "name": "The Havens",
+    "yearsActive": null,
+    "tags": [
+      "MINOR",
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "THa"
+    ],
+    "color": {
+      "red": 147,
+      "green": 173,
+      "blue": 172
+    }
+  },
+  "TP": {
+    "key": "TP",
+    "name": "The Protectorate",
+    "yearsActive": [
+      {
+        "start": 3078,
+        "end": 3086
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "TP"
+    ],
+    "color": {
+      "red": 255,
+      "green": 51,
+      "blue": 51
+    }
+  },
+  "TTU": {
+    "key": "TTU",
+    "name": "Tall Trees Union",
+    "yearsActive": [
+      {
+        "start": 3136,
+        "end": 3144
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 153,
+      "green": 153,
+      "blue": 51
+    }
+  },
+  "TU": {
+    "key": "TU",
+    "name": "Tikonov Union",
+    "yearsActive": [
+      {
+        "start": 2177,
+        "end": 2243
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 255,
+      "green": 160,
+      "blue": 122
+    }
+  },
+  "TamP": {
+    "key": "TamP",
+    "name": "Tamar Pact",
+    "yearsActive": [
+      {
+        "start": 2235,
+        "end": 2341
+      },
+      {
+        "start": 3151
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "TamP"
+    ],
+    "color": {
+      "red": 244,
+      "green": 161,
+      "blue": 66
+    }
+  },
+  "TiC": {
+    "key": "TiC",
+    "name": "Timbuktu Collective",
+    "yearsActive": null,
+    "tags": [
+      "MINOR",
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "TiC"
+    ],
+    "color": {
+      "red": 93,
+      "green": 133,
+      "blue": 147
+    }
+  },
+  "UC": {
+    "key": "UC",
+    "name": "Umayyad Caliphate",
+    "yearsActive": [
+      {
+        "start": 2830,
+        "end": 3080
+      }
+    ],
+    "tags": [
+      "DEEP_PERIPHERY",
+      "STINGY",
+      "CONTROLLING"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "UC"
+    ],
+    "color": {
+      "red": 0,
+      "green": 255,
+      "blue": 0
+    }
+  },
+  "UHC": {
+    "key": "UHC",
+    "name": "United Hindu Collective",
+    "yearsActive": [
+      {
+        "start": 2240,
+        "end": 2540
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "UHC"
+    ],
+    "color": {
+      "red": 171,
+      "green": 148,
+      "blue": 118
+    }
+  },
+  "UND": {
+    "key": "UND",
+    "name": "Undiscovered",
+    "yearsActive": null,
+    "tags": [
+      "SPECIAL",
+      "ABANDONED",
+      "INACTIVE",
+      "CHAOS",
+      "AGGREGATE"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "U"
+    ],
+    "color": {
+      "red": 0,
+      "green": 0,
+      "blue": 0
+    }
+  },
+  "VSM": {
+    "key": "VSM",
+    "name": "Vesper Marches",
+    "yearsActive": [
+      {
+        "start": 3151
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "VM"
+    ],
+    "color": {
+      "red": 235,
+      "green": 162,
+      "blue": 235
+    }
+  },
+  "WA": {
+    "key": "WA",
+    "name": "Western Alliance",
+    "yearsActive": [
+      {
+        "start": 2014,
+        "end": 2086
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "IS"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [],
+    "color": {
+      "red": 0,
+      "green": 20,
+      "blue": 220
+    }
+  },
+  "WOB": {
+    "key": "WOB",
+    "name": "Word of Blake",
+    "yearsActive": [
+      {
+        "start": 3052,
+        "end": 3081
+      }
+    ],
+    "tags": [
+      "PLAYABLE",
+      "MINOR",
+      "IS",
+      "CONTROLLING"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "WB"
+    ],
+    "color": {
+      "red": 205,
+      "green": 192,
+      "blue": 176
+    }
+  }
+}

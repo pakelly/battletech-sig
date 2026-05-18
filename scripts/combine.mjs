@@ -368,18 +368,35 @@ function remapFactionKeys(obj) {
   return result;
 }
 
+// ── Load faction metadata from YAML parse ──
+const factionMetaPath = join(ROOT, 'output/faction-metadata.json');
+let factionYamlMeta = {};
+if (existsSync(factionMetaPath)) {
+  factionYamlMeta = JSON.parse(readFileSync(factionMetaPath, 'utf8'));
+  console.log(`Loaded faction YAML metadata: ${Object.keys(factionYamlMeta).length} factions`);
+} else {
+  console.warn('WARNING: faction-metadata.json not found — run parse-factions.mjs first');
+}
+
 // ── Faction display info + weight class distributions ──
 const FACTION_INFO = {};
 for (const [code, meta] of Object.entries(scores.factionMeta)) {
   const outCode = remapFactionCode(code);
   if (FACTION_INFO[outCode]) continue; // skip if already mapped (e.g. LA after LC)
   const wcd = scores.weightClassDistributions?.[code];
+  
+  // Enrich with YAML metadata (fullName, yearsActive, tags)
+  const yamlMeta = factionYamlMeta[outCode] || factionYamlMeta[code];
+  
   FACTION_INFO[outCode] = {
     name: meta.name,
     clan: meta.clan,
     periphery: meta.periphery,
     minor: meta.minor,
-    ...(wcd && Object.keys(wcd).length > 0 ? { wcd } : {})
+    ...(wcd && Object.keys(wcd).length > 0 ? { wcd } : {}),
+    ...(yamlMeta?.name ? { fullName: yamlMeta.name } : {}),
+    ...(yamlMeta?.yearsActive ? { yearsActive: yamlMeta.yearsActive } : {}),
+    ...(yamlMeta?.tags?.length > 0 ? { tags: yamlMeta.tags } : {})
   };
 }
 

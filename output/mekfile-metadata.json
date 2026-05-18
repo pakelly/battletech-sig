@@ -1,5 +1,5 @@
 {
-  "_generated": "2026-05-18T14:34:39.632Z",
+  "_generated": "2026-05-18T14:39:31.352Z",
   "_source": "mm-data/data/mekfiles/meks",
   "_note": "BV (Battle Value) is not present in .mtf files — MegaMek calculates it at runtime. All BV fields are null.",
   "stats": {

@@ -19,7 +19,10 @@ echo ""
 echo "=== Step 3: Parse Mekfiles ==="
 node scripts/parse-mekfiles.mjs
 echo ""
-echo "=== Step 4: Combine ==="
+echo "=== Step 4: Parse Faction Metadata ==="
+node scripts/parse-factions.mjs
+echo ""
+echo "=== Step 5: Combine ==="
 node scripts/combine.mjs
 echo ""
 echo "=== Done ==="
