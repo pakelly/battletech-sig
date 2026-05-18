@@ -16,7 +16,10 @@ echo ""
 echo "=== Step 2: Scoring ==="
 node scripts/score.mjs
 echo ""
-echo "=== Step 3: Combine ==="
+echo "=== Step 3: Parse Mekfiles ==="
+node scripts/parse-mekfiles.mjs
+echo ""
+echo "=== Step 4: Combine ==="
 node scripts/combine.mjs
 echo ""
 echo "=== Done ==="

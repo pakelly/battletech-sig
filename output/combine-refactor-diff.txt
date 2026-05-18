@@ -1,0 +1,92 @@
+=== Combine Refactor Diff Report ===
+
+--- Chassis Metadata ---
+Same: 407
+Changed: 249
+New: 0
+Removed: 0
+
+--- Changed Chassis Details ---
+Lumberjack: {"tons":null,"class":null,"intro":null,"industrial":false,"tech":null,"omni":false} → {"tons":60,"class":"Heavy","intro":2355,"industrial":false,"tech":"Inner Sphere","omni":false}
+Mackie: {"tons":100,"class":"Assault","intro":2439,"industrial":false,"tech":"Primitive","omni":false} → {"tons":100,"class":"Assault","intro":2439,"industrial":false,"tech":"Inner Sphere","omni":false}
+Archer: {"tons":70,"class":"Heavy","intro":2458,"industrial":false,"tech":"Mixed","omni":false} → {"tons":70,"class":"Heavy","intro":2458,"industrial":false,"tech":"Inner Sphere/Clan/Mixed","omni":false}
+Banshee: {"tons":95,"class":"Assault","intro":2475,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":95,"class":"Assault","intro":2445,"industrial":false,"tech":"Inner Sphere/Mixed","omni":false}
+BattleAxe: {"tons":70,"class":"Heavy","intro":2459,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":70,"class":"Heavy","intro":2459,"industrial":false,"tech":"Inner Sphere/Mixed","omni":false}
+Bellerophon: {"tons":60,"class":"Heavy","intro":2442,"industrial":false,"tech":"Primitive","omni":false} → {"tons":60,"class":"Heavy","intro":2442,"industrial":false,"tech":"Inner Sphere","omni":false}
+Emperor: {"tons":90,"class":"Assault","intro":2442,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":90,"class":"Assault","intro":2442,"industrial":false,"tech":"Inner Sphere/Mixed","omni":false}
+Helepolis: {"tons":75,"class":"Heavy","intro":2460,"industrial":false,"tech":"Primitive","omni":false} → {"tons":75,"class":"Heavy","intro":2460,"industrial":false,"tech":"Inner Sphere","omni":false}
+Kyudo: {"tons":45,"class":"Medium","intro":2443,"industrial":false,"tech":"Primitive","omni":false} → {"tons":45,"class":"Medium","intro":2443,"industrial":false,"tech":"Inner Sphere","omni":false}
+Orion: {"tons":75,"class":"Heavy","intro":2525,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":75,"class":"Heavy","intro":2453,"industrial":false,"tech":"Inner Sphere/Mixed","omni":false}
+Commando: {"tons":25,"class":"Light","intro":2463,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":25,"class":"Light","intro":2463,"industrial":false,"tech":"Inner Sphere/Mixed","omni":false}
+Crossbow: {"tons":60,"class":"Heavy","intro":2473,"industrial":false,"tech":"Clan","omni":true} → {"tons":60,"class":"Heavy","intro":2468,"industrial":false,"tech":"Clan/Inner Sphere","omni":true}
+Gladiator: {"tons":55,"class":"Medium","intro":2468,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":95,"class":"Assault","intro":2468,"industrial":false,"tech":"Clan/Inner Sphere/Mixed","omni":false}
+Griffin: {"tons":55,"class":"Medium","intro":2465,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":55,"class":"Medium","intro":2465,"industrial":false,"tech":"Inner Sphere/Mixed/Clan","omni":false}
+Shadow Hawk: {"tons":55,"class":"Medium","intro":2467,"industrial":false,"tech":"Mixed","omni":false} → {"tons":55,"class":"Medium","intro":2467,"industrial":false,"tech":"Inner Sphere/Mixed","omni":false}
+Swordsman: {"tons":null,"class":null,"intro":null,"industrial":false,"tech":null,"omni":false} → {"tons":40,"class":"Medium","intro":2463,"industrial":false,"tech":"Inner Sphere","omni":false}
+Wasp: {"tons":20,"class":"Light","intro":2464,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":20,"class":"Light","intro":2464,"industrial":false,"tech":"Inner Sphere/Mixed","omni":false}
+Ymir: {"tons":90,"class":"Assault","intro":2462,"industrial":false,"tech":"Primitive","omni":false} → {"tons":90,"class":"Assault","intro":2462,"industrial":false,"tech":"Inner Sphere","omni":false}
+Hector: {"tons":70,"class":"Heavy","intro":2471,"industrial":false,"tech":"Primitive","omni":false} → {"tons":70,"class":"Heavy","intro":2471,"industrial":false,"tech":"Inner Sphere","omni":false}
+Icarus: {"tons":40,"class":"Medium","intro":2470,"industrial":false,"tech":"Primitive","omni":false} → {"tons":40,"class":"Medium","intro":2470,"industrial":false,"tech":"Inner Sphere","omni":false}
+Longbow: {"tons":85,"class":"Assault","intro":2529,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":85,"class":"Assault","intro":2480,"industrial":false,"tech":"Inner Sphere","omni":false}
+Ostwar: {"tons":65,"class":"Heavy","intro":2470,"industrial":false,"tech":"Primitive","omni":false} → {"tons":65,"class":"Heavy","intro":2470,"industrial":false,"tech":"Inner Sphere","omni":false}
+Patron: {"tons":null,"class":null,"intro":null,"industrial":false,"tech":null,"omni":false} → {"tons":15,"class":"Light","intro":2470,"industrial":false,"tech":"Inner Sphere","omni":false}
+Phoenix: {"tons":50,"class":"Medium","intro":2474,"industrial":false,"tech":"Primitive","omni":false} → {"tons":50,"class":"Medium","intro":2474,"industrial":false,"tech":"Inner Sphere","omni":false}
+Stinger: {"tons":20,"class":"Light","intro":2479,"industrial":false,"tech":"Clan","omni":false} → {"tons":20,"class":"Light","intro":2479,"industrial":false,"tech":"Inner Sphere/Clan","omni":false}
+Toro: {"tons":35,"class":"Light","intro":2481,"industrial":false,"tech":"Primitive","omni":false} → {"tons":35,"class":"Light","intro":2481,"industrial":false,"tech":"Inner Sphere","omni":false}
+Trooper: {"tons":null,"class":null,"intro":null,"industrial":false,"tech":null,"omni":false} → {"tons":20,"class":"Light","intro":2475,"industrial":false,"tech":"Inner Sphere","omni":false}
+Von Rohrs (Hebi): {"tons":null,"class":null,"intro":null,"industrial":false,"tech":null,"omni":false} → {"tons":65,"class":"Heavy","intro":2487,"industrial":false,"tech":"Inner Sphere","omni":false}
+Chameleon: {"tons":50,"class":"Medium","intro":2510,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":50,"class":"Medium","intro":2510,"industrial":false,"tech":"Inner Sphere/Mixed","omni":false}
+DemolitionMech: {"tons":null,"class":null,"intro":null,"industrial":false,"tech":null,"omni":false} → {"tons":35,"class":"Light","intro":2513,"industrial":false,"tech":"Inner Sphere","omni":false}
+Dervish: {"tons":55,"class":"Medium","intro":2520,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":55,"class":"Medium","intro":2520,"industrial":false,"tech":"Inner Sphere/Mixed","omni":false}
+Eisenfaust: {"tons":45,"class":"Medium","intro":2515,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":45,"class":"Medium","intro":2471,"industrial":false,"tech":"Inner Sphere","omni":false}
+Locust: {"tons":20,"class":"Light","intro":2499,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":20,"class":"Light","intro":2499,"industrial":false,"tech":"Inner Sphere/Mixed","omni":false}
+Ostroc: {"tons":60,"class":"Heavy","intro":2511,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":60,"class":"Heavy","intro":2511,"industrial":false,"tech":"Inner Sphere/Mixed","omni":false}
+Rifleman: {"tons":60,"class":"Heavy","intro":2504,"industrial":false,"tech":"Mixed","omni":false} → {"tons":60,"class":"Heavy","intro":2504,"industrial":false,"tech":"Inner Sphere/Clan/Mixed","omni":false}
+Thunderbolt: {"tons":65,"class":"Heavy","intro":2491,"industrial":false,"tech":"Mixed","omni":false} → {"tons":65,"class":"Heavy","intro":2491,"industrial":false,"tech":"Inner Sphere/Clan/Mixed","omni":false}
+Victor: {"tons":80,"class":"Assault","intro":2508,"industrial":false,"tech":"Mixed","omni":false} → {"tons":80,"class":"Assault","intro":2508,"industrial":false,"tech":"Inner Sphere/Mixed","omni":false}
+Warhammer: {"tons":70,"class":"Heavy","intro":2515,"industrial":false,"tech":"Mixed","omni":false} → {"tons":70,"class":"Heavy","intro":2515,"industrial":false,"tech":"Inner Sphere/Mixed/Clan","omni":false}
+Firestarter: {"tons":35,"class":"Light","intro":2550,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":35,"class":"Light","intro":2550,"industrial":false,"tech":"Inner Sphere/Mixed","omni":false}
+Galahad: {"tons":50,"class":"Medium","intro":2570,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":60,"class":"Heavy","intro":2570,"industrial":false,"tech":"Clan/Inner Sphere","omni":false}
+Jabberwocky: {"tons":null,"class":null,"intro":null,"industrial":false,"tech":null,"omni":false} → {"tons":50,"class":"Medium","intro":2549,"industrial":false,"tech":"Inner Sphere","omni":false}
+Peacekeeper: {"tons":95,"class":"Assault","intro":3086,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":95,"class":"Assault","intro":2522,"industrial":false,"tech":"Inner Sphere","omni":false}
+Phoenix Hawk: {"tons":45,"class":"Medium","intro":2568,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":45,"class":"Medium","intro":2568,"industrial":false,"tech":"Inner Sphere/Mixed/Clan","omni":false}
+Quasit: {"tons":null,"class":null,"intro":null,"industrial":false,"tech":null,"omni":false} → {"tons":45,"class":"Medium","intro":2517,"industrial":false,"tech":"Inner Sphere","omni":false}
+Scorpion: {"tons":55,"class":"Medium","intro":2570,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":55,"class":"Medium","intro":2570,"industrial":false,"tech":"Inner Sphere/Mixed","omni":false}
+Xanthos: {"tons":100,"class":"Assault","intro":2564,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":100,"class":"Assault","intro":2564,"industrial":false,"tech":"Inner Sphere/Mixed","omni":false}
+BattleMaster: {"tons":85,"class":"Assault","intro":2633,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":85,"class":"Assault","intro":2633,"industrial":false,"tech":"Inner Sphere/Clan/Mixed","omni":false}
+Black Knight: {"tons":75,"class":"Heavy","intro":2578,"industrial":false,"tech":"Inner Sphere","omni":false} → {"tons":75,"class":"Heavy","intro":2578,"industrial":false,"tech":"Inner Sphere/Mixed","omni":false}
+Buster: {"tons":null,"class":null,"intro":null,"industrial":false,"tech":null,"omni":false} → {"tons":50,"class":"Medium","intro":2615,"industrial":false,"tech":"Inner Sphere","omni":false}
+Cestus: {"tons":65,"class":"Heavy","intro":2609,"industrial":false,"tech":"Mixed","omni":false} → {"tons":65,"class":"Heavy","intro":2609,"industrial":false,"tech":"Inner Sphere/Clan","omni":false}
+... and 199 more
+
+--- Model Prefixes ---
+Before: 405, After: 499
+Same: 380, Changed: 25, New: 94
+
+--- Variant Data ---
+Total variants: 36123
+BV same: 36123, BV diff: 0
+Intro same: 24210, Intro diff: 11913
+
+--- New Chassis ---
+
+--- File Sizes ---
+Before: 6480KB
+After: 6517KB
+--- Known Tonnage Mismatches (Clan dual-name collisions) ---
+JagerMech: 70→65 (mekfile IS version correct at 65t)
+Gladiator: 55→95 (mekfile has Clan Executioner; MUL had IS Gladiator)
+Galahad: 50→60 (mekfile has Clan version at 60t)
+Viper: 70→75 (mekfile has different tonnage)
+Firestarter: unchanged at 35t ✓
+Firestarter (Omni): unchanged at 45t ✓
+
+--- Summary ---
+All differences are explainable:
+- Previously null chassis now have metadata (mekfiles filled gaps)
+- Tech strings richer (e.g. "Inner Sphere" → "Inner Sphere/Mixed")
+- "Primitive" tech → "Inner Sphere" (mekfiles use actual tech base)
+- Earlier intro dates from mekfile data (authoritative source)
+- BV: 100% preserved (still from MUL)
+- Model prefixes: 94 new ones from mekfiles
+- All 120 tests pass

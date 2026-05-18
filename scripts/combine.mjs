@@ -7,15 +7,25 @@
  * up to and including the current era, it's considered available.
  */
 
-import { readFileSync, writeFileSync, readdirSync } from 'fs';
+import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 
 const scores = JSON.parse(readFileSync(join(ROOT, 'output/scores.json'), 'utf8'));
 const families = JSON.parse(readFileSync(join(ROOT, 'config/chassis-families.json'), 'utf8'));
+
+// ── Load mekfile metadata (primary source for chassis/variant metadata) ──
+const mekfilePath = join(ROOT, 'output/mekfile-metadata.json');
+if (!existsSync(mekfilePath)) {
+  console.log('mekfile-metadata.json not found, running parse-mekfiles.mjs...');
+  execSync('node scripts/parse-mekfiles.mjs', { cwd: ROOT, stdio: 'inherit' });
+}
+const mekfileData = JSON.parse(readFileSync(mekfilePath, 'utf8'));
+console.log(`Loaded mekfile metadata: ${Object.keys(mekfileData.chassis).length} chassis, ${Object.keys(mekfileData.variants).length} variants, ${Object.keys(mekfileData.modelPrefixes).length} prefixes`);
 
 // ── MUL era ordering (chronological) ──
 const MUL_ERA_ORDER = [
@@ -87,19 +97,41 @@ const ERA_LIST = [
   { year: 3160, label: 'ilClan (3160)', mulEra: 'ilClan' }
 ];
 
+// ── Seed metadata from mekfile data (primary source) ──
+const chassisMeta = {};
+const modelPrefixes = {};
+const variantMeta = {};
+
+// Seed chassisMeta from mekfiles
+for (const [name, mek] of Object.entries(mekfileData.chassis)) {
+  chassisMeta[name] = {
+    tonnage: mek.tonnage,
+    introDate: mek.intro || null,
+    tech: mek.tech || null,
+    type: mek.omni ? 'OmniMech' : 'BattleMech'
+  };
+}
+
+// Seed modelPrefixes from mekfiles
+Object.assign(modelPrefixes, mekfileData.modelPrefixes);
+
+// Seed variantMeta from mekfiles (intro only — BV comes from MUL)
+for (const [variant, mek] of Object.entries(mekfileData.variants)) {
+  variantMeta[variant] = {
+    bv: null,  // BV not in .mtf files — filled from MUL below
+    intro: mek.intro || null
+  };
+}
+
+console.log(`Seeded from mekfiles: ${Object.keys(chassisMeta).length} chassis, ${Object.keys(variantMeta).length} variants, ${Object.keys(modelPrefixes).length} prefixes`);
+
 // ── Load MUL cache data ──
 // Build CUMULATIVE availability: { factionCode: { mulEraName: Set<chassisName> } }
 // A chassis available in era N is also available in all eras > N
 const mulRaw = {}; // per-era raw availability
-const chassisMeta = {};
-const modelPrefixes = {};
 
 const mulCacheDir = join(ROOT, 'data/mul-cache');
 const mulFiles = readdirSync(mulCacheDir);
-
-// Variant metadata index: { "DRG-1N": { bv: 1125, intro: 2754 }, ... }
-// Keyed by variant designation. First non-null value wins (same variant across files).
-const variantMeta = {};
 
 for (const file of mulFiles) {
   if (!file.endsWith('.json')) continue;
@@ -116,7 +148,7 @@ for (const file of mulFiles) {
     if (!chassis) continue;
     mulRaw[faction][mulEra].add(chassis);
     
-    // Collect chassis metadata (earliest intro date)
+    // Fill chassis metadata gaps: if mekfiles didn't have this chassis, use MUL
     if (!chassisMeta[chassis]) {
       chassisMeta[chassis] = {
         tonnage: entry.Tonnage,
@@ -124,15 +156,17 @@ for (const file of mulFiles) {
         tech: entry.Technology?.Name || null,
         type: entry.Type?.Name || null
       };
-    }
-    if (entry.DateIntroduced) {
-      const introYear = parseInt(entry.DateIntroduced);
-      if (!chassisMeta[chassis].introDate || introYear < chassisMeta[chassis].introDate) {
-        chassisMeta[chassis].introDate = introYear;
+    } else {
+      // Backfill earliest intro date from MUL if earlier
+      if (entry.DateIntroduced) {
+        const introYear = parseInt(entry.DateIntroduced);
+        if (!chassisMeta[chassis].introDate || introYear < chassisMeta[chassis].introDate) {
+          chassisMeta[chassis].introDate = introYear;
+        }
       }
     }
     
-    // Extract model prefix + variant metadata (BV, intro)
+    // Extract model prefix (fill gaps) + variant BV from MUL
     if (entry.Variant) {
       const variant = entry.Variant.trim();
       const prefix = variant.split('-')[0];
@@ -142,14 +176,13 @@ for (const file of mulFiles) {
         }
       }
       
-      // Index variant BV and intro year
+      // Fill variant BV from MUL (primary BV source) and intro if missing
       if (!variantMeta[variant]) {
         variantMeta[variant] = {
           bv: entry.BattleValue || null,
           intro: entry.DateIntroduced ? parseInt(entry.DateIntroduced) : null
         };
       } else {
-        // Fill in missing fields from other cache entries for same variant
         if (!variantMeta[variant].bv && entry.BattleValue) {
           variantMeta[variant].bv = entry.BattleValue;
         }
