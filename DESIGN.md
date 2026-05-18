@@ -1,8 +1,8 @@
 # BattleTech Faction Signatures — Design Document
 
-**v1.2.0 — 2026-05-14** (added versioning, Biased Weight column)
+**v1.21.1 — 2026-05-18** (smart era auto-adjust, no-results breadcrumbing, expanded factions, mm-data integration, DR terminology)
 
-_Previous: v1.1 — 2026-05-13 (Unit Quality Rating)_
+_Previous: v1.2.0 — 2026-05-14 (Biased Weight column), v1.1 — 2026-05-13 (Unit Quality Rating)_
 
 ---
 
@@ -20,7 +20,7 @@ A tool for BattleTech hobbyists to explore faction identity through mech usage d
 
 ### MegaMek Force Generator (Primary)
 - **Source:** `MegaMek/mm-data` GitHub repo, `data/forcegenerator/`
-- **Content:** 40 era XML files (2398–3160) + `factions.xml`
+- **Content:** 39 era XML files (2398–3160) + `factions.xml`
 - **What it provides:** Weighted availability of chassis and variants per faction per era. Numeric weights represent relative likelihood of a faction fielding that chassis. Higher = more common in that faction's forces.
 - **Faction inheritance:** Child factions (e.g., DC, FS, LC) inherit from parent factions (e.g., IS) when no explicit entry exists. Must be resolved at parse time.
 - **License:** CC BY-NC-SA 4.0
@@ -97,18 +97,18 @@ Where:
 
 **Why z-score works:** MegaMek weights are relative probabilities within each faction's generation table — they're not comparable across factions by simple summation. But comparing ranks and statistical position IS valid. The z-score measures "how unusual is this faction's weight for this chassis compared to everyone else."
 
-**Why include zeros:** Non-fielding factions are counted as weight 0. This makes exclusivity emerge naturally — a mech only one faction fields has ~39 zeros pulling the mean down, so that faction's z-score is enormous. No separate scarcity factor needed.
+**Why include zeros:** Non-fielding factions are counted as weight 0. This makes exclusivity emerge naturally — a mech only one faction fields has ~90+ zeros pulling the mean down, so that faction's z-score is enormous. No separate scarcity factor needed.
 
 The product `weight × z` captures both signals: high weight (the faction fields it a lot) AND high z (the faction stands out from the crowd). A DC-exclusive mech at weight 6 scores high because z ≈ 6. A ubiquitous mech at weight 6 scores low because z ≈ 1.
 
-**Display: Tier 1–5 (Jenks Natural Breaks).** The raw `weight × z-score` values are classified into 5 tiers using the Jenks Natural Breaks algorithm, which finds breakpoints that minimize within-tier variance and maximize between-tier variance:
-- **Tier 1** — Faction-defining. The totemic mechs.
-- **Tier 2** — Strong identity markers.
-- **Tier 3** — Moderate association.
-- **Tier 4** — Weak association.
-- **Tier 5** — Incidental. The faction has access but it's not "theirs."
+**Display: Distinctiveness Rating DR1–DR5 (Jenks Natural Breaks).** The raw `weight × z-score` values are classified into 5 tiers using the Jenks Natural Breaks algorithm, which finds breakpoints that minimize within-tier variance and maximize between-tier variance:
+- **DR1** — Faction-defining. The totemic mechs.
+- **DR2** — Strong identity markers.
+- **DR3** — Moderate association.
+- **DR4** — Weak association.
+- **DR5** — Incidental. The faction has access but it's not "theirs."
 
-Unlike fixed quintiles (20% each), Jenks finds the natural gaps in the data. A faction with 3 clearly iconic mechs and a gradual tail gets 3 in T1, not an arbitrary 20% slice. The underlying raw value is still used for sorting and filtering.
+Unlike fixed quintiles (20% each), Jenks finds the natural gaps in the data. A faction with 3 clearly iconic mechs and a gradual tail gets 3 in DR1, not an arbitrary 20% slice. The underlying raw value is still used for sorting and filtering.
 
 **Global signature is stable regardless of scope.** Adding or removing factions from the query doesn't change any faction's signature scores. It's a global property of the faction's relationship to that chassis.
 
@@ -150,8 +150,7 @@ All of these work as both filters (`field>value`) and sort targets (`sort by fie
 | **avg-pref** | Mean scoped preference across scoped factions that field the chassis. | `avg-pref<6` |
 | **weight** | Raw MegaMek weight. Not normalized. | `weight>5` |
 | **tons** | Chassis tonnage. | `tons>50`, `tons=75` |
-| **sig** | Global signature raw score (weight × share). Max across scoped factions. | `sig>3` |
-| **sig-tier** | Signature tier (1=most iconic, 5=incidental). | `sig-tier<3` |
+| **sig** (alias: **dr**, **distinctiveness**) | Global signature raw score (weight × share). Max across scoped factions. | `sig>3`, `dr>3` |
 | **DC-pref** | Faction-specific scoped preference. | `DC-pref>8` |
 | **DC-sig** | Faction-specific global signature raw score. | `DC-sig>3` |
 | **bv** | Battle Value range filter (variant-level). | `bv>1000`, `bv<1500` |
@@ -504,6 +503,9 @@ These are applied after all adjustments (quality rating + weight class) and can 
 
 ## Era & Year Selection
 
+### Default Era
+The default era is **3049** (Clan Invasion). When no `year=` or `era=` is specified and no smart era auto-adjust triggers, queries use this era. See "Smart Era Auto-Adjust" for automatic era selection based on chassis/faction filters.
+
 ### Target Year
 Enter a specific year (e.g., 3052). The tool selects the most recent MegaMek era at or before that year and filters out chassis/variants introduced after the target year (using MUL introduction dates).
 
@@ -539,6 +541,8 @@ All text fields support the `=` and `!=` operators. Multi-value OR is supported 
 | `tons` | numeric | Tonnage filter/sort | `tons>50` |
 | `DC-pref` | numeric | Faction-specific pref filter/sort | `DC-pref>8` |
 | `DC-sig` | numeric | Faction-specific sig filter/sort | `DC-sig>7` |
+| `type` | enum | Mech type filter | `type=omni`, `type=battlemech` |
+| `tech` | enum | Technology base filter | `tech=clan`, `tech=is`, `tech=mixed` |
 | `sort` | keyword | Sort specification | `sort by DC sig desc` |
 | `year` | numeric | Target year | `year=3039` |
 | `era` | text | Era name | `era=ClanInvasion` |
@@ -559,17 +563,18 @@ All string matching is case-insensitive with partial match support. Faction code
 |----------|-----------|
 | `faction=GreatHouses` | DC, FS, FWL, LC, CC |
 | `faction=Clans` | All Clan factions |
+| `faction=InnerSphere` | All IS factions (non-Clan, non-Periphery) |
 | `faction=InvasionClans` | CW, CJF, CGB, CSJ |
 | `faction=HomeClans` | CBS, CCO, CFM, CGS, CIH, CSA, CSV, CCC, CB, CMG, CWI, CWOV, CSL |
 | `faction=ISClans` | CW, CJF, CGB, CSJ, CHH, CNC, CDS, CSR, RD, RA, CWIE, CWE |
 | `faction=Periphery` | All periphery factions |
 | `faction=FWLStates` | DA, DO, DTA, MSC, OP, RF, RCM, PR, MCM |
-| `faction=SubUnits` | All sub-unit factions (e.g., DC.SL, MERC.KH) |
 
 ### Sort Syntax
 
 - `sort by spread desc` — sort by spread, descending
 - `sort by DC sig desc` — sort by DC's signature score, descending
+- `sort by DC dr desc` — alternate syntax using DR (Distinctiveness Rating)
 - `sort by DC preference desc` — sort by DC's scoped preference, descending
 - `sort by DC-sig desc` — alternate syntax (hyphenated)
 - `sort by tons asc` — sort by tonnage, ascending
@@ -612,26 +617,19 @@ The primary view for multi-faction queries. Table with:
 - **Rows:** Chassis (one per row)
 - **Columns:** One per scoped faction, plus stat columns
 
-Each faction cell shows three values:
-```
-10.0      ← Scoped Preference (primary, heat-colored)
-s:8.6     ← Global Signature (accent color)
-w:8       ← Raw Weight (dim)
-```
+Each faction has two columns:
+- **DR column** — Distinctiveness Rating (DR1–DR5) + raw signature score, heat-colored by tier
+- **Weight column** — Raw MegaMek weight (1–10 log scale), heat-colored by value
 
-Heat map coloring is based on scoped preference (1 = cool, 10 = hot).
-
-Dedicated sig columns (one per faction) also appear after the faction cells for sortability.
-
-Stat columns: Spread, Span, Avg Pref.
+Additional columns: Biased Weight (BW, hidden by default), Spread (hidden by default).
 
 ### Single Faction Roster View
 
-For single-faction queries without explicit sort/sig. Same key metrics as multi-faction view:
-- Chassis, Tons, Class, BV (if available), DR (tier + raw score), Prob, Availability (numeric weight + bar)
+For single-faction queries without explicit sort/sig. Key columns:
+- Chassis, Tons, Class, BV (if available), DR (Distinctiveness Rating tier + raw score), Prob (probability weight including WCD), Weight (raw availability + bar)
 - Default sort: DR desc (most iconic mechs first)
 - DR and Prob use the same heat-colored styling as multi-faction view
-- Availability bar shows raw weight with percentage fill relative to the faction's max weight
+- Weight bar shows raw weight with percentage fill relative to the faction's max weight
 
 ### Chassis Detail Drill-Down
 
@@ -699,12 +697,12 @@ MUL ingestion pulls per-faction data AND the three general pools (IS General, Cl
 {
   _meta: { generated, description },
   factionIndex: ["AML", "ARDC", "BAN", ...],  // sorted faction codes; numeric keys in eraData reference this
-  factions: { code: { name, clan, periphery, minor, wcd: { year: [L,M,H,A] } } },
+  factions: { code: { name, fullName, clan, periphery, minor, tags: [], yearsActive: [{start, end}], wcd: { year: [L,M,H,A] } } },
   factionGroups: { GreatHouses: [...], Clans: [...], Periphery: [...] },
   eras: [{ year, label, mulEra }],
   families: [{ groupName, chassis, enabled }],
   modelPrefixes: { prefix: chassisName },
-  chassis: { name: { tons, class, intro, industrial, tech } },
+  chassis: { name: { tons, class, intro, industrial, omni, tech } },
   eraData: {
     year: {
       chassisName: {
@@ -751,16 +749,14 @@ Vanilla HTML/CSS/JS. No framework. Single-page app loading `app-data.json` at st
 
 ### Known Architecture Debt
 
-**`runQuery()` monolith:** The main query function (295 lines) handles parsing, filtering, scoring, signature computation, Jenks breaks, sorting, rendering dispatch, and pagination in a single function. Natural decomposition targets: extract filtering loop, scoring pass, and render dispatch into separate functions.
-
-**Dead code:** `assignTier()` (superseded by `assignTierFromBreaks()`), `renderMechDetail()` (trivial passthrough never called), `toRating()` (unused inverse of `toProb()`). Should be cleaned up.
+**`runQuery()` monolith:** The main query function (~397 lines) handles parsing, filtering, scoring, signature computation, Jenks breaks, sorting, rendering dispatch, and pagination in a single function. Natural decomposition targets: extract filtering loop, scoring pass, and render dispatch into separate functions.
 
 ---
 
 ## Resolved Design Decisions
 
 1. **Scoped Preference normalization:** Linear min-to-max mapping across scoped factions' weights. 1 = lowest, 10 = highest. Zeros included.
-2. **Global Signature formula:** `weight × share` (faction weight × faction's share of total MUL-confirmed weight). Raw score in weight units. Displayed as quintile tiers 1–5.
+2. **Global Signature formula:** `weight × share` (faction weight × faction's share of total MUL-confirmed weight). Raw score in weight units. Displayed as Distinctiveness Rating (DR1–DR5) via Jenks Natural Breaks.
 3. **Signature is global, not scoped.** Normalizes against all factions in the era, not just the user's current scope. This makes it a stable faction identity metric.
 4. **Two metrics, not one.** Scoped preference and global signature answer different questions (mech→faction vs faction→mech). Neither replaces the other.
 5. **Filter/sort parity.** Every numeric field that can be filtered can also be sorted, and vice versa. This is a design invariant.
@@ -876,18 +872,20 @@ This tool explores faction identity in BattleTech through mech usage data. It an
 **How it works (the 30-second version):**
 - Data comes from two sources: MegaMek's force generator (community-curated mech availability tables) and the official Master Unit List (canon confirmation).
 - Each faction has a weight (1–10) for each chassis — how likely they are to field it. Higher = more common in that faction's forces.
-- **Signature** measures how much a mech *belongs* to a faction. It combines usage (do they field it a lot?) with distinctiveness (does anyone else?). A mech only one faction uses scores very high. A mech everyone uses scores low.
-- Signature tiers (T1–T5) group mechs by natural breaks in the data. T1 = the faction's totemic mechs.
+- **Distinctiveness Rating (DR)** measures how much a mech *belongs* to a faction. It combines usage (do they field it a lot?) with distinctiveness (does anyone else?). A mech only one faction uses scores very high. A mech everyone uses scores low.
+- Distinctiveness ratings (DR1–DR5) group mechs by natural breaks in the data. DR1 = the faction's totemic mechs.
 
 **Key assumptions:**
 - **MegaMek data is the primary source.** It's community-curated and richer than the official MUL, but may include reasonable extrapolations beyond strict canon.
 - **Mode B (default) filters by canon.** If the MUL says a faction doesn't have a chassis in that era, it's excluded. Mode A shows everything MegaMek has.
 - **Weight class distribution matters.** Factions that invest heavily in heavies get more sig credit for their heavy mechs. A Lyran Atlas counts more than a Lyran Locust in the identity ranking.
 - **Unit quality is averaged by default.** Some mechs are elite-only (rating A) or garrison-only (rating F). The default view averages across all tiers. Use `rating=A` or `rating=F` to focus on a specific tier.
-- **Signature is global and stable.** Adding or removing factions from your query doesn't change any faction's signature scores. It's a property of the faction's relationship to the chassis across the entire universe.
+- **Signature is global and stable.** Adding or removing factions from your query doesn't change any faction's distinctiveness scores. It's a property of the faction's relationship to the chassis across the entire universe.
 
 **Quick start — try these:**
 _(Same example queries as the landing page, with one-line explanations of what each one shows)_
+
+**Default era:** 3049 (Clan Invasion). If a searched chassis or faction doesn't exist in this era, the app auto-adjusts to the best available era (see "Smart Era Auto-Adjust" below).
 
 ---
 
@@ -902,20 +900,20 @@ The detailed lookup for specific filters, columns, and settings. Organized by wh
 | **Chassis** | Always | Mech name (or family name if family merging is on). Click to see variant breakdown. |
 | **Tons** | Always | Chassis tonnage with weight class badge (L/M/H/A). |
 | **BV** | When BV data exists | Battle Value range across in-scope variants (min–max). |
-| **[Faction] Sig** | Multi-faction queries | Signature tier (T1–T5) and raw score. T1 = faction-defining. Higher raw score = stronger association. See "How signature is computed" below. |
+| **[Faction] DR** | Multi-faction queries | Distinctiveness Rating (DR1–DR5) and raw score. DR1 = faction-defining. Higher raw score = stronger association. See "How signature is computed" below. |
 | **[Faction]** | Multi-faction queries | Raw MegaMek weight (1–10 logarithmic scale). Heat-colored: warm = high usage, cool = low. This is the faction's availability rating for the chassis — how likely they are to field it relative to other chassis in the same weight class. Each +2 on this scale doubles the probability of appearing in a force. |
 | **[Faction] BW** | Multi-faction queries | Biased Weight — the chassis's effective probability of appearing in a faction's full roster. Formula: `2^(rating/2) × classShare`, where `classShare` is the faction's weight class distribution proportion for this chassis's weight class (e.g., Lyran Heavy share = 0.35, DC Assault share = 0.10). When filtering to a single weight class, BW is just `2^(rating/2)` (no class mixing). Hidden by default (☰ menu). |
 | **Spread** | Multi-faction queries | Difference between highest and lowest raw weight across scoped factions. High spread = factions disagree about this mech = interesting. Hidden by default. |
 | **Weight** | Single-faction view | Raw availability weight with usage bar. |
 
-**Signature tiers explained:**
-- **T1** — Faction-defining. The totemic mechs. If you're painting one faction, start here.
-- **T2** — Strong identity markers. Clearly associated with the faction.
-- **T3** — Moderate association. The faction fields it, and more than average.
-- **T4** — Weak association. Present but not distinctive.
-- **T5** — Incidental. The faction has access but it's not "theirs."
+**Distinctiveness ratings explained:**
+- **DR1** — Faction-defining. The totemic mechs. If you're painting one faction, start here.
+- **DR2** — Strong identity markers. Clearly associated with the faction.
+- **DR3** — Moderate association. The faction fields it, and more than average.
+- **DR4** — Weak association. Present but not distinctive.
+- **DR5** — Incidental. The faction has access but it's not "theirs."
 
-Tiers are assigned using Jenks Natural Breaks — a statistical method that finds natural gaps in the data rather than arbitrary cutoffs. Tiers are computed globally across all displayed factions, so T1 means the same thing regardless of which faction column you're reading.
+Tiers are assigned using Jenks Natural Breaks — a statistical method that finds natural gaps in the data rather than arbitrary cutoffs. Tiers are computed globally across all displayed factions, so DR1 means the same thing regardless of which faction column you're reading.
 
 **How signature is computed:**
 
@@ -993,6 +991,39 @@ In-app help rather than a separate docs page because:
 3. Stays in sync with the deployed version (same deploy pipeline)
 4. No separate hosting or docs framework needed
 
+## Pagination
+
+Results tables are paginated when the result set exceeds 25 rows. A pagination bar with page navigation appears below the table. Pagination state resets on each new query.
+
+---
+
+## Column Legend
+
+A collapsible inline legend bar appears above results when a query is active. It provides quick-reference explanations for DR (Distinctiveness Rating) and Prob (Probability Weight) columns. Defaults to expanded. The legend links to the full help panel for deeper explanation.
+
+---
+
+## Loading Overlay
+
+A spinner overlay (`#loading-overlay`) displays while `app-data.json` is being fetched and decoded. It is hidden once data loading completes. This provides visual feedback during the initial ~10MB data load.
+
+---
+
+## Expanded Faction Set
+
+The dataset includes **125 factions** (92 appearing in era weight data via `factionIndex`). This includes:
+
+- **5 Great Houses** — DC, FS, FWL, LC, CC
+- **23 Clan factions** — including homeworld Clans, IS Clans, and historical Clans (Mongoose, Widowmaker, Wolverine, Burrock)
+- **FWL breakup states** — 9 successor states (DA, DO, DTA, MSC, OP, RF, RCM, PR, MCM)
+- **Periphery states** — TC, MH, OA, MOC, CDP, FVC, RWR, TD, GV, etc.
+- **Historical factions** — Star League (SL, SLR, SLIE), Terran Hegemony (TH), Terran Alliance (TA), Pentagon Powers (PP)
+- **Special factions** — MERC, PIR, BAN, WOB, CS, ROS, Stone's Coalition, etc.
+
+Each faction carries metadata: `name`, `fullName`, `clan`, `periphery`, `minor`, `tags` (e.g. PLAYABLE, MAJOR, IS), `yearsActive` (array of `{start, end}` ranges), and `wcd` (weight class distribution per era).
+
+---
+
 ## Smart Era Auto-Adjust (v1.21.1)
 
 **Problem:** Default era is 3049. Users searching for chassis or factions that don't exist in that era get blank results with no explanation. With 125 factions (many era-specific), this is a common trap.
@@ -1025,7 +1056,7 @@ The breadcrumb messages render as styled `<p>` elements with clickable `<a>` tag
 
 - **Faction lineage / succession model:** Many factions merge, splinter, rename, or absorb others across eras. Current approach patches this case-by-case (e.g. LA/LC MUL merge → canonical LC). Needs a proper lineage map that understands rename (LC↔LA), merger (FS+LC→FC), splintering (FRR from DC), conquest-then-absorption (FRR→CGB occupation→RD), brief existence (WOB, ROS, SIC), etc. Scoring implications differ: a rename shares the same force pool, a merger combines two, a splinter starts fresh-ish. Key example: FRR goes DC→FRR→CGB/FRR→RD, with mech roster evolving at each transition.
 - **Boolean query language (Level 3):** Replace the regex-based parser with a proper tokenizer + AST parser supporting full boolean logic: `(faction=DC AND class=Heavy) OR (faction=FS AND class=Light)`. Would require: tokenizer → recursive descent parser → AST → evaluator per row. Current parser handles AND implicitly (multiple fields) and OR within fields (`class=(Light OR Medium)`), plus `NOT`/`!=` negation. Cross-field OR and parenthetical grouping need AST evaluation. Big lift but would make the query bar a real query language.
-- **Code consolidation:** Decompose `runQuery()` monolith. Clean up dead functions (`assignTier`, `renderMechDetail`, `toRating`).
+- **Code consolidation:** Decompose `runQuery()` monolith (~397 lines).
 
 - **Structured form UI:** Dropdowns and sliders layered on top of the query bar, reading/writing the same query syntax.
 - **Sub-unit faction toggle:** A session-level option to load extended data including regiment-level factions (DC.SL Sword of Light, MERC.KH Kell Hounds, etc.). Currently excluded for file size reasons (~200 sub-units inflate app-data.json from ~10MB to 44MB). The data pipeline still parses sub-unit factions from MegaMek; they're filtered out in combine.mjs at the output stage. Re-enabling would require either a lazy-load mechanism or a separate extended data file.
