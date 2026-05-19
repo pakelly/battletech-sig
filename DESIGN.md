@@ -557,6 +557,8 @@ All string matching is case-insensitive with partial match support. Faction code
 
 **Multi-word chassis names:** The query parser supports quoted values for multi-word names: `chassis="King Crab"`. Unquoted multi-word names are also handled by attempting greedy matching against known chassis names before falling back to single-token parsing.
 
+**Chassis autocomplete scope:** Autocomplete suggestions draw from the union of all chassis across all eras, not just the latest era. This ensures extinct chassis (e.g., Exterminator, which drops out after 3078) are still discoverable. The era auto-adjust feature handles redirecting to an appropriate era when the chassis isn't available in the default.
+
 ### Shortcuts
 
 | Shortcut | Expands to |
