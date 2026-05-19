@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.21.1';
-const DEPLOY_TIME = '20260518.1907';
+const APP_VERSION = '1.21.2';
+const DEPLOY_TIME = '20260519.0520';
 
 let DATA = null; // app-data.json
 
@@ -1976,14 +1976,19 @@ function getValueSuggestions(field, lower) {
       return items.filter(i => i.text.toLowerCase().startsWith(lower) || i.hint.toLowerCase().includes(lower)).slice(0, 12);
     }
     case 'chassis': {
-      const latestEra = DATA.eras[DATA.eras.length - 1]?.year || 3160;
-      const chassisData = getChassisForEra(String(latestEra), 'on');
-      const names = Object.keys(chassisData).sort();
+      // Union of all chassis across all eras so extinct chassis are still suggested
+      const allNames = new Set();
+      for (const eraKey of Object.keys(DATA.eraData)) {
+        for (const name of Object.keys(DATA.eraData[eraKey])) {
+          allNames.add(name);
+        }
+      }
+      const names = [...allNames].sort();
       const results = names.filter(n => n.toLowerCase().includes(lower))
         .slice(0, 10)
         .map(n => {
-          const members = chassisData[n]?._members;
-          const hint = members ? members.join(', ') : (DATA.chassis[n]?.class || '');
+          const meta = DATA.chassis[n];
+          const hint = meta?.class || '';
           return { text: n, hint };
         });
       // Also suggest from aliases (Clan names, IS reporting names)
