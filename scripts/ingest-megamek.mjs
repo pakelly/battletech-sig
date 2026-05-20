@@ -172,6 +172,116 @@ function peakWeight(entry) {
   return entry; // legacy number
 }
 
+// ── Multi-parent averaging (matching MegaMek's mergeFactionAvailability) ──
+// Converts ratings to probability space, averages, converts back.
+function toProb(rating) {
+  if (rating <= 0) return 0;
+  return Math.pow(2, rating / 2);
+}
+
+function toRating(prob) {
+  if (prob <= 0) return 0;
+  return 2 * Math.log2(prob);
+}
+
+/**
+ * Average multiple availability entries in probability space.
+ * For [base, mod] entries: averages the base ratings in prob space,
+ * resolves modifier by majority vote (or 0 if tied).
+ * For explicit {level: weight} entries: averages each level's weight
+ * in prob space across parents.
+ * Returns a merged entry in the same format.
+ */
+function mergeParentEntries(entries) {
+  if (entries.length === 0) return null;
+  if (entries.length === 1) return entries[0];
+
+  // Check if any entry is explicit per-level (object, not array)
+  const hasExplicit = entries.some(e => typeof e === 'object' && !Array.isArray(e));
+
+  if (hasExplicit) {
+    // Merge explicit level entries: average each level in prob space
+    // Collect all level names across all entries
+    const allLevels = new Set();
+    for (const entry of entries) {
+      if (typeof entry === 'object' && !Array.isArray(entry)) {
+        for (const k of Object.keys(entry)) allLevels.add(k);
+      }
+    }
+
+    const merged = {};
+    for (const level of allLevels) {
+      const values = [];
+      for (const entry of entries) {
+        if (typeof entry === 'object' && !Array.isArray(entry)) {
+          if (entry[level] !== undefined) values.push(entry[level]);
+        } else {
+          // For [base, mod] entries, use peak as fallback for each level
+          values.push(peakWeight(entry));
+        }
+      }
+      if (values.length > 0) {
+        const avgProb = values.reduce((sum, v) => sum + toProb(v), 0) / values.length;
+        merged[level] = Math.round(toRating(avgProb));
+      }
+    }
+    return merged;
+  }
+
+  // All entries are [base, mod] or plain numbers — average bases in prob space
+  const bases = entries.map(e => peakWeight(e));
+  const avgProb = bases.reduce((sum, b) => sum + toProb(b), 0) / bases.length;
+  const mergedBase = Math.round(toRating(avgProb));
+
+  // Resolve modifier by majority vote
+  const modCounts = { '+': 0, '-': 0, '0': 0 };
+  for (const entry of entries) {
+    const mod = Array.isArray(entry) ? (entry[1] || 0) : 0;
+    const key = mod === '+' ? '+' : mod === '-' ? '-' : '0';
+    modCounts[key]++;
+  }
+  let mergedMod = 0;
+  if (modCounts['+'] > modCounts['-'] && modCounts['+'] > modCounts['0']) mergedMod = '+';
+  else if (modCounts['-'] > modCounts['+'] && modCounts['-'] > modCounts['0']) mergedMod = '-';
+
+  return [mergedBase, mergedMod];
+}
+
+/**
+ * Resolve a faction's weight for a chassis by walking its ancestry.
+ * For single-parent factions: returns first ancestor's entry (current behavior).
+ * For multi-parent factions: averages all parents' resolved weights in prob space.
+ */
+function resolveInheritedWeight(fkey, explicitFactions, visited = new Set()) {
+  // Check explicit entry first
+  if (explicitFactions[fkey] !== undefined) {
+    return explicitFactions[fkey];
+  }
+
+  if (visited.has(fkey)) return null;
+  visited.add(fkey);
+
+  const parents = factionMeta[fkey]?.parents || [];
+  if (parents.length === 0) return null;
+
+  if (parents.length === 1) {
+    // Single parent — recurse (same as old BFS first-match)
+    return resolveInheritedWeight(parents[0], explicitFactions, new Set(visited));
+  }
+
+  // Multiple parents — resolve each independently and average
+  const parentEntries = [];
+  for (const parent of parents) {
+    const entry = resolveInheritedWeight(parent, explicitFactions, new Set(visited));
+    if (entry !== null && entry !== undefined) {
+      parentEntries.push(entry);
+    }
+  }
+
+  if (parentEntries.length === 0) return null;
+  return mergeParentEntries(parentEntries);
+}
+
 // ── 3. Parse era XMLs ──────────────────────────────────────────────────────
 
 const eraFiles = fs.readdirSync(DATA_DIR)
@@ -364,20 +474,9 @@ for (const era of Object.keys(rawData)) {
     
     // For each faction we want to resolve
     for (const fkey of factionsToResolve) {
-      // Check if faction has explicit entry
-      if (explicitFactions[fkey] !== undefined) {
-        resolvedFactions[fkey] = explicitFactions[fkey];
-        continue;
-      }
-      
-      // Walk up ancestry chain to find inherited weight
-      const ancestors = getAncestors(fkey);
-      for (const ancestor of ancestors) {
-        if (explicitFactions[ancestor] !== undefined) {
-          // Inherit parent's entry (preserving modifier info)
-          resolvedFactions[fkey] = explicitFactions[ancestor];
-          break;
-        }
+      const weight = resolveInheritedWeight(fkey, explicitFactions);
+      if (weight !== null && weight !== undefined) {
+        resolvedFactions[fkey] = weight;
       }
     }
     
@@ -386,6 +485,54 @@ for (const era of Object.keys(rawData)) {
     
     // Resolve variant weights with inheritance + scaling
     // Variant scaling produces plain numbers (approximations), not modifier-encoded values
+    //
+    // Helper: resolve a single parent faction's variant weight for a model
+    function resolveVariantFromAncestor(ancestorFkey, modelFactions, factionChassisW) {
+      // Check explicit variant entry for ancestor
+      if (modelFactions[ancestorFkey] !== undefined) {
+        const parentVariantWeight = peakWeight(modelFactions[ancestorFkey]);
+        const parentChassisW = explicitFactions[ancestorFkey] !== undefined
+          ? peakWeight(explicitFactions[ancestorFkey])
+          : peakWeight(resolvedFactions[ancestorFkey]);
+        if (parentChassisW && parentChassisW > 0) {
+          return parentVariantWeight * (factionChassisW / parentChassisW);
+        }
+        return parentVariantWeight;
+      }
+      // Check General as fallback
+      if (modelFactions['General'] !== undefined) {
+        const generalW = peakWeight(modelFactions['General']);
+        const parentChassisW = explicitFactions[ancestorFkey] !== undefined
+          ? peakWeight(explicitFactions[ancestorFkey]) : null;
+        if (parentChassisW !== null && parentChassisW > 0) {
+          return generalW * (factionChassisW / parentChassisW);
+        }
+        const maxExplicit = Math.max(...Object.values(explicitFactions).map(v => peakWeight(v)).filter(v => v > 0), 1);
+        return generalW * (factionChassisW / maxExplicit);
+      }
+      return null;
+    }
+
+    // Walk ancestry to find the best variant weight for a single-line ancestry
+    function resolveVariantSingleLine(fkey, modelFactions, factionChassisW) {
+      // Check explicit entry first
+      if (modelFactions[fkey] !== undefined) {
+        return modelFactions[fkey];
+      }
+
+      const ancestors = getAncestors(fkey);
+      for (const anc of ancestors) {
+        const val = resolveVariantFromAncestor(anc, modelFactions, factionChassisW);
+        if (val !== null) return val;
+      }
+
+      // General as absolute last resort
+      if (modelFactions['General'] !== undefined) {
+        return peakWeight(modelFactions['General']);
+      }
+      return null;
+    }
+
     for (const [modelName, modelFactions] of Object.entries(chassisData.variants)) {
       resolvedVariants[modelName] = {};
       
@@ -396,57 +543,28 @@ for (const era of Object.keys(rawData)) {
           continue;
         }
         
-        // For variant scaling, use peakWeight for arithmetic
         const factionChassisW = peakWeight(resolvedFactions[fkey]);
-        
-        // Check "General" — a catch-all for variant distribution
-        if (modelFactions['General'] !== undefined) {
-          const generalW = peakWeight(modelFactions['General']);
-          
-          // Find the parent faction weight for chassis
-          const ancestors = getAncestors(fkey);
-          let parentChassisWeight = null;
-          let parentVariantWeight = null;
-          
-          // First check if any ancestor has explicit variant weight
-          for (const anc of ancestors) {
-            if (modelFactions[anc] !== undefined) {
-              parentVariantWeight = peakWeight(modelFactions[anc]);
-              parentChassisWeight = explicitFactions[anc] !== undefined ? peakWeight(explicitFactions[anc]) : null;
-              break;
+        const parents = factionMeta[fkey]?.parents || [];
+
+        if (parents.length > 1) {
+          // Multi-parent: resolve each parent's variant weight and average
+          const parentValues = [];
+          for (const parent of parents) {
+            const val = resolveVariantSingleLine(parent, modelFactions, factionChassisW);
+            if (val !== null && val !== undefined) {
+              parentValues.push(typeof val === 'number' ? val : peakWeight(val));
             }
           }
-          
-          if (parentVariantWeight !== null && parentChassisWeight !== null && parentChassisWeight > 0) {
-            resolvedVariants[modelName][fkey] = parentVariantWeight * (factionChassisW / parentChassisWeight);
-          } else {
-            const maxExplicit = Math.max(...Object.values(explicitFactions).map(v => peakWeight(v)).filter(v => v > 0), 1);
-            resolvedVariants[modelName][fkey] = generalW * (factionChassisW / maxExplicit);
+          if (parentValues.length > 0) {
+            const avgProb = parentValues.reduce((sum, v) => sum + toProb(v), 0) / parentValues.length;
+            resolvedVariants[modelName][fkey] = Math.max(0, toRating(avgProb));
           }
-          continue;
-        }
-        
-        // Inherit from parent faction's variant weight, scaled
-        const ancestors = getAncestors(fkey);
-        let inherited = false;
-        for (const anc of ancestors) {
-          if (modelFactions[anc] !== undefined) {
-            const parentVariantWeight = peakWeight(modelFactions[anc]);
-            const parentChassisW = explicitFactions[anc] !== undefined ? peakWeight(explicitFactions[anc]) : peakWeight(resolvedFactions[anc]);
-            
-            if (parentChassisW && parentChassisW > 0) {
-              resolvedVariants[modelName][fkey] = parentVariantWeight * (factionChassisW / parentChassisW);
-            } else {
-              resolvedVariants[modelName][fkey] = parentVariantWeight;
-            }
-            inherited = true;
-            break;
+        } else {
+          // Single parent (or none): use existing ancestry walk
+          const val = resolveVariantSingleLine(fkey, modelFactions, factionChassisW);
+          if (val !== null && val !== undefined) {
+            resolvedVariants[modelName][fkey] = val;
           }
-        }
-        
-        // If still no variant weight, check General as last resort
-        if (!inherited && modelFactions['General'] !== undefined) {
-          resolvedVariants[modelName][fkey] = peakWeight(modelFactions['General']);
         }
       }
     }

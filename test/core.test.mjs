@@ -1233,3 +1233,75 @@ describe('No-Results Breadcrumbing', () => {
     }
   });
 });
+
+// ════════════════════════════════════════════════════════
+// MULTI-PARENT FACTION AVERAGING
+// ════════════════════════════════════════════════════════
+
+describe('Multi-Parent Faction Averaging', () => {
+  // FC (Federated Commonwealth) has parents FS + LA.
+  // Its weights should be a blend of both, not just FS.
+
+  it('FC chassis weight blends FS and LA when FC has no explicit data', () => {
+    // BattleMaster in 3039: FS inherits IS=5, LA=7, FC has no explicit entry.
+    // FC should average in prob space: avg(2^(5/2), 2^(7/2)) ≈ 8.49 → rating ≈ 6
+    const era3039 = APP_DATA.eraData['3039'];
+    if (!era3039) return;
+
+    const bm = era3039['BattleMaster'];
+    assert.ok(bm, 'BattleMaster should exist in 3039');
+    const w = bm.w;
+    // LC is our canonical code for LA (Lyran)
+    // FS inherits from IS=5 in the XML; LC=7 explicit
+    const fcW = w?.FC;
+    assert.ok(fcW != null, 'FC should have BattleMaster weight');
+    const fcPeak = Array.isArray(fcW) ? fcW[0] : (typeof fcW === 'object' ? Math.max(...Object.values(fcW)) : fcW);
+    // Should be ~6 (blend of 5 and 7), not 5 (pure FS/IS) or 7 (pure LA)
+    assert.ok(fcPeak >= 5 && fcPeak <= 7,
+      `FC BattleMaster weight (${fcPeak}) should be between FS-inherited (5) and LC (7)`);
+    assert.ok(fcPeak !== 5 && fcPeak !== 7,
+      `FC BattleMaster weight (${fcPeak}) should be a blend, not identical to either parent`);
+  });
+
+  it('FC Zeus weight reflects Lyran influence (higher than pure FS)', () => {
+    // Zeus in 3039: FS=[6,"-"], LA=[10,0]. FC should blend, resulting in ~8-9.
+    const era3039 = APP_DATA.eraData['3039'];
+    if (!era3039) return;
+
+    const zeus = era3039['Zeus'];
+    assert.ok(zeus, 'Zeus should exist in 3039');
+    const w = zeus.w;
+    const fcW = w?.FC;
+    const fsW = w?.FS;
+    assert.ok(fcW != null, 'FC should have Zeus weight');
+    const fcPeak = Array.isArray(fcW) ? fcW[0] : (typeof fcW === 'object' ? Math.max(...Object.values(fcW)) : fcW);
+    const fsPeak = Array.isArray(fsW) ? fsW[0] : (typeof fsW === 'object' ? Math.max(...Object.values(fsW)) : fsW);
+    // FC should be higher than pure FS because LA loves the Zeus
+    assert.ok(fcPeak > fsPeak,
+      `FC Zeus weight (${fcPeak}) should be higher than FS (${fsPeak}) due to Lyran influence`);
+  });
+
+  it('FC has explicit data for chassis that both FS and LA field', () => {
+    // In eras where FC exists, it should have weights for chassis fielded by both parents
+    const era3039 = APP_DATA.eraData['3039'];
+    if (!era3039) return;
+
+    let fcCount = 0;
+    let parentBothCount = 0;
+    for (const [chassis, data] of Object.entries(era3039)) {
+      const hasFsW = data.w?.FS != null;
+      const hasLaW = data.w?.LC != null;
+      const hasFcW = data.w?.FC != null;
+      if (hasFsW && hasLaW) {
+        parentBothCount++;
+        if (hasFcW) fcCount++;
+      }
+    }
+    // FC should have weights for most chassis that both parents field
+    if (parentBothCount > 0) {
+      const coverage = fcCount / parentBothCount;
+      assert.ok(coverage > 0.5,
+        `FC should cover >50% of chassis both parents field (got ${fcCount}/${parentBothCount} = ${(coverage*100).toFixed(0)}%)`);
+    }
+  });
+});

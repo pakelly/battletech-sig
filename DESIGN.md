@@ -23,6 +23,7 @@ A tool for BattleTech hobbyists to explore faction identity through mech usage d
 - **Content:** 39 era XML files (2398–3160) + `factions.xml`
 - **What it provides:** Weighted availability of chassis and variants per faction per era. Numeric weights represent relative likelihood of a faction fielding that chassis. Higher = more common in that faction's forces.
 - **Faction inheritance:** Child factions (e.g., DC, FS, LC) inherit from parent factions (e.g., IS) when no explicit entry exists. Must be resolved at parse time.
+- **Multi-parent faction averaging:** Some factions have multiple parents (e.g., FC = FS + LA). MegaMek averages their availability in probability space: convert each parent's rating to `2^(rating/2)`, average the weights, convert back to a rating via `2 × log2(avg)`. Modifier is resolved by majority vote (or flat if split). This applies to both chassis and variant inheritance.
 - **License:** CC BY-NC-SA 4.0
 
 ### Master Unit List / MUL (Supplementary)
@@ -772,6 +773,7 @@ Vanilla HTML/CSS/JS. No framework. Single-page app loading `app-data.json` at st
 13. **MegaMek weights are logarithmic.** The 1–10 scale represents `2^(n/2)` probability weight internally. All mathematical operations (averaging, weight class adjustment, z-score computation) happen in probability space. Display values are converted back to the 1–10 scale.
 14. **Weight class distribution is table-level mixing, not per-chassis adjustment.** Per-faction, per-era tonnage bias from MegaMek's force generator is applied as a display-level mixing proportion when showing all weight classes together, matching MegaMek's `generateTable()` approach. Within a single weight class view, WCD does not apply to **raw weight display** — chassis compete on raw availability only. However, **signature always uses WCD mixing** even in single-class views, because sig answers "how much does this mech belong to this faction?" which inherently includes weight class preferences. This avoids the log-scale distortion that per-chassis probability multiplication caused (crushing low-rated chassis to zero).
 15. **Salvage is excluded.** MegaMek encodes salvage allocation (e.g., DC capturing FedSuns mechs). We deliberately omit this — salvage muddies faction identity rather than defining it. A captured mech isn't "theirs."
+16. **Multi-parent faction averaging.** Factions with multiple parent factions (e.g., FC = FS + LA, FWL breakup states = IS + FWL) have their inherited weights averaged in probability space, matching MegaMek's `mergeFactionAvailability()`. Each parent's rating is converted to `2^(rating/2)`, the weights are averaged, and the result is converted back to a rating. This replaces the previous first-match BFS inheritance which gave composite factions only one parent's data.
 
 ---
 
