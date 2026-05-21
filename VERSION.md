@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.22.0 | 2026-05-20 16:16 UTC | 2026-05-20 19:13 UTC |
-| test | 1.22.0 | 2026-05-20 16:17 UTC | 2026-05-20 19:13 UTC |
+| test | 1.23.0 | 2026-05-21 00:38 UTC | 2026-05-21 01:33 UTC |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.23.0 | test | 2026-05-21 00:38 | pending | bump to 1.23.0 (combined variant weights) |
 | 1.22.0 | test | 2026-05-20 16:17 | pending | VERSION.md: auto-stamp 1.22.0 prod deploy |
 | 1.22.0 | prod | 2026-05-20 16:16 | pending | bump to 1.22.0 for test deploy (multi-parent faction averaging) |
 | 1.21.2 | prod | 2026-05-19 05:20 | pending | fix: chassis autocomplete uses all-era union instead of latest era only |
