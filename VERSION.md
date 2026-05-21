@@ -4,13 +4,14 @@
 
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
-| prod | 1.22.0 | 2026-05-20 16:16 UTC | 2026-05-20 19:13 UTC |
+| prod | 1.24.0 | 2026-05-21 23:38 UTC | pending |
 | test | 1.23.0 | 2026-05-21 00:38 UTC | 2026-05-21 01:33 UTC |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.24.0 | prod | 2026-05-21 23:38 | pending | filter: exclude chassis with no BV data (IndustrialMechs, etc.) |
 | 1.23.0 | test | 2026-05-21 00:38 | pending | bump to 1.23.0 (combined variant weights) |
 | 1.22.0 | test | 2026-05-20 16:17 | pending | VERSION.md: auto-stamp 1.22.0 prod deploy |
 | 1.22.0 | prod | 2026-05-20 16:16 | pending | bump to 1.22.0 for test deploy (multi-parent faction averaging) |
