@@ -18,6 +18,36 @@ const ROOT = join(__dirname, '..');
 const scores = JSON.parse(readFileSync(join(ROOT, 'output/scores.json'), 'utf8'));
 const families = JSON.parse(readFileSync(join(ROOT, 'config/chassis-families.json'), 'utf8'));
 
+// ── Probability helpers for combined variant weights ──
+const NUM_LEVELS = 5;
+function toProb(rating) {
+  if (rating <= 0) return 0;
+  return Math.pow(2, rating / 2);
+}
+function resolveWeightAtTier(entry, tierIdx) {
+  if (typeof entry === 'number') return entry;
+  if (Array.isArray(entry)) {
+    const [base, mod] = entry;
+    if (!mod || mod === 0 || mod === '0') return base;
+    if (mod === '+') return Math.max(0, base - (NUM_LEVELS - 1 - tierIdx));
+    return Math.max(0, base - tierIdx); // '-'
+  }
+  if (typeof entry === 'object' && entry !== null) {
+    // Explicit per-level: use average of all positive values as approximation
+    const vals = Object.values(entry).filter(v => typeof v === 'number' && v > 0);
+    return vals.length > 0 ? vals.reduce((a, b) => a + b) / vals.length : 0;
+  }
+  return 0;
+}
+/** Cross-tier average in probability space */
+function variantEntryToProb(entry) {
+  let sum = 0;
+  for (let i = 0; i < NUM_LEVELS; i++) {
+    sum += toProb(resolveWeightAtTier(entry, i));
+  }
+  return sum / NUM_LEVELS;
+}
+
 // ── Load mekfile metadata (primary source for chassis/variant metadata) ──
 const mekfilePath = join(ROOT, 'output/mekfile-metadata.json');
 if (!existsSync(mekfilePath)) {
@@ -474,10 +504,81 @@ for (const [eraYear, chassisEntries] of Object.entries(scores.eras)) {
     
     if (data.variants && Object.keys(data.variants).length > 0) {
       const vOut = {};
+      // First pass: collect raw variant weights (remapped faction keys)
+      const rawVariants = {};
       for (const [varName, factionWeights] of Object.entries(data.variants)) {
+        rawVariants[varName] = remapFactionKeys(factionWeights);
+      }
+      
+      // Second pass: compute combined weights per variant per faction
+      // MegaMek formula: finalWeight = chassisWeight × (variantWeight / totalVariantWeight)
+      const chassisWeights = entry.w; // already remapped
+      const allFactions = new Set();
+      for (const vw of Object.values(rawVariants)) {
+        for (const f of Object.keys(vw)) allFactions.add(f);
+      }
+      
+      for (const [varName, rawFactionWeights] of Object.entries(rawVariants)) {
         const meta = variantMeta[varName];
+        const combinedW = {};
+        
+        for (const f of Object.keys(rawFactionWeights)) {
+          const chassisEntry = chassisWeights[f];
+          const variantEntry = rawFactionWeights[f];
+          if (chassisEntry == null || variantEntry == null) {
+            combinedW[f] = variantEntry;
+            continue;
+          }
+          
+          // Compute combined weight per-tier, then average in prob space
+          // This correctly handles +/- modifiers that vary across tiers
+          let combinedProbSum = 0;
+          let tierCount = 0;
+          for (let tier = 0; tier < NUM_LEVELS; tier++) {
+            const chassisRating = resolveWeightAtTier(chassisEntry, tier);
+            const variantRating = resolveWeightAtTier(variantEntry, tier);
+            
+            if (chassisRating <= 0 || variantRating <= 0) {
+              tierCount++;
+              continue; // 0 prob at this tier
+            }
+            
+            // Sum sibling variant probs at this tier
+            let totalSiblingProb = 0;
+            for (const [, sibVw] of Object.entries(rawVariants)) {
+              const sibEntry = sibVw[f];
+              if (sibEntry != null) {
+                const sibRating = resolveWeightAtTier(sibEntry, tier);
+                totalSiblingProb += toProb(sibRating);
+              }
+            }
+            
+            if (totalSiblingProb <= 0) {
+              tierCount++;
+              continue;
+            }
+            
+            const chassisProb = toProb(chassisRating);
+            const variantProb = toProb(variantRating);
+            combinedProbSum += chassisProb * (variantProb / totalSiblingProb);
+            tierCount++;
+          }
+          
+          if (tierCount <= 0 || combinedProbSum <= 0) {
+            combinedW[f] = 0;
+          } else {
+            const avgProb = combinedProbSum / tierCount;
+            // Convert back to rating scale: 2 * log2(prob)
+            // May be negative for units available only at top tiers — this is correct;
+            // negative ratings encode sub-1.0 average probabilities and the app's
+            // toProb() handles them correctly.
+            const rating = 2 * Math.log2(avgProb);
+            combinedW[f] = Math.round(rating * 100) / 100;
+          }
+        }
+        
         vOut[varName] = {
-          w: remapFactionKeys(factionWeights),
+          w: combinedW,
           ...(meta?.bv != null ? { bv: meta.bv } : {}),
           ...(meta?.intro != null ? { intro: meta.intro } : {})
         };

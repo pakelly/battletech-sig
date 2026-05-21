@@ -1305,3 +1305,131 @@ describe('Multi-Parent Faction Averaging', () => {
     }
   });
 });
+
+// ── Combined Variant Weights ────────────────────────────────────────────
+describe('Combined Variant Weights', () => {
+  // MegaMek computes final variant weight as:
+  //   chassisWeight × (variantWeight / totalVariantWeight)
+  // Our drill-down variant weights should reflect this combined value,
+  // not the raw variant-layer availability.
+
+  function toProb(rating) {
+    // Combined variant weights can be negative (sub-1.0 average probability).
+    // Only truly zero means no availability.
+    if (rating === 0) return 0;
+    return Math.pow(2, rating / 2);
+  }
+
+  function resolveWeight(entry, ratingIdx) {
+    if (typeof entry === 'number') return entry;
+    if (Array.isArray(entry)) {
+      const [base, mod] = entry;
+      if (!mod || mod === 0 || mod === '0') return base;
+      const NUM_LEVELS = 5;
+      if (ratingIdx !== null && ratingIdx !== undefined) {
+        if (mod === '+') return Math.max(0, base - (NUM_LEVELS - 1 - ratingIdx));
+        return Math.max(0, base - ratingIdx); // '-'
+      }
+      // cross-tier average
+      let sum = 0;
+      for (let i = 0; i < NUM_LEVELS; i++) {
+        sum += Math.max(0, mod === '+' ? base - (NUM_LEVELS - 1 - i) : base - i);
+      }
+      return sum / NUM_LEVELS;
+    }
+    if (typeof entry === 'object' && entry !== null) {
+      const vals = Object.values(entry).filter(v => typeof v === 'number' && v > 0);
+      return vals.length > 0 ? vals.reduce((a, b) => a + b) / vals.length : 0;
+    }
+    return 0;
+  }
+
+  it('Variant weights should be combined (chassis × variant share), not raw', () => {
+    // Kintaro in 3039: chassis FS=[2,"+"], only variant KTO-18 FS=[8,0]
+    // Javelin in 3039: chassis FS=[7,"+"], variant JVN-10N FS=[9,0]
+    // If combined: KTO-18 final ≈ chassis weight (only variant, gets 100%)
+    //              JVN-10N final < chassis weight (shares with other variants)
+    // The KTO-18 combined weight should be MUCH lower than JVN-10N combined weight
+    // because the Kintaro chassis is rated 2+ vs Javelin at 7+.
+    const era3039 = APP_DATA.eraData['3039'];
+    assert.ok(era3039, '3039 era should exist');
+
+    const kintaro = era3039['Kintaro'];
+    const javelin = era3039['Javelin'];
+    assert.ok(kintaro?.v?.['KTO-18'], 'KTO-18 should exist');
+    assert.ok(javelin?.v?.['JVN-10N'], 'JVN-10N should exist');
+
+    const kto18_w = kintaro.v['KTO-18'].w?.FS;
+    const jvn10n_w = javelin.v['JVN-10N'].w?.FS;
+    assert.ok(kto18_w != null, 'KTO-18 should have FS variant weight');
+    assert.ok(jvn10n_w != null, 'JVN-10N should have FS variant weight');
+
+    // Resolve to numbers (cross-tier average)
+    const kto18_val = resolveWeight(kto18_w, null);
+    const jvn10n_val = resolveWeight(jvn10n_w, null);
+
+    // Combined weights: KTO-18 should be substantially lower than JVN-10N
+    // because chassis 2+ << 7+ even though variant 8 > 9's share
+    // If raw (uncombined), KTO-18 would be 8 vs JVN-10N ~9 — nearly equal or KTO higher
+    // If combined, KTO-18 ≈ 2 vs JVN-10N ≈ 4-5 — clearly lower
+    assert.ok(kto18_val < jvn10n_val,
+      `KTO-18 combined FS weight (${kto18_val.toFixed(2)}) should be less than ` +
+      `JVN-10N (${jvn10n_val.toFixed(2)}) — chassis 2+ vs 7+`);
+  });
+
+  it('Single-variant chassis: combined prob equals chassis prob', () => {
+    // When a chassis has only one variant for a faction, the combined variant
+    // probability should equal the chassis probability (variant gets 100% share)
+    const era3039 = APP_DATA.eraData['3039'];
+    assert.ok(era3039, '3039 era should exist');
+
+    const kintaro = era3039['Kintaro'];
+    assert.ok(kintaro, 'Kintaro should exist in 3039');
+
+    // KTO-18 is the only FS variant
+    // Chassis [2,"+"] per-tier: F=0,D=0,C=0,B=1,A=2 → probs: 0,0,0,1.41,2.0
+    // Combined variant stored as plain number (cross-tier avg prob → rating)
+    // Compare: toProb(combined_rating) should ≈ avg of chassis per-tier probs
+    let chassisProbAvg = 0;
+    for (let tier = 0; tier < 5; tier++) {
+      chassisProbAvg += toProb(resolveWeight(kintaro.w?.FS, tier));
+    }
+    chassisProbAvg /= 5;
+
+    const combinedRating = resolveWeight(kintaro.v?.['KTO-18']?.w?.FS, null);
+    const combinedProb = toProb(combinedRating);
+
+    if (chassisProbAvg <= 0) return;
+    const ratio = combinedProb / chassisProbAvg;
+    assert.ok(ratio > 0.8 && ratio < 1.2,
+      `Single-variant combined prob (${combinedProb.toFixed(3)}) should ≈ chassis avg prob ` +
+      `(${chassisProbAvg.toFixed(3)}), ratio=${ratio.toFixed(2)}`);
+  });
+
+  it('Multi-variant chassis: combined weights sum to chassis weight', () => {
+    // Javelin FS in 3039 has multiple variants. Their combined weights
+    // should sum to approximately the chassis weight.
+    const era3039 = APP_DATA.eraData['3039'];
+    assert.ok(era3039, '3039 era should exist');
+
+    const javelin = era3039['Javelin'];
+    assert.ok(javelin?.v, 'Javelin should have variants');
+
+    const chassisProb = toProb(resolveWeight(javelin.w?.FS, null));
+    if (chassisProb <= 0) return; // skip if FS doesn't field Javelin
+
+    let variantProbSum = 0;
+    for (const [, vd] of Object.entries(javelin.v)) {
+      const w = vd.w?.FS;
+      if (w != null) {
+        variantProbSum += toProb(resolveWeight(w, null));
+      }
+    }
+
+    // Sum of variant combined probs should ≈ chassis prob
+    const ratio = variantProbSum / chassisProb;
+    assert.ok(ratio > 0.8 && ratio < 1.2,
+      `Javelin FS variant prob sum (${variantProbSum.toFixed(2)}) should ≈ chassis prob ` +
+      `(${chassisProb.toFixed(2)}), ratio=${ratio.toFixed(2)}`);
+  });
+});

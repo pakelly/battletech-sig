@@ -502,6 +502,51 @@ These are applied after all adjustments (quality rating + weight class) and can 
 
 ---
 
+## Variant Combined Weights (Drill-Down)
+
+### Background
+
+MegaMek's force generator uses a **two-layer multiplicative model** for unit selection:
+
+1. **Chassis layer**: How likely is ANY variant of this chassis? (e.g., Kintaro FS:2+)
+2. **Variant layer**: Given this chassis, which variant? (e.g., KTO-18 FS:8)
+
+The final weight for a specific variant in MegaMek is:
+
+```
+finalWeight = chassisWeight × (variantWeight / totalVariantWeight)
+```
+
+Where `totalVariantWeight` is the sum of all variant weights for that chassis+faction combination. This is confirmed in MegaMek's `RATGenerator.generateTable()` (line 711) and replicated identically in MekBay's `generate-megamek-availability.ts`.
+
+### The Problem
+
+Our app stores chassis weights (`data.w`) and variant weights (`data.v[name].w`) as independent layers. The main table correctly shows chassis-level weights (which equal the sum of all final variant weights). But the drill-down displays raw variant availability ratings without combining them with the chassis weight.
+
+This means the drill-down shows "KTO-18 has availability 8 for FS" — which is only the variant's share within Kintaros, not its actual weight in the faction table. A user comparing KTO-18 (variant rating 8, chassis 2+) to JVN-10N (variant rating 9, chassis 7+) would get a misleading picture — the Javelin variant is dramatically more common in practice despite similar-looking variant ratings.
+
+### Solution
+
+Compute combined variant weights at build time in `combine.mjs`. For each variant, for each faction:
+
+```
+combinedWeight = toProb(chassisRating) × (toProb(variantRating) / sumOfVariantProbs)
+displayRating = toRating(combinedWeight)
+```
+
+Where `toProb(r) = 2^(r/2)` and `toRating(p) = 2 × log2(p)`.
+
+**Rating tier handling**: Both chassis and variant may have `+`/`-` modifiers. The combination must happen per-tier:
+- For each tier index (0-4), resolve both chassis and variant weights
+- Compute the combined probability weight
+- Average across tiers in probability space for the cross-tier value
+
+**Storage**: Combined weights replace the current raw variant weights in `data.v[name].w`. The drill-down then shows weights that are directly comparable across chassis — matching what MegaMek's RAT would actually produce.
+
+**Main table unchanged**: The chassis-level weights in `data.w` remain as-is. They are already the correct total (sum of variant final weights = chassis weight).
+
+---
+
 ## Era & Year Selection
 
 ### Default Era
