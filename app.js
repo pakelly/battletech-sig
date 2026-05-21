@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.23.0';
-const DEPLOY_TIME = '20260521.0038';
+const APP_VERSION = '1.24.0';
+const DEPLOY_TIME = '20260521.2338';
 
 let DATA = null; // app-data.json
 
@@ -2436,15 +2436,16 @@ function runQuery() {
     // Compute BV range from in-scope variants
     const bvRange = computeBVRange(data.v, scopedFactions, data.mul, modeB, parsed.year);
     
+    // Skip chassis with no BV data (IndustrialMechs, obscure designs without MUL entries)
+    if (!bvRange) continue;
+    
     // BV filter: chassis passes if any single in-scope variant satisfies ALL bv conditions
-    if (parsed.bv.length > 0 && bvRange) {
+    if (parsed.bv.length > 0) {
       // Check if any individual BV value in the range satisfies all conditions
       const bvPass = bvRange.bvList.some(bv =>
         parsed.bv.every(cond => compareOp(bv, cond.op, cond.val))
       );
       if (!bvPass) continue;
-    } else if (parsed.bv.length > 0 && !bvRange) {
-      continue; // No BV data, can't pass a BV filter
     }
     
     rows.push({
