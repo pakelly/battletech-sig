@@ -96,6 +96,7 @@ before(() => {
         getWcdMixingFactor,
         toProb,
         RATING_INDEX,
+        computeVariantDistribution,
       };
     }
   `);
@@ -1446,5 +1447,86 @@ describe('Combined Variant Weights', () => {
     assert.ok(ratio > 0.8 && ratio < 1.2,
       `Javelin FS variant prob sum (${variantProbSum.toFixed(2)}) should ≈ chassis prob ` +
       `(${chassisProb.toFixed(2)}), ratio=${ratio.toFixed(2)}`);
+  });
+});
+
+// ── 13. VARIANT DISTRIBUTION (Detail View) ──
+
+describe('Variant Distribution — computeVariantDistribution', () => {
+  it('includes variants with negative weights (clan OmniMechs)', () => {
+    // Puma (Adder) variants for CW in 3049 — all offsets, mostly negative
+    const variants = {
+      'Prime': { w: { CW: 0.43 }, bv: 1487, intro: 2870 },
+      'A':     { w: { CW: -2.24 }, bv: 1466, intro: 2870 },
+      'B':     { w: { CW: -0.9 }, bv: 1892, intro: 2870 },
+      'C':     { w: { CW: -2.24 }, bv: 1484, intro: 2848 },
+      'D':     { w: { CW: -3.9 }, bv: 2298, intro: 2870 },
+      'S':     { w: { CW: -3.57 }, bv: 1427, intro: 3050 },
+    };
+    const result = F.computeVariantDistribution(variants, 'CW', 3049);
+    // S is intro 3050 > targetYear 3049, should be excluded
+    assert.strictEqual(result.sorted.length, 5, 'should include 5 variants (all except S)');
+    assert.ok(result.total > 0, 'total should be positive');
+    // Prime has highest weight (0.43) → should be first
+    assert.strictEqual(result.sorted[0][0], 'Prime');
+    // All entries should have positive probability values
+    for (const [name, prob] of result.sorted) {
+      assert.ok(prob > 0, `${name} should have positive probability, got ${prob}`);
+    }
+  });
+
+  it('still works for IS mechs with positive weights', () => {
+    const variants = {
+      'AS7-D': { w: { FS: 5 }, bv: 1897, intro: 2755 },
+      'AS7-A': { w: { FS: 2 }, bv: 1787, intro: 2954 },
+    };
+    const result = F.computeVariantDistribution(variants, 'FS', null);
+    assert.strictEqual(result.sorted.length, 2);
+    assert.ok(result.total > 0);
+    // D (weight 5) should be first
+    assert.strictEqual(result.sorted[0][0], 'AS7-D');
+    // D should have higher proportion than A
+    assert.ok(result.sorted[0][1] > result.sorted[1][1]);
+  });
+
+  it('excludes variants with no data for the faction', () => {
+    const variants = {
+      'A': { w: { CW: 2 }, bv: 1000, intro: 2870 },
+      'B': { w: { CJF: 3 }, bv: 1100, intro: 2870 },
+    };
+    const result = F.computeVariantDistribution(variants, 'CW', null);
+    assert.strictEqual(result.sorted.length, 1);
+    assert.strictEqual(result.sorted[0][0], 'A');
+  });
+
+  it('filters by target year', () => {
+    const variants = {
+      'A': { w: { CW: 1 }, bv: 1000, intro: 2870 },
+      'B': { w: { CW: 2 }, bv: 1100, intro: 3060 },
+    };
+    const result = F.computeVariantDistribution(variants, 'CW', 3050);
+    assert.strictEqual(result.sorted.length, 1);
+    assert.strictEqual(result.sorted[0][0], 'A');
+  });
+
+  it('percentages sum to ~100% for all-negative weights', () => {
+    const variants = {
+      'A': { w: { CW: -1 }, bv: 1000, intro: 2870 },
+      'B': { w: { CW: -3 }, bv: 1100, intro: 2870 },
+      'C': { w: { CW: -2 }, bv: 1200, intro: 2870 },
+    };
+    const result = F.computeVariantDistribution(variants, 'CW', null);
+    const pctSum = result.sorted.reduce((sum, [, p]) => sum + (p / result.total * 100), 0);
+    assert.ok(Math.abs(pctSum - 100) < 0.01, `percentages should sum to 100, got ${pctSum}`);
+  });
+
+  it('real data: Puma (Adder) CW 3049 shows variants', () => {
+    const eraData = APP_DATA.eraData['3049'];
+    const puma = eraData?.['Puma (Adder)'];
+    assert.ok(puma, 'Puma should exist in 3049 era data');
+    assert.ok(puma.v, 'Puma should have variant data');
+    const result = F.computeVariantDistribution(puma.v, 'CW', 3049);
+    assert.ok(result.sorted.length >= 3, `should have at least 3 variants, got ${result.sorted.length}`);
+    assert.ok(result.total > 0, 'total should be positive');
   });
 });

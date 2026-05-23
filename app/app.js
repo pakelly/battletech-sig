@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.24.1';
+const APP_VERSION = '1.25.0';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -1583,6 +1583,45 @@ function renderMechView(rows, eraYear, chassisName) {
 
 // ── Variant Drill-down ──
 
+/**
+ * Compute variant distribution for a given faction.
+ * Variant weights are log-scale offsets (can be negative — "less common than
+ * chassis average"). A defined value means the faction fields that variant.
+ * We convert to probability space via 2^(w/2) for proportional display.
+ *
+ * @param {Object} variants - { varName: { w: { faction: weight }, bv, intro } }
+ * @param {string} faction - faction code to compute distribution for
+ * @param {number|null} targetYear - filter out variants introduced after this year
+ * @returns {{ sorted: [string, number][], variantBV: Object, variantIntro: Object, total: number }}
+ */
+function computeVariantDistribution(variants, faction, targetYear) {
+  const variantProbs = {};
+  const variantBV = {};
+  const variantIntro = {};
+  let total = 0;
+
+  for (const [varName, varData] of Object.entries(variants || {})) {
+    const factionWeights = varData.w || varData;
+    const rawW = factionWeights[faction];
+    // A defined value (even negative) means the faction fields this variant
+    if (rawW === undefined || rawW === null) continue;
+    // Filter out variants introduced after the target year
+    if (targetYear && varData.intro && varData.intro > targetYear) continue;
+    const resolved = resolveWeight(rawW, null);
+    // Convert log-scale offset to probability space for proportional display.
+    // Unlike toProb(), don't clamp negatives to 0 — these are relative offsets,
+    // not absolute ratings. 2^(w/2) is always positive for any finite w.
+    const prob = Math.pow(2, resolved / 2);
+    variantProbs[varName] = prob;
+    total += prob;
+    if (varData.bv != null) variantBV[varName] = varData.bv;
+    if (varData.intro != null) variantIntro[varName] = varData.intro;
+  }
+
+  const sorted = Object.entries(variantProbs).sort((a, b) => b[1] - a[1]);
+  return { sorted, variantBV, variantIntro, total };
+}
+
 function showVariants(chassisName, faction, eraYear) {
   const overlay = document.getElementById('variant-overlay');
   const title = document.getElementById('variant-title');
@@ -1631,33 +1670,9 @@ function showVariants(chassisName, faction, eraYear) {
     }
   }
   
-  // Calculate variant percentages for this faction
-  // Variants can be either new format { w: {...}, bv, intro } or legacy { faction: weight }
-  const variantWeights = {};
-  const variantBV = {};
-  const variantIntro = {};
   // Use exact year if specified, otherwise fall back to the era bucket year
-  // (eraYear param comes from currentEraYear, resolved from year= or era= in runQuery)
   const targetYear = currentQuery.year || eraYear;
-  let total = 0;
-  for (const [varName, varData] of Object.entries(variants || {})) {
-    // Handle both new { w: {...}, bv, intro } and legacy { faction: weight } format
-    // Variant weights may be [base, mod], {levels}, or plain numbers — resolve them
-    const factionWeights = varData.w || varData;
-    const rawW = factionWeights[faction];
-    const w = rawW !== undefined && rawW !== null ? resolveWeight(rawW, null) : 0;
-    if (w > 0) {
-      // Filter out variants introduced after the target year
-      if (targetYear && varData.intro && varData.intro > targetYear) continue;
-      variantWeights[varName] = w;
-      total += w;
-      if (varData.bv != null) variantBV[varName] = varData.bv;
-      if (varData.intro != null) variantIntro[varName] = varData.intro;
-    }
-  }
-  
-  // Sort by weight desc
-  const sorted = Object.entries(variantWeights).sort((a, b) => b[1] - a[1]);
+  const { sorted, variantBV, variantIntro, total } = computeVariantDistribution(variants, faction, targetYear);
   
   title.textContent = `${chassisName} — ${getFactionFullName(faction)}`;
   

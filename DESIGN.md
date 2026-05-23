@@ -197,6 +197,8 @@ The chassis is the unit of faction identity. All scoring, filtering, comparison,
 
 Clicking a faction + chassis cell shows variant breakdown as internal distribution percentages. Variants are a composition detail, not a faction identity signal.
 
+**Variant weight interpretation:** Variant weights are log-scale offsets relative to the chassis average. Positive means "more common than average," negative means "less common." A defined value (even negative) means the faction fields that variant. To compute display proportions, convert each variant's raw weight to probability space via `2^(w/2)` (without clamping negatives to zero — unlike `toProb()`, which is for absolute ratings). The resulting positive values give correct relative proportions for the bar chart.
+
 #### Variant Weight Resolution
 
 When a faction has an explicit chassis weight but no variant override, variant weight is inherited from the parent faction and scaled:
