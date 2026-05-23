@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.24.0';
+const APP_VERSION = '1.24.1';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -751,13 +751,14 @@ function computeBVRange(variants, scopedFactions, mul, modeB, targetYear) {
     const intro = varData.intro;
     if (bv == null) continue;
     if (targetYear && intro && intro > targetYear) continue;
-    // Check if any scoped faction has weight > 0 for this variant
-    // Variant weights may be [base, mod], {levels}, or plain numbers — resolve them
+    // Check if any scoped faction has weight data for this variant.
+    // Combined variant weights can be negative (meaning "less common than chassis
+    // average") — a defined value still indicates the faction fields this variant.
+    // The chassis-level hasAnyWeight check already confirmed positive availability.
     const factions = scopedFactions.length > 0 ? scopedFactions : Object.keys(vWeights);
     const hasFaction = factions.some(f => {
       const raw = vWeights[f];
-      if (raw === undefined || raw === null) return false;
-      return resolveWeight(raw, null) > 0;
+      return raw !== undefined && raw !== null;
     });
     if (!hasFaction) continue;
     bvValues.push(bv);

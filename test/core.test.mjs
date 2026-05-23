@@ -440,6 +440,21 @@ describe('Derived Values', () => {
     assert.strictEqual(range, null);
   });
 
+  it('computeBVRange includes variants with negative weights (relative adjustments)', () => {
+    // Combined variant weights can be negative — means "less common than chassis average"
+    // but the faction still fields this variant. Bug: was requiring resolveWeight > 0,
+    // which dropped chassis like Gargoyle/Hellbringer/Daishi for InvasionClans.
+    const variants = {
+      'Prime': { w: { CW: -0.68, CJF: -2.07 }, bv: 1487, intro: 2870 },
+      'A': { w: { CW: -1.01, CJF: -4.07 }, bv: 1466, intro: 2870 },
+    };
+    const range = F.computeBVRange(variants, ['CW', 'CJF'], {}, false, null);
+    assert.notStrictEqual(range, null, 'should not be null — negative weights still mean the faction fields this variant');
+    assert.strictEqual(range.bvMin, 1466);
+    assert.strictEqual(range.bvMax, 1487);
+    assert.strictEqual(range.bvList.length, 2);
+  });
+
   it('computeBVRange respects scoped factions', () => {
     const variants = {
       'DRG-1N': { w: { DC: 8, FS: 3 }, bv: 1125, intro: 2754 },

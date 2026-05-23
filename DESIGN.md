@@ -234,7 +234,7 @@ If a variant has no MUL match, `bv` and `intro` are null/omitted.
 ### BV Filtering
 
 **BV is a variant-level field.** A chassis passes a `bv` filter if **any** of its in-scope variants qualify. "In scope" means:
-1. The variant has weight > 0 for at least one scoped faction
+1. The variant has weight data (defined and non-null) for at least one scoped faction. Note: combined variant weights can be negative (meaning "less common than chassis average") — a negative weight still indicates the faction fields this variant. The chassis-level `hasAnyWeight` check (which runs before BV computation) already confirms the faction uses the chassis.
 2. The variant is MUL-confirmed for that faction (in Mode B)
 3. The variant's intro year ≤ the target year (if year filtering is active)
 4. The variant's BV falls within the filter range
