@@ -80,9 +80,20 @@ Each commit should do one thing. "Add sig column" and "fix sort parser" are two 
 ### 8. Deploy correctly, then verify
 **Deployment is a two-branch process.** Code lives on `main`. The live site serves from `gh-pages`. Pushing to `main` does NOT deploy.
 
-**Deploy procedure: run `./scripts/deploy.sh`**
+**Deploy procedure:**
 
-That's it. The script handles everything: push main, build gh-pages, clean stale files, verify only expected files exist, push gh-pages, switch back to main. If something looks wrong it aborts.
+```bash
+# DEFEND mode (current): test first, then prod
+./scripts/deploy.sh test       # Deploy to TEST
+./scripts/deploy.sh --test     # Also works (either form accepted)
+# → verify on https://pakelly.github.io/battletech-sig-test/
+# → Patrick accepts
+
+./scripts/deploy.sh            # Deploy to PROD (no argument)
+# → verify on https://pakelly.github.io/battletech-sig/
+```
+
+The script handles everything: push main, build gh-pages, clean stale files, verify only expected files exist, push gh-pages, switch back to main, auto-stamp VERSION.md. If something looks wrong it aborts.
 
 **Do not deploy manually.** The manual procedure has caused repeated failures (forgetting to push main, stale `app/` dirs leaking into gh-pages). The script exists to prevent this. Use it.
 
@@ -95,7 +106,7 @@ That's it. The script handles everything: push main, build gh-pages, clean stale
 - When Patrick confirms a deploy looks good → update the `accepted` column in VERSION.md's current state table.
 - **Read VERSION.md after every compression** to know what's deployed and what's pending acceptance.
 
-**🔴 DEFEND mode adds:** Push to test environment first (`pakelly/patrickforaptca-test` pattern). Verify on test. Only then deploy to prod. No exceptions. VERSION.md tracks both environments — test must be accepted before prod deploy.
+**🔴 DEFEND mode adds:** Deploy to test first (`./scripts/deploy.sh test`), verify on test site, get Patrick's acceptance. Only then deploy to prod (`./scripts/deploy.sh`). No exceptions. VERSION.md tracks both environments — test must be accepted before prod deploy.
 
 ### 9. No duplicate logic
 If a function exists that does X, use it. Don't write a second version. If the existing function doesn't quite fit, extend it — don't clone it. Before writing any new function, search for existing implementations.
