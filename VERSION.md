@@ -4,13 +4,14 @@
 
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
-| prod | 1.24.0 | 2026-05-21 23:38 UTC | pending |
+| prod | 1.24.1 | 2026-05-23 14:17 UTC | pending |
 | test | 1.24.0 | 2026-05-21 23:44 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.24.1 | prod | 2026-05-23 14:17 | pending | fix: computeBVRange drops chassis with negative variant weights |
 | 1.24.0 | test | 2026-05-21 23:44 | pending | VERSION.md: auto-stamp 1.24.0 prod deploy |
 | 1.24.0 | prod | 2026-05-21 23:38 | pending | filter: exclude chassis with no BV data (IndustrialMechs, etc.) |
 | 1.23.0 | test | 2026-05-21 00:38 | pending | bump to 1.23.0 (combined variant weights) |
