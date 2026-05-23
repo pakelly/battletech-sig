@@ -14,7 +14,7 @@ cd "$(dirname "$0")/.."
 
 TARGET="origin"
 LABEL="PROD"
-if [ "$1" = "--test" ]; then
+if [ "$1" = "--test" ] || [ "$1" = "test" ]; then
   TARGET="test"
   LABEL="TEST"
 fi
