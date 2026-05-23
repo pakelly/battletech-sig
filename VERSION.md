@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.24.1 | 2026-05-23 14:17 UTC | pending |
-| test | 1.24.0 | 2026-05-21 23:44 UTC | pending |
+| test | 1.25.0 | 2026-05-23 14:48 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.25.0 | test | 2026-05-23 14:48 | pending | fix: show variant distribution for clan OmniMechs with negative weights |
 | 1.24.1 | prod | 2026-05-23 14:17 | pending | fix: computeBVRange drops chassis with negative variant weights |
 | 1.24.0 | test | 2026-05-21 23:44 | pending | VERSION.md: auto-stamp 1.24.0 prod deploy |
 | 1.24.0 | prod | 2026-05-21 23:38 | pending | filter: exclude chassis with no BV data (IndustrialMechs, etc.) |
