@@ -219,6 +219,8 @@ Configuration in `config/chassis-families.json`. Auto-detected from naming patte
 
 Each variant in the MUL cache carries per-variant metadata: **BattleValue** and **DateIntroduced**. These are propagated into `app-data.json` alongside variant weights.
 
+**Important:** Variant metadata lookup in `combine.mjs` is keyed by `chassis:variant` (compound key), not variant name alone. Many chassis share variant designations (e.g., OmniMech configs `""`, `"A"`, `"B"`, `"Prime"` appear on dozens of chassis). Without per-chassis keying, the first chassis processed would set BV/intro for all chassis sharing that variant name.
+
 ### Variant-Level Fields in app-data.json
 
 The `v` (variant) object within each era+chassis entry is extended from weight-only to include metadata:

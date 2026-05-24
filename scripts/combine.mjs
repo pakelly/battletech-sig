@@ -130,7 +130,10 @@ const ERA_LIST = [
 // ── Seed metadata from mekfile data (primary source) ──
 const chassisMeta = {};
 const modelPrefixes = {};
+// variantMeta is keyed by "chassis\0variant" to avoid collisions between
+// chassis sharing variant names (e.g., every OmniMech has "A", "B", "Prime").
 const variantMeta = {};
+function vmKey(chassis, variant) { return chassis + '\0' + variant; }
 
 // Seed chassisMeta from mekfiles
 for (const [name, mek] of Object.entries(mekfileData.chassis)) {
@@ -147,13 +150,14 @@ Object.assign(modelPrefixes, mekfileData.modelPrefixes);
 
 // Seed variantMeta from mekfiles (intro only — BV comes from MUL)
 for (const [variant, mek] of Object.entries(mekfileData.variants)) {
-  variantMeta[variant] = {
+  const key = vmKey(mek.chassis, variant);
+  variantMeta[key] = {
     bv: null,  // BV not in .mtf files — filled from MUL below
     intro: mek.intro || null
   };
 }
 
-console.log(`Seeded from mekfiles: ${Object.keys(chassisMeta).length} chassis, ${Object.keys(variantMeta).length} variants, ${Object.keys(modelPrefixes).length} prefixes`);
+console.log(`Seeded from mekfiles: ${Object.keys(chassisMeta).length} chassis, ${Object.keys(variantMeta).length} variant entries, ${Object.keys(modelPrefixes).length} prefixes`);
 
 // ── Load MUL cache data ──
 // Build CUMULATIVE availability: { factionCode: { mulEraName: Set<chassisName> } }
@@ -207,17 +211,19 @@ for (const file of mulFiles) {
       }
       
       // Fill variant BV from MUL (primary BV source) and intro if missing
-      if (!variantMeta[variant]) {
-        variantMeta[variant] = {
+      // Keyed per-chassis to avoid collisions between shared variant names
+      const vKey = vmKey(chassis, variant);
+      if (!variantMeta[vKey]) {
+        variantMeta[vKey] = {
           bv: entry.BattleValue || null,
           intro: entry.DateIntroduced ? parseInt(entry.DateIntroduced) : null
         };
       } else {
-        if (!variantMeta[variant].bv && entry.BattleValue) {
-          variantMeta[variant].bv = entry.BattleValue;
+        if (!variantMeta[vKey].bv && entry.BattleValue) {
+          variantMeta[vKey].bv = entry.BattleValue;
         }
-        if (!variantMeta[variant].intro && entry.DateIntroduced) {
-          variantMeta[variant].intro = parseInt(entry.DateIntroduced);
+        if (!variantMeta[vKey].intro && entry.DateIntroduced) {
+          variantMeta[vKey].intro = parseInt(entry.DateIntroduced);
         }
       }
     }
@@ -232,7 +238,7 @@ for (const file of mulFiles) {
 
 // Collect per-chassis tonnage sets from MUL for disambiguation
 const chassisTonnages = {};  // { chassisName: Set<tonnage> }
-const variantTonnage = {};   // { variantDesignation: tonnage }
+const variantTonnagePerChassis = {};   // { chassisName: { variantDesignation: tonnage } }
 for (const file of mulFiles) {
   if (!file.endsWith('.json')) continue;
   const entries = JSON.parse(readFileSync(join(mulCacheDir, file), 'utf8'));
@@ -242,7 +248,8 @@ for (const file of mulFiles) {
     if (!chassisTonnages[chassis]) chassisTonnages[chassis] = new Set();
     chassisTonnages[chassis].add(entry.Tonnage);
     if (entry.Variant) {
-      variantTonnage[entry.Variant.trim()] = entry.Tonnage;
+      if (!variantTonnagePerChassis[chassis]) variantTonnagePerChassis[chassis] = {};
+      variantTonnagePerChassis[chassis][entry.Variant.trim()] = entry.Tonnage;
     }
   }
 }
@@ -271,9 +278,10 @@ for (const baseName of omniBaseNames) {
     }
 
     let introDate = null;
-    for (const [v, vt] of Object.entries(variantTonnage)) {
+    const baseVariants = variantTonnagePerChassis[baseName] || {};
+    for (const [v, vt] of Object.entries(baseVariants)) {
       if (vt === omniTonnage) {
-        const vm = variantMeta[v];
+        const vm = variantMeta[vmKey(baseName, v)];
         if (vm?.intro && (!introDate || vm.intro < introDate)) introDate = vm.intro;
       }
     }
@@ -519,7 +527,10 @@ for (const [eraYear, chassisEntries] of Object.entries(scores.eras)) {
       }
       
       for (const [varName, rawFactionWeights] of Object.entries(rawVariants)) {
-        const meta = variantMeta[varName];
+        // Look up per-chassis variant metadata; for "(Omni)" entries, also try base name
+        const mulLookupName = chassisName.replace(' (Omni)', '');
+        const meta = variantMeta[vmKey(chassisName, varName)]
+                  || variantMeta[vmKey(mulLookupName, varName)];
         const combinedW = {};
         
         for (const f of Object.keys(rawFactionWeights)) {

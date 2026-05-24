@@ -229,6 +229,43 @@ console.log('\n═══ TEST 5: faction=(DC OR FS) spread>5 sort by spread desc
   assert(dcFavored, 'Some DC-favored mechs should appear (pref > 8)');
 }
 
+// ── BV uniqueness: no phantom shared BV values across unrelated chassis ──
+test('Variant BV values are chassis-specific (no global collision)', () => {
+  const eraData = DATA.eraData['3049'];
+  assert(eraData, 'Era 3049 data should exist');
+  
+  // Known BV reference point: Kodiak standard should be ~2927, not 645
+  const kodiak = eraData['Kodiak'];
+  if (kodiak) {
+    const kodiakVariants = kodiak.v || {};
+    const stdVariant = kodiakVariants[''];
+    if (stdVariant && stdVariant.bv != null) {
+      assert(stdVariant.bv > 2000, `Kodiak standard BV should be >2000 (got ${stdVariant.bv})`);
+    }
+  }
+  
+  // Collect all BV values per variant name across chassis to detect collision
+  const bvByVariantName = {};  // { varName: Set<bv> }
+  for (const [name, data] of Object.entries(eraData)) {
+    if (!data.v) continue;
+    for (const [vName, vData] of Object.entries(data.v)) {
+      if (vData.bv == null) continue;
+      if (!bvByVariantName[vName]) bvByVariantName[vName] = new Set();
+      bvByVariantName[vName].add(vData.bv);
+    }
+  }
+  
+  // OmniMech configs like "A", "Prime" should have MANY distinct BV values
+  // (different chassis = different loadouts = different BVs)
+  // If "Prime" only has 1-2 distinct BVs across all chassis, something is wrong
+  for (const vName of ['Prime', 'A', 'B', 'C', 'D', '']) {
+    const bvSet = bvByVariantName[vName];
+    if (bvSet && bvSet.size < 3) {
+      assert(false, `Variant "${vName || '(standard)'}" has only ${bvSet.size} distinct BV value(s) across all chassis — likely a global collision bug`);
+    }
+  }
+});
+
 // ══════════════════════════════════════════════════════════════════════════
 console.log(`\n═══ RESULTS: ${passed} passed, ${failed} failed ═══`);
 process.exit(failed > 0 ? 1 : 0);
