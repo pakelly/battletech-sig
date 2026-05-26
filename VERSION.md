@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.25.1 | 2026-05-24 04:50 UTC | pending |
-| test | 1.25.1 | 2026-05-24 04:41 UTC | pending |
+| test | 1.26.0 | 2026-05-26 14:56 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.26.0 | test | 2026-05-26 14:56 | pending | feat: variant-level tech filtering |
 | 1.25.1 | prod | 2026-05-24 04:50 | pending | VERSION.md: auto-stamp 1.25.1 test deploy |
 | 1.25.1 | test | 2026-05-24 04:41 | pending | fix: variant BV/intro collision — key variantMeta per-chassis |
 | 1.25.0 | prod | 2026-05-23 14:53 | pending | VERSION.md: auto-stamp 1.25.0 test deploy |
