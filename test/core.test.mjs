@@ -97,6 +97,8 @@ before(() => {
         toProb,
         RATING_INDEX,
         computeVariantDistribution,
+        variantMatchesTech,
+        filterVariantsByTech,
       };
     }
   `);
@@ -1528,5 +1530,114 @@ describe('Variant Distribution — computeVariantDistribution', () => {
     const result = F.computeVariantDistribution(puma.v, 'CW', 3049);
     assert.ok(result.sorted.length >= 3, `should have at least 3 variants, got ${result.sorted.length}`);
     assert.ok(result.total > 0, 'total should be positive');
+  });
+});
+
+// ════════════════════════════════════════════════════════
+// VARIANT-LEVEL TECH FILTERING
+// ════════════════════════════════════════════════════════
+
+describe('variantMatchesTech', () => {
+  it('Clan tech matches tech=clan', () => {
+    assert.strictEqual(F.variantMatchesTech('Clan', 'clan'), true);
+  });
+
+  it('Inner Sphere does NOT match tech=clan', () => {
+    assert.strictEqual(F.variantMatchesTech('Inner Sphere', 'clan'), false);
+  });
+
+  it('Mixed (Clan Chassis) matches tech=clan', () => {
+    assert.strictEqual(F.variantMatchesTech('Mixed (Clan Chassis)', 'clan'), true);
+  });
+
+  it('Mixed (IS Chassis) does NOT match tech=clan', () => {
+    assert.strictEqual(F.variantMatchesTech('Mixed (IS Chassis)', 'clan'), false);
+  });
+
+  it('Inner Sphere matches tech=is', () => {
+    assert.strictEqual(F.variantMatchesTech('Inner Sphere', 'is'), true);
+  });
+
+  it('Clan does NOT match tech=is', () => {
+    assert.strictEqual(F.variantMatchesTech('Clan', 'is'), false);
+  });
+
+  it('Mixed matches tech=mixed', () => {
+    assert.strictEqual(F.variantMatchesTech('Mixed', 'mixed'), true);
+  });
+
+  it('Mixed (Clan Chassis) matches tech=mixed', () => {
+    assert.strictEqual(F.variantMatchesTech('Mixed (Clan Chassis)', 'mixed'), true);
+  });
+
+  it('null tech does NOT match anything', () => {
+    assert.strictEqual(F.variantMatchesTech(null, 'clan'), false);
+    assert.strictEqual(F.variantMatchesTech(null, 'is'), false);
+    assert.strictEqual(F.variantMatchesTech(null, 'mixed'), false);
+  });
+
+  it('Inner Sphere does NOT match tech=mixed', () => {
+    assert.strictEqual(F.variantMatchesTech('Inner Sphere', 'mixed'), false);
+  });
+});
+
+describe('filterVariantsByTech', () => {
+  const variants = {
+    'GRF-1N':  { w: { DC: 5 }, bv: 1272, intro: 2492, tech: 'Inner Sphere' },
+    'GRF-3M':  { w: { DC: 4 }, bv: 1401, intro: 3049, tech: 'Inner Sphere' },
+    'C':       { w: { CJF: 3 }, bv: 1671, intro: 2832, tech: 'Mixed (Clan Chassis)' },
+    'C 2':     { w: { CJF: 2 }, bv: 2157, intro: 3052, tech: 'Clan' },
+  };
+
+  it('tech=clan keeps only Clan and Mixed(Clan) variants', () => {
+    const result = F.filterVariantsByTech(variants, 'clan', 'Inner Sphere');
+    assert.ok(result, 'should return non-null');
+    assert.ok(result['C'], 'Mixed (Clan Chassis) variant should pass');
+    assert.ok(result['C 2'], 'Clan variant should pass');
+    assert.strictEqual(result['GRF-1N'], undefined, 'IS variant should be excluded');
+    assert.strictEqual(result['GRF-3M'], undefined, 'IS variant should be excluded');
+  });
+
+  it('tech=is keeps only Inner Sphere variants', () => {
+    const result = F.filterVariantsByTech(variants, 'is', 'Inner Sphere');
+    assert.ok(result, 'should return non-null');
+    assert.ok(result['GRF-1N'], 'IS variant should pass');
+    assert.ok(result['GRF-3M'], 'IS variant should pass');
+    assert.strictEqual(result['C'], undefined, 'Clan variant should be excluded');
+    assert.strictEqual(result['C 2'], undefined, 'Clan variant should be excluded');
+  });
+
+  it('returns null when no variants match', () => {
+    const isOnly = {
+      'GRF-1N': { w: { DC: 5 }, tech: 'Inner Sphere' },
+    };
+    const result = F.filterVariantsByTech(isOnly, 'clan', 'Inner Sphere');
+    assert.strictEqual(result, null);
+  });
+
+  it('variants without tech inherit unambiguous fallback', () => {
+    const noTech = {
+      'A': { w: { CW: 5 } },  // no tech field
+      'B': { w: { CW: 4 }, tech: 'Inner Sphere' },
+    };
+    // fallbackTech is Clan (unambiguous) → variant A should inherit and pass clan filter
+    const result = F.filterVariantsByTech(noTech, 'clan', 'Clan');
+    assert.ok(result, 'should return non-null');
+    assert.ok(result['A'], 'variant without tech should inherit Clan fallback');
+    assert.strictEqual(result['B'], undefined, 'IS variant should be excluded');
+  });
+
+  it('ambiguous fallback tech is NOT inherited', () => {
+    const noTech = {
+      'C': { w: { CW: 3 } },  // no tech field — Griffin C case
+    };
+    // fallbackTech is aggregated "Inner Sphere/Mixed/Clan" — ambiguous, should NOT inherit
+    const result = F.filterVariantsByTech(noTech, 'clan', 'Inner Sphere/Mixed/Clan');
+    assert.strictEqual(result, null, 'ambiguous fallback should not match');
+  });
+
+  it('returns input unchanged when variants is null/undefined', () => {
+    assert.strictEqual(F.filterVariantsByTech(null, 'clan', 'Clan'), null);
+    assert.strictEqual(F.filterVariantsByTech(undefined, 'clan', 'Clan'), undefined);
   });
 });

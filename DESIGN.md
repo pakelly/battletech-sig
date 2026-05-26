@@ -592,7 +592,7 @@ All text fields support the `=` and `!=` operators. Multi-value OR is supported 
 | `DC-pref` | numeric | Faction-specific pref filter/sort | `DC-pref>8` |
 | `DC-sig` | numeric | Faction-specific sig filter/sort | `DC-sig>7` |
 | `type` | enum | Mech type filter | `type=omni`, `type=battlemech` |
-| `tech` | enum | Technology base filter | `tech=clan`, `tech=is`, `tech=mixed` |
+| `tech` | enum | Technology base filter (variant-level) | `tech=clan`, `tech=is`, `tech=mixed` |
 | `sort` | keyword | Sort specification | `sort by DC sig desc` |
 | `year` | numeric | Target year | `year=3039` |
 | `era` | text | Era name | `era=ClanInvasion` |
@@ -759,7 +759,7 @@ MUL ingestion pulls per-faction data AND the three general pools (IS General, Cl
     year: {
       chassisName: {
         w: { "15": weight, "22": weight },  // keys are numeric indices into factionIndex
-        v: { variantName: { w: { "15": weight }, bv: number|null, intro: number|null } },
+        v: { variantName: { w: { "15": weight }, bv: number|null, intro: number|null, tech: string|null } },
         mul: { "15": 1 },                    // MUL confirmation flags (indexed)
         fam: "familyGroupName"
       }
@@ -1002,7 +1002,7 @@ Weight class distribution (classShare) is always applied before the z-score calc
 | `era=` | `era=ClanInvasion` | Select an era by name. |
 | `rating=` | `rating=A`, `rating=F` | Unit quality tier. A = elite/Keshik, B, C, D, F = garrison/PGC. MegaMek encodes that some mechs are more common at elite tiers (`+` modifier: highest at A, decreasing down) or garrison tiers (`-` modifier: highest at F, decreasing up). Flat entries (no modifier) are the same at all tiers. **Default (no rating filter):** cross-tier average — a `+` mech at base 8 averages to 6.0 because lower tiers pull it down. **`rating=A`:** shows what the faction's elite units field. **`rating=F`:** the garrison/militia picture. The roster shrinks at extreme tiers as many mechs go to zero. |
 | `type=` | `type=omni`, `type=battlemech` | Filter by mech type. |
-| `tech=` | `tech=clan`, `tech=is` | Filter by technology base. |
+| `tech=` | `tech=clan`, `tech=is` | Filter by technology base. **Variant-level filtering:** each variant carries its own tech base from the source .mtf data. When `tech=` is set, only variants matching the requested tech are included; the chassis is excluded entirely if none of its variants match. A variant matches `tech=clan` if its tech base includes "clan" (covers both pure Clan and Mixed (Clan Chassis)). `tech=is` requires exactly "Inner Sphere". `tech=mixed` requires exactly "Mixed". Variants without explicit tech data inherit the chassis-level tech for backward compatibility. This prevents IS chassis with Clan refits (e.g., Griffin C) from appearing in `tech=clan` searches — only the Griffin IIC (a true Clan chassis) would match. |
 | `family=` | `family=on`, `family=off` | Toggle chassis family merging. |
 | `mode=` | `mode=A`, `mode=B` | Data mode. A = MegaMek only, B = MegaMek × MUL (default). |
 | `industrial=` | `industrial=show` | Show IndustrialMechs (hidden by default). |

@@ -148,12 +148,13 @@ for (const [name, mek] of Object.entries(mekfileData.chassis)) {
 // Seed modelPrefixes from mekfiles
 Object.assign(modelPrefixes, mekfileData.modelPrefixes);
 
-// Seed variantMeta from mekfiles (intro only — BV comes from MUL)
+// Seed variantMeta from mekfiles (intro + tech — BV comes from MUL)
 for (const [variant, mek] of Object.entries(mekfileData.variants)) {
   const key = vmKey(mek.chassis, variant);
   variantMeta[key] = {
     bv: null,  // BV not in .mtf files — filled from MUL below
-    intro: mek.intro || null
+    intro: mek.intro || null,
+    tech: mek.tech || null
   };
 }
 
@@ -591,7 +592,8 @@ for (const [eraYear, chassisEntries] of Object.entries(scores.eras)) {
         vOut[varName] = {
           w: combinedW,
           ...(meta?.bv != null ? { bv: meta.bv } : {}),
-          ...(meta?.intro != null ? { intro: meta.intro } : {})
+          ...(meta?.intro != null ? { intro: meta.intro } : {}),
+          ...(meta?.tech != null ? { tech: meta.tech } : {})
         };
       }
       entry.v = vOut;
