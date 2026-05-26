@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.25.1';
-const DEPLOY_TIME = '20260524.0450';
+const APP_VERSION = '1.26.0';
+const DEPLOY_TIME = '20260526.1456';
 
 let DATA = null; // app-data.json
 
@@ -765,6 +765,46 @@ function computeBVRange(variants, scopedFactions, mul, modeB, targetYear) {
   }
   if (bvValues.length === 0) return null;
   return { bvMin: Math.min(...bvValues), bvMax: Math.max(...bvValues), bvList: bvValues };
+}
+
+/**
+ * Check if a single variant's tech base matches the requested tech filter.
+ * @param {string|null} variantTech - tech base of the variant (e.g., "Clan", "Inner Sphere", "Mixed")
+ * @param {string} filterTech - parsed tech filter value: 'clan', 'is', or 'mixed'
+ * @returns {boolean}
+ */
+function variantMatchesTech(variantTech, filterTech) {
+  if (!variantTech) return false; // no tech data → can't confirm match
+  const t = variantTech.toLowerCase();
+  if (filterTech === 'clan') return t.includes('clan');
+  if (filterTech === 'is') return t === 'inner sphere';
+  if (filterTech === 'mixed') return t.includes('mixed');
+  return false;
+}
+
+/**
+ * Filter a variants object by tech base. Returns a new object containing
+ * only variants whose tech matches the filter. Variants without explicit
+ * tech data inherit the chassis-level tech (fallbackTech).
+ * @param {Object} variants - { variantName: { w, bv, intro, tech } }
+ * @param {string} filterTech - 'clan', 'is', or 'mixed'
+ * @param {string|null} fallbackTech - chassis-level tech for variants missing tech
+ * @returns {Object|null} filtered variants, or null if none match
+ */
+function filterVariantsByTech(variants, filterTech, fallbackTech) {
+  if (!variants) return variants; // no variants to filter
+  // Only use fallback if the chassis has a single unambiguous tech base.
+  // Aggregated values like "Inner Sphere/Mixed/Clan" are ambiguous —
+  // we can't determine the variant's actual tech from them.
+  const usableFallback = (fallbackTech && !fallbackTech.includes('/')) ? fallbackTech : null;
+  const result = {};
+  for (const [name, data] of Object.entries(variants)) {
+    const tech = data.tech || usableFallback;
+    if (variantMatchesTech(tech, filterTech)) {
+      result[name] = data;
+    }
+  }
+  return Object.keys(result).length > 0 ? result : null;
 }
 
 /**
@@ -2328,7 +2368,7 @@ function runQuery() {
 
   // Build rows
   const rows = [];
-  for (const [chassisName, data] of Object.entries(chassisData)) {
+  for (let [chassisName, data] of Object.entries(chassisData)) {
     // Chassis filter
     if (chassisFilter.length > 0) {
       const matches = chassisFilter.some(cf => {
@@ -2362,10 +2402,17 @@ function runQuery() {
     if (parsed.type === 'omni' && !meta.omni) continue;
     if (parsed.type === 'battlemech' && (meta.omni || meta.industrial)) continue;
     if (parsed.tech) {
-      const t = (meta.tech || '').toLowerCase();
-      if (parsed.tech === 'clan' && !t.includes('clan')) continue;
-      if (parsed.tech === 'is' && t !== 'inner sphere') continue;
-      if (parsed.tech === 'mixed' && t !== 'mixed') continue;
+      // Variant-level tech filtering: only include variants whose tech matches,
+      // and skip the chassis entirely if no variants pass.
+      if (data.v) {
+        const filtered = filterVariantsByTech(data.v, parsed.tech, meta.tech);
+        if (!filtered) continue; // no variants match → skip chassis
+        data = { ...data, v: filtered }; // replace variants with filtered set
+      } else {
+        // No variant data — fall back to chassis-level tech check
+        const t = (meta.tech || '').toLowerCase();
+        if (!variantMatchesTech(meta.tech, parsed.tech)) continue;
+      }
     }
     if (parsed.year && meta.intro && meta.intro > parsed.year) continue;
     if (parsed.tons) {
