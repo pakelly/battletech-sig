@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.30.1';
+const APP_VERSION = '1.30.2';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -845,6 +845,78 @@ function resolveChassisRole(chassis, mulRole, variants) {
 }
 
 /**
+ * Show a role selection dropdown anchored to a variant role button.
+ * @param {HTMLElement} btn - the .variant-role-btn element
+ */
+function showRoleDropdown(btn) {
+  const dropdown = document.createElement('div');
+  dropdown.className = 'role-dropdown';
+
+  const taxonomy = getRoleTaxonomy();
+  const currentRole = btn.dataset.role || '';
+
+  for (const role of taxonomy) {
+    const item = document.createElement('div');
+    item.className = 'role-dropdown-item' + (role === currentRole ? ' role-dropdown-active' : '');
+    item.textContent = role;
+    item.addEventListener('click', () => {
+      const chassis = btn.dataset.chassis;
+      const variant = btn.dataset.variant;
+      const roles = getOrInitUserRoles();
+      if (role === 'None' || role === '') {
+        delete roles.overrides[chassis + ':' + variant];
+      } else {
+        roles.overrides[chassis + ':' + variant] = role;
+      }
+      saveUserRoles(roles);
+      dropdown.remove();
+      btn.textContent = role;
+      btn.dataset.role = role;
+    });
+    dropdown.appendChild(item);
+  }
+
+  // Reset to MUL default option
+  const resetItem = document.createElement('div');
+  resetItem.className = 'role-dropdown-item role-dropdown-reset';
+  resetItem.textContent = '↩ Reset to MUL default';
+  resetItem.addEventListener('click', () => {
+    const chassis = btn.dataset.chassis;
+    const variant = btn.dataset.variant;
+    const roles = getOrInitUserRoles();
+    delete roles.overrides[chassis + ':' + variant];
+    saveUserRoles(roles);
+    dropdown.remove();
+    const eraData = DATA.eraData[String(currentEraYear)];
+    const cData = eraData?.[chassis];
+    const mulRole = cData?.v?.[variant]?.role || null;
+    const resolved = resolveVariantRole(chassis, variant, mulRole);
+    btn.textContent = resolved || 'None';
+    btn.dataset.role = resolved || '';
+  });
+  dropdown.appendChild(resetItem);
+
+  // Position near the button using fixed positioning
+  const btnRect = btn.getBoundingClientRect();
+  dropdown.style.top = (btnRect.bottom + 2) + 'px';
+  dropdown.style.left = btnRect.left + 'px';
+  document.body.appendChild(dropdown);
+  const dropRect = dropdown.getBoundingClientRect();
+  if (dropRect.bottom > window.innerHeight) {
+    dropdown.style.top = (btnRect.top - dropRect.height - 2) + 'px';
+  }
+
+  // Close on click outside
+  const closeDropdown = (ev) => {
+    if (!dropdown.contains(ev.target) && ev.target !== btn) {
+      dropdown.remove();
+      document.removeEventListener('click', closeDropdown);
+    }
+  };
+  setTimeout(() => document.addEventListener('click', closeDropdown), 0);
+}
+
+/**
  * Get the active role taxonomy (user-customized or MUL defaults).
  * @returns {string[]}
  */
@@ -1450,10 +1522,10 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
     tbody.innerHTML = '';
     for (const row of pageRows) {
       const tr = document.createElement('tr');
-      let html = `<td class="chassis-name">${escHtml(row.name)}</td>`;
-      html += `<td class="tonnage-col">${formatTonnage(row.meta)} <span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>`;
+      let html = `<td class="chassis-name" style="cursor:pointer" data-chassis="${escAttr(row.name)}">${escHtml(row.name)}</td>`;
+      html += `<td class="tonnage-col" style="cursor:pointer" data-chassis="${escAttr(row.name)}">${formatTonnage(row.meta)} <span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>`;
       const displayRole = resolveChassisRole(row.name, row.meta.role, row.variants) || '';
-      html += `<td class="role-col">${escHtml(displayRole)}</td>`;
+      html += `<td class="role-col" style="cursor:pointer" data-chassis="${escAttr(row.name)}">${escHtml(displayRole)}</td>`;
       if (hasBV) {
         if (row.bvRange) {
           const bvStr = row.bvRange.bvMin === row.bvRange.bvMax
@@ -1833,6 +1905,51 @@ function showVariants(chassisName, faction, eraYear) {
   
   // Use exact year if specified, otherwise fall back to the era bucket year
   const targetYear = currentQuery.year || eraYear;
+  
+  // If no faction specified, show all variants with metadata only (no weight distribution)
+  if (!faction) {
+    title.textContent = `${chassisName} — All Variants (${eraYear})`;
+    let html = '<div class="drilldown-section"><h4 class="drilldown-section-title">Variants</h4>';
+    
+    if (variants) {
+      const variantList = Object.entries(variants)
+        .filter(([vName, vData]) => {
+          if (targetYear && vData.intro && vData.intro > targetYear) return false;
+          return true;
+        })
+        .sort((a, b) => a[0].localeCompare(b[0]));
+      
+      for (const [vName, vData] of variantList) {
+        const role = resolveVariantRole(chassisName, vName, vData.role) || '';
+        const bvStr = vData.bv != null ? `<span class="variant-bv">BV ${vData.bv}</span>` : '';
+        const introStr = vData.intro != null ? `<span class="variant-intro">${vData.intro}</span>` : '';
+        const roleStr = `<span class="variant-role variant-role-btn" data-chassis="${escAttr(chassisName)}" data-variant="${escAttr(vName)}" data-role="${escAttr(role)}" title="Click to change role">${escHtml(role || 'None')}</span>`;
+        const metaStr = `<span class="variant-meta">${roleStr}${bvStr}${introStr}</span>`;
+        html += `<div class="variant-row"><span class="variant-name">${escHtml(vName)}</span>${metaStr}</div>`;
+      }
+      if (variantList.length === 0) {
+        html += '<p class="drilldown-empty">No variants available in this era.</p>';
+      }
+    } else {
+      html += '<p class="drilldown-empty">No variant data available.</p>';
+    }
+    html += '</div>';
+    
+    content.innerHTML = html;
+    overlay.classList.remove('hidden');
+    
+    // Wire up role reassignment buttons
+    content.querySelectorAll('.variant-role-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        content.querySelectorAll('.role-dropdown').forEach(d => d.remove());
+        document.querySelectorAll('.role-dropdown').forEach(d => d.remove());
+        showRoleDropdown(btn);
+      });
+    });
+    return;
+  }
+  
   const { sorted, variantBV, variantIntro, variantRoles, total } = computeVariantDistribution(variants, faction, targetYear, chassisName);
   
   title.textContent = `${chassisName} — ${getFactionFullName(faction)}`;
@@ -2016,93 +2133,25 @@ function showVariants(chassisName, faction, eraYear) {
   content.querySelectorAll('.variant-role-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      // Remove any existing dropdown
-      content.querySelectorAll('.role-dropdown').forEach(d => d.remove());
-
-      const rect = btn.getBoundingClientRect();
-      const dropdown = document.createElement('div');
-      dropdown.className = 'role-dropdown';
-
-      const taxonomy = getRoleTaxonomy();
-      const currentRole = btn.dataset.role || '';
-
-      for (const role of taxonomy) {
-        const item = document.createElement('div');
-        item.className = 'role-dropdown-item' + (role === currentRole ? ' role-dropdown-active' : '');
-        item.textContent = role;
-        item.addEventListener('click', () => {
-          const chassis = btn.dataset.chassis;
-          const variant = btn.dataset.variant;
-          const roles = getOrInitUserRoles();
-
-          if (role === 'None' || role === '') {
-            // Check if this is the MUL default — if so, just remove override
-            delete roles.overrides[chassis + ':' + variant];
-          } else {
-            roles.overrides[chassis + ':' + variant] = role;
-          }
-          saveUserRoles(roles);
-          dropdown.remove();
-
-          // Update the button display
-          btn.textContent = role;
-          btn.dataset.role = role;
-        });
-        dropdown.appendChild(item);
-      }
-
-      // Reset to MUL default option
-      const resetItem = document.createElement('div');
-      resetItem.className = 'role-dropdown-item role-dropdown-reset';
-      resetItem.textContent = '↩ Reset to MUL default';
-      resetItem.addEventListener('click', () => {
-        const chassis = btn.dataset.chassis;
-        const variant = btn.dataset.variant;
-        const roles = getOrInitUserRoles();
-        delete roles.overrides[chassis + ':' + variant];
-        saveUserRoles(roles);
-        dropdown.remove();
-
-        // Re-resolve from MUL data
-        const eraData = DATA.eraData[String(currentEraYear)];
-        const cData = eraData?.[chassis];
-        const mulRole = cData?.v?.[variant]?.role || null;
-        const resolved = resolveVariantRole(chassis, variant, mulRole);
-        btn.textContent = resolved || 'None';
-        btn.dataset.role = resolved || '';
-      });
-      dropdown.appendChild(resetItem);
-
-      // Position near the button using fixed positioning
-      const btnRect = btn.getBoundingClientRect();
-      dropdown.style.top = (btnRect.bottom + 2) + 'px';
-      dropdown.style.left = btnRect.left + 'px';
-      // If dropdown would go off bottom of screen, position above instead
-      document.body.appendChild(dropdown);
-      const dropRect = dropdown.getBoundingClientRect();
-      if (dropRect.bottom > window.innerHeight) {
-        dropdown.style.top = (btnRect.top - dropRect.height - 2) + 'px';
-      }
-
-      // Close on click outside
-      const closeDropdown = (ev) => {
-        if (!dropdown.contains(ev.target) && ev.target !== btn) {
-          dropdown.remove();
-          document.removeEventListener('click', closeDropdown);
-        }
-      };
-      setTimeout(() => document.addEventListener('click', closeDropdown), 0);
+      document.querySelectorAll('.role-dropdown').forEach(d => d.remove());
+      showRoleDropdown(btn);
     });
   });
 }
 
 function handleCellClick(e) {
-  const cell = e.target.closest('[data-chassis][data-faction]');
-  if (!cell) return;
-  const chassis = cell.dataset.chassis;
-  const faction = cell.dataset.faction;
-  const eraYear = currentEraYear;
-  showVariants(chassis, faction, eraYear);
+  // Faction-specific drill-down (clicking a faction weight/sig cell)
+  const factionCell = e.target.closest('[data-chassis][data-faction]');
+  if (factionCell) {
+    showVariants(factionCell.dataset.chassis, factionCell.dataset.faction, currentEraYear);
+    return;
+  }
+  // Chassis-level drill-down (clicking name/tons/role/bv cells)
+  const chassisCell = e.target.closest('[data-chassis]');
+  if (chassisCell) {
+    showVariants(chassisCell.dataset.chassis, null, currentEraYear);
+    return;
+  }
 }
 
 function handleHeaderSort(th, rows, scopedFactions, eraYear, query) {
