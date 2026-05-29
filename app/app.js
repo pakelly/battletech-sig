@@ -3139,13 +3139,15 @@ async function init() {
     });
   });
   
-  // Close variant overlay
+  // Close variant overlay — re-run query to reflect any role changes
   document.getElementById('variant-close').addEventListener('click', () => {
     document.getElementById('variant-overlay').classList.add('hidden');
+    runQuery();
   });
   document.getElementById('variant-overlay').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) {
       e.currentTarget.classList.add('hidden');
+      runQuery();
     }
   });
   
