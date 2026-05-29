@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.26.0';
-const DEPLOY_TIME = '20260526.1702';
+const APP_VERSION = '1.27.0';
+const DEPLOY_TIME = '20260529.2055';
 
 let DATA = null; // app-data.json
 
@@ -835,19 +835,38 @@ function filterVariantsByTech(variants, filterTech, fallbackTech) {
 function computeSignature(weights, mulData, factions, allFactionCodes, wcdParams, chassisTech, rawW, ratingIdx) {
   const result = {};
   
-  // Filter comparison pool by tech base so IS workhorse mechs aren't
-  // inflated by Clan factions' zeros (and vice versa).
-  // Include any faction that: (a) matches the tech base, OR (b) actually fields the chassis.
-  // This handles late-era tech sharing (e.g., IS factions fielding Clan mechs).
+  // Filter comparison pool by faction family MUL availability.
+  // A faction family (IS, Clan, Periphery) is included in the z-score pool
+  // if the chassis has MUL access in that family's general pool.
+  // Factions outside included families are excluded entirely — their absence
+  // is a technological boundary, not a meaningful choice.
+  // Within included families, non-fielding factions count as 0 (a real choice).
   let compareFactions = allFactionCodes;
-  if (chassisTech === 'Inner Sphere' || chassisTech === 'Primitive') {
-    compareFactions = allFactionCodes.filter(f =>
-      !DATA.factions[f]?.clan || (weights[f] && weights[f] > 0));
-  } else if (chassisTech === 'Clan') {
-    compareFactions = allFactionCodes.filter(f =>
-      DATA.factions[f]?.clan || (weights[f] && weights[f] > 0));
+  {
+    // Determine which faction families have MUL access to this chassis
+    const isPool = DATA.factionIndex.indexOf('IS');
+    const clanPool = DATA.factionIndex.indexOf('CLAN');
+    const periPool = DATA.factionIndex.indexOf('Periphery');
+    const hasIS = isPool >= 0 && mulData[DATA.factionIndex[isPool]];
+    const hasClan = clanPool >= 0 && mulData[DATA.factionIndex[clanPool]];
+    const hasPeri = periPool >= 0 && mulData[DATA.factionIndex[periPool]];
+
+    // If at least one pool is identified, scope to those families
+    // Include any faction that: belongs to an included family OR actually fields the chassis
+    if (hasIS || hasClan || hasPeri) {
+      compareFactions = allFactionCodes.filter(f => {
+        // Always include factions that actually field the chassis (late-era tech sharing)
+        if (weights[f] && weights[f] > 0) return true;
+        // Include faction if their family pool has MUL access
+        const fd = DATA.factions[f];
+        if (!fd) return false;
+        if (fd.clan) return hasClan;
+        if (fd.periphery) return hasPeri;
+        return hasIS; // default to IS family
+      });
+    }
+    // If no general pool data exists, fall back to all factions (Mode A / pre-MUL data)
   }
-  // Mixed/null tech: compare against all factions
   
   // Build effective weight array in probability space.
   // Signature uses 2^(rating/2) to reflect actual battlefield presence —
