@@ -1288,6 +1288,55 @@ details[open] > .help-section-title::before {
   font-size: 0.85em;
   margin-right: 0.5em;
 }
+.variant-role-btn {
+  cursor: pointer;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  border: 1px solid transparent;
+}
+.variant-role-btn:hover {
+  border-color: var(--accent);
+  background: var(--bg-raised);
+}
+.role-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  min-width: 150px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0.3rem 0;
+}
+.role-dropdown-item {
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+.role-dropdown-item:hover {
+  background: var(--bg-raised);
+  color: var(--accent);
+}
+.role-dropdown-active {
+  color: var(--accent);
+  font-weight: bold;
+}
+.role-dropdown-reset {
+  border-top: 1px solid var(--border);
+  margin-top: 0.3rem;
+  padding-top: 0.4rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+.role-dropdown-reset:hover {
+  color: var(--accent);
+}
 .role-col {
   color: var(--text-dim);
   font-size: 0.9em;

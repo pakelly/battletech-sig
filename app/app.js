@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.30.0';
+const APP_VERSION = '1.30.1';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -1976,8 +1976,9 @@ function showVariants(chassisName, faction, eraYear) {
       const pct = (w / total * 100).toFixed(1);
       const bvStr = variantBV[varName] != null ? `<span class="variant-bv">BV ${variantBV[varName]}</span>` : '';
       const introStr = variantIntro[varName] != null ? `<span class="variant-intro">${variantIntro[varName]}</span>` : '';
-      const roleStr = variantRoles[varName] ? `<span class="variant-role">${escHtml(variantRoles[varName])}</span>` : '';
-      const metaStr = (bvStr || introStr || roleStr) ? `<span class="variant-meta">${roleStr}${bvStr}${introStr}</span>` : '';
+      const vRole = variantRoles[varName] || '';
+      const roleStr = `<span class="variant-role variant-role-btn" data-chassis="${escAttr(chassisName)}" data-variant="${escAttr(varName)}" data-role="${escAttr(vRole)}" title="Click to change role">${escHtml(vRole || 'None')}</span>`;
+      const metaStr = `<span class="variant-meta">${roleStr}${bvStr}${introStr}</span>`;
       html += `
         <div class="variant-row">
           <span class="variant-name">${escHtml(varName)}</span>
@@ -1994,6 +1995,82 @@ function showVariants(chassisName, faction, eraYear) {
   
   content.innerHTML = html;
   overlay.classList.remove('hidden');
+
+  // Wire up variant role reassignment buttons
+  content.querySelectorAll('.variant-role-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Remove any existing dropdown
+      content.querySelectorAll('.role-dropdown').forEach(d => d.remove());
+
+      const rect = btn.getBoundingClientRect();
+      const dropdown = document.createElement('div');
+      dropdown.className = 'role-dropdown';
+
+      const taxonomy = getRoleTaxonomy();
+      const currentRole = btn.dataset.role || '';
+
+      for (const role of taxonomy) {
+        const item = document.createElement('div');
+        item.className = 'role-dropdown-item' + (role === currentRole ? ' role-dropdown-active' : '');
+        item.textContent = role;
+        item.addEventListener('click', () => {
+          const chassis = btn.dataset.chassis;
+          const variant = btn.dataset.variant;
+          const roles = getOrInitUserRoles();
+
+          if (role === 'None' || role === '') {
+            // Check if this is the MUL default — if so, just remove override
+            delete roles.overrides[chassis + ':' + variant];
+          } else {
+            roles.overrides[chassis + ':' + variant] = role;
+          }
+          saveUserRoles(roles);
+          dropdown.remove();
+
+          // Update the button display
+          btn.textContent = role;
+          btn.dataset.role = role;
+        });
+        dropdown.appendChild(item);
+      }
+
+      // Reset to MUL default option
+      const resetItem = document.createElement('div');
+      resetItem.className = 'role-dropdown-item role-dropdown-reset';
+      resetItem.textContent = '↩ Reset to MUL default';
+      resetItem.addEventListener('click', () => {
+        const chassis = btn.dataset.chassis;
+        const variant = btn.dataset.variant;
+        const roles = getOrInitUserRoles();
+        delete roles.overrides[chassis + ':' + variant];
+        saveUserRoles(roles);
+        dropdown.remove();
+
+        // Re-resolve from MUL data
+        const eraData = DATA.eraData[String(currentEraYear)];
+        const cData = eraData?.[chassis];
+        const mulRole = cData?.v?.[variant]?.role || null;
+        const resolved = resolveVariantRole(chassis, variant, mulRole);
+        btn.textContent = resolved || 'None';
+        btn.dataset.role = resolved || '';
+      });
+      dropdown.appendChild(resetItem);
+
+      // Position near the button
+      btn.style.position = 'relative';
+      btn.appendChild(dropdown);
+
+      // Close on click outside
+      const closeDropdown = (ev) => {
+        if (!dropdown.contains(ev.target) && ev.target !== btn) {
+          dropdown.remove();
+          document.removeEventListener('click', closeDropdown);
+        }
+      };
+      setTimeout(() => document.addEventListener('click', closeDropdown), 0);
+    });
+  });
 }
 
 function handleCellClick(e) {
