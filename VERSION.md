@@ -4,13 +4,14 @@
 
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
-| prod | 1.27.1 | 2026-05-29 21:35 UTC | pending |
+| prod | 1.30.1 | 2026-05-29 23:24 UTC | pending |
 | test | 1.30.1 | 2026-05-29 23:13 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.30.1 | prod | 2026-05-29 23:24 | pending | VERSION.md: auto-stamp 1.30.1 test deploy |
 | 1.30.1 | test | 2026-05-29 23:13 | pending | Auto-refresh table when closing variant drill-down |
 | 1.30.1 | test | 2026-05-29 23:00 | pending | Chassis-level role recomputes from variant overrides |
 | 1.30.1 | test | 2026-05-29 22:58 | pending | Fix role dropdown readability - solid opaque background |
