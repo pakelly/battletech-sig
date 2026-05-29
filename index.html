@@ -17,7 +17,7 @@
   <meta name="twitter:title" content="BattleTech Faction Signatures">
   <meta name="twitter:description" content="Which mechs define a faction? Explore faction identity through mech usage data — find out what makes a Kurita lance feel like Kurita.">
 
-  <link rel="stylesheet" href="style.css?v=1.27.1">
+  <link rel="stylesheet" href="style.css?v=1.30.0">
 </head>
 <body>
   <!-- Loading overlay — visible until app-data.json is loaded -->
@@ -220,8 +220,18 @@ signature = weight × max(0, z)</pre>
             </label>
           </div>
           <div class="settings-section">
+            <h4>Mech Roles</h4>
+            <p class="settings-hint">Alpha Strike roles from the MUL. Add, rename, or delete roles. Reassign individual variants in the drill-down view.</p>
+            <div id="roles-list" class="roles-list"></div>
+            <div class="role-add-row">
+              <input type="text" id="role-add-input" placeholder="New role name..." class="role-input">
+              <button id="role-add-btn" class="role-add-btn" title="Add role">+</button>
+            </div>
+            <button id="reset-roles-btn" class="reset-roles-btn">Reset roles to MUL defaults</button>
+          </div>
+          <div class="settings-section">
             <button id="reset-defaults-btn" class="reset-defaults-btn">Reset to defaults</button>
-            <p class="settings-hint">Clears all saved preferences (column visibility, families, data mode) and reloads.</p>
+            <p class="settings-hint">Clears all saved preferences (column visibility, families, data mode, roles) and reloads.</p>
           </div>
         </div>
       </div>
@@ -298,6 +308,6 @@ signature = weight × max(0, z)</pre>
     <p class="footer-dim">BattleTech is a registered trademark of The Topps Company, Inc. This is an unofficial fan tool.</p>
   </footer>
 
-  <script src="app.js?v=1.27.1"></script>
+  <script src="app.js?v=1.30.0"></script>
 </body>
 </html>
