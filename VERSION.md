@@ -4,13 +4,14 @@
 
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
-| prod | 1.26.0 | 2026-05-26 17:03 UTC | pending |
+| prod | 1.27.1 | 2026-05-29 21:35 UTC | pending |
 | test | 1.27.1 | 2026-05-29 21:21 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.27.1 | prod | 2026-05-29 21:35 | pending | VERSION.md: auto-stamp 1.27.1 test deploy |
 | 1.27.1 | test | 2026-05-29 21:21 | pending | Exclude era-inactive factions from signature z-score pool |
 | 1.27.0 | test | 2026-05-29 20:55 | pending | Scope signature z-score pool by faction family MUL availability |
 | 1.26.0 | prod | 2026-05-26 17:03 | pending | VERSION.md: auto-stamp 1.26.0 test deploy |
