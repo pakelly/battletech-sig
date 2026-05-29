@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
 const APP_VERSION = '1.30.1';
-const DEPLOY_TIME = '20260529.2300';
+const DEPLOY_TIME = '20260529.2312';
 
 let DATA = null; // app-data.json
 
@@ -3139,13 +3139,15 @@ async function init() {
     });
   });
   
-  // Close variant overlay
+  // Close variant overlay — re-run query to reflect any role changes
   document.getElementById('variant-close').addEventListener('click', () => {
     document.getElementById('variant-overlay').classList.add('hidden');
+    runQuery();
   });
   document.getElementById('variant-overlay').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) {
       e.currentTarget.classList.add('hidden');
+      runQuery();
     }
   });
   
