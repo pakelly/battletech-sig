@@ -1192,6 +1192,16 @@ details[open] > .help-section-title::before {
 .variant-intro {
   color: var(--text-dim);
 }
+.variant-role {
+  color: var(--accent);
+  font-size: 0.85em;
+  margin-right: 0.5em;
+}
+.role-col {
+  color: var(--text-dim);
+  font-size: 0.9em;
+  white-space: nowrap;
+}
 
 /* ── Drilldown Sections ── */
 .drilldown-section {

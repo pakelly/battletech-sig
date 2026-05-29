@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.28.0';
+const APP_VERSION = '1.29.0';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -532,6 +532,9 @@ function parseQuery(queryStr) {
       case 'tech':
         result.tech = value.toLowerCase();
         break;
+      case 'role':
+        result.role = value.toLowerCase();
+        break;
       case 'mode':
         result.mode = value.toUpperCase();
         break;
@@ -770,6 +773,72 @@ function computeBVRange(variants, scopedFactions, mul, modeB, targetYear) {
 /**
  * Check if a single variant's tech base matches the requested tech filter.
  * @param {string|null} variantTech - tech base of the variant (e.g., "Clan", "Inner Sphere", "Mixed")
+/**
+ * Get the user's custom role settings from localStorage, or null if none.
+ * @returns {{ taxonomy: string[], overrides: Object, renames: Object } | null}
+ */
+function getUserRoles() {
+  try {
+    const stored = localStorage.getItem('bt-sig-roles');
+    return stored ? JSON.parse(stored) : null;
+  } catch { return null; }
+}
+
+/**
+ * Resolve the display role for a specific variant.
+ * Resolution order: user override → MUL data → rename mapping
+ * @param {string} chassis - chassis name
+ * @param {string} variant - variant name
+ * @param {string|null} mulRole - role from app-data.json
+ * @returns {string} resolved role name
+ */
+function resolveVariantRole(chassis, variant, mulRole) {
+  const userRoles = getUserRoles();
+  if (!userRoles) return mulRole || null;
+  
+  // Check per-variant override
+  const key = chassis + ':' + variant;
+  if (userRoles.overrides?.[key]) return userRoles.overrides[key];
+  
+  // Apply rename to MUL role
+  let role = mulRole || null;
+  if (role && userRoles.renames?.[role]) role = userRoles.renames[role];
+  
+  // Check if resolved role is in taxonomy; if not, map to None
+  if (role && userRoles.taxonomy && !userRoles.taxonomy.includes(role)) role = 'None';
+  
+  return role;
+}
+
+/**
+ * Resolve the display role for a chassis (used when no variant data).
+ * @param {string} chassis - chassis name
+ * @param {string|null} mulRole - role from chassis metadata
+ * @returns {string} resolved role name
+ */
+function resolveChassisRole(chassis, mulRole) {
+  const userRoles = getUserRoles();
+  if (!userRoles || !mulRole) return mulRole || null;
+  
+  // Apply renames to each component of a multi-role (e.g. "Sniper/Juggernaut")
+  const parts = mulRole.split('/');
+  const resolved = parts.map(r => userRoles.renames?.[r] || r);
+  const role = resolved.join('/');
+  
+  return role;
+}
+
+/**
+ * Get the active role taxonomy (user-customized or MUL defaults).
+ * @returns {string[]}
+ */
+function getRoleTaxonomy() {
+  const userRoles = getUserRoles();
+  if (userRoles?.taxonomy) return userRoles.taxonomy;
+  return ['Scout', 'Striker', 'Skirmisher', 'Juggernaut', 'Brawler', 'Missile Boat', 'Sniper', 'Ambusher', 'None'];
+}
+
+/**
  * @param {string} filterTech - parsed tech filter value: 'clan', 'is', or 'mixed'
  * @returns {boolean}
  */
@@ -1091,6 +1160,7 @@ function getChassisForEra(eraYear, familyMode) {
       let introMin = null;
       let isIndustrial = false;
       const techValues = new Set();
+      const roleValues = new Set();
       for (const member of members) {
         const m = DATA.chassis[member];
         if (!m) continue;
@@ -1099,6 +1169,8 @@ function getChassisForEra(eraYear, familyMode) {
         if (m.intro != null) introMin = introMin == null ? m.intro : Math.min(introMin, m.intro);
         if (m.industrial) isIndustrial = true;
         if (m.tech) techValues.add(m.tech);
+        const resolvedRole = resolveChassisRole(member, m.role);
+        if (resolvedRole) roleValues.add(resolvedRole);
       }
       const tonsMin = tonValues.length ? Math.min(...tonValues) : null;
       const tonsMax = tonValues.length ? Math.max(...tonValues) : null;
@@ -1117,7 +1189,8 @@ function getChassisForEra(eraYear, familyMode) {
           class: classValues.size === 1 ? [...classValues][0] : [...classValues].join('/'),
           intro: introMin,
           industrial: isIndustrial,
-          tech: techValues.size === 1 ? [...techValues][0] : [...techValues].join('/')
+          tech: techValues.size === 1 ? [...techValues][0] : [...techValues].join('/'),
+          role: roleValues.size === 1 ? [...roleValues][0] : roleValues.size > 1 ? [...roleValues].join('/') : null
         }
       };
     } else if (!famName || disabledFamilies.has(famName)) {
@@ -1330,7 +1403,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   const thead = document.createElement('thead');
   const hasSig = rows.some(r => r.sig);
   const hasBV = rows.some(r => r.bvRange);
-  let headerHTML = '<tr><th data-sort="name">Chassis</th><th data-sort="tonnage">Tons</th>';
+  let headerHTML = '<tr><th data-sort="name">Chassis</th><th data-sort="tonnage">Tons</th><th data-sort="role">Role</th>';
   if (hasBV) headerHTML += '<th data-sort="bv">BV</th>';
   if (hasSig) {
     for (const f of scopedFactions) {
@@ -1363,6 +1436,8 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
       const tr = document.createElement('tr');
       let html = `<td class="chassis-name">${escHtml(row.name)}</td>`;
       html += `<td class="tonnage-col">${formatTonnage(row.meta)} <span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>`;
+      const displayRole = resolveChassisRole(row.name, row.meta.role) || '';
+      html += `<td class="role-col">${escHtml(displayRole)}</td>`;
       if (hasBV) {
         if (row.bvRange) {
           const bvStr = row.bvRange.bvMin === row.bvRange.bvMax
@@ -1478,7 +1553,7 @@ function renderSingleFaction(rows, faction, eraYear) {
   const thead = document.createElement('thead');
   const singleHasBV = rows.some(r => r.bvRange);
   const singleHasSig = rows.some(r => r.sig?.[faction] > 0);
-  thead.innerHTML = `<tr><th>Chassis</th><th>Tons</th><th>Class</th>${singleHasBV ? '<th>BV</th>' : ''}${singleHasSig ? '<th>DR</th>' : ''}<th>Prob</th><th>Availability</th></tr>`;
+  thead.innerHTML = `<tr><th>Chassis</th><th>Tons</th><th>Class</th><th>Role</th>${singleHasBV ? '<th>BV</th>' : ''}${singleHasSig ? '<th>DR</th>' : ''}<th>Prob</th><th>Availability</th></tr>`;
   table.appendChild(thead);
   
   // Filter to rows with weight > 0
@@ -1549,6 +1624,7 @@ function renderSingleFaction(rows, faction, eraYear) {
         <td class="chassis-name" style="cursor:pointer" data-chassis="${escAttr(row.name)}" data-faction="${faction}">${escHtml(row.name)}</td>
         <td class="tonnage-col">${formatTonnage(row.meta)}</td>
         <td><span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>
+        <td class="role-col">${escHtml(resolveChassisRole(row.name, row.meta.role) || '')}</td>
         ${bvCell}
         ${drCell}
         ${probCell}
@@ -1658,12 +1734,14 @@ function renderMechView(rows, eraYear, chassisName) {
  * @param {Object} variants - { varName: { w: { faction: weight }, bv, intro } }
  * @param {string} faction - faction code to compute distribution for
  * @param {number|null} targetYear - filter out variants introduced after this year
- * @returns {{ sorted: [string, number][], variantBV: Object, variantIntro: Object, total: number }}
+ * @param {string} chassisName - chassis name for role resolution
+ * @returns {{ sorted: [string, number][], variantBV: Object, variantIntro: Object, variantRoles: Object, total: number }}
  */
-function computeVariantDistribution(variants, faction, targetYear) {
+function computeVariantDistribution(variants, faction, targetYear, chassisName) {
   const variantProbs = {};
   const variantBV = {};
   const variantIntro = {};
+  const variantRoles = {};
   let total = 0;
 
   for (const [varName, varData] of Object.entries(variants || {})) {
@@ -1682,10 +1760,11 @@ function computeVariantDistribution(variants, faction, targetYear) {
     total += prob;
     if (varData.bv != null) variantBV[varName] = varData.bv;
     if (varData.intro != null) variantIntro[varName] = varData.intro;
+    variantRoles[varName] = resolveVariantRole(chassisName, varName, varData.role);
   }
 
   const sorted = Object.entries(variantProbs).sort((a, b) => b[1] - a[1]);
-  return { sorted, variantBV, variantIntro, total };
+  return { sorted, variantBV, variantIntro, variantRoles, total };
 }
 
 function showVariants(chassisName, faction, eraYear) {
@@ -1738,7 +1817,7 @@ function showVariants(chassisName, faction, eraYear) {
   
   // Use exact year if specified, otherwise fall back to the era bucket year
   const targetYear = currentQuery.year || eraYear;
-  const { sorted, variantBV, variantIntro, total } = computeVariantDistribution(variants, faction, targetYear);
+  const { sorted, variantBV, variantIntro, variantRoles, total } = computeVariantDistribution(variants, faction, targetYear, chassisName);
   
   title.textContent = `${chassisName} — ${getFactionFullName(faction)}`;
   
@@ -1897,7 +1976,8 @@ function showVariants(chassisName, faction, eraYear) {
       const pct = (w / total * 100).toFixed(1);
       const bvStr = variantBV[varName] != null ? `<span class="variant-bv">BV ${variantBV[varName]}</span>` : '';
       const introStr = variantIntro[varName] != null ? `<span class="variant-intro">${variantIntro[varName]}</span>` : '';
-      const metaStr = (bvStr || introStr) ? `<span class="variant-meta">${bvStr}${introStr}</span>` : '';
+      const roleStr = variantRoles[varName] ? `<span class="variant-role">${escHtml(variantRoles[varName])}</span>` : '';
+      const metaStr = (bvStr || introStr || roleStr) ? `<span class="variant-meta">${roleStr}${bvStr}${introStr}</span>` : '';
       html += `
         <div class="variant-row">
           <span class="variant-name">${escHtml(varName)}</span>
@@ -1949,7 +2029,7 @@ function handleHeaderSort(th, rows, scopedFactions, eraYear, query) {
 
 // ── Auto-Suggest ──
 
-const FIELD_NAMES = ['faction', 'chassis', 'class', 'type', 'tech', 'spread', 'sig', 'signature', 'dr', 'distinctiveness', 'weight', 'tons', 'tonnage', 'bv', 'year', 'era', 'rating', 'family', 'industrial', 'mode', 'sort'];
+const FIELD_NAMES = ['faction', 'chassis', 'class', 'type', 'tech', 'role', 'spread', 'sig', 'signature', 'dr', 'distinctiveness', 'weight', 'tons', 'tonnage', 'bv', 'year', 'era', 'rating', 'family', 'industrial', 'mode', 'sort'];
 
 function getSuggestions(text, cursorPos) {
   if (!DATA) return [];
@@ -1966,7 +2046,7 @@ function getSuggestions(text, cursorPos) {
   if (spaceMatch) {
     const field = spaceMatch[1].toLowerCase();
     const partial = spaceMatch[2].trim().toLowerCase();
-    const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'year', 'era', 'rating', 'family', 'industrial', 'mode']);
+    const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'role', 'year', 'era', 'rating', 'family', 'industrial', 'mode']);
     if (VALUE_FIELD_SET.has(field) && partial) {
       // Fake an eq match and fall through to value completion
       return getValueSuggestions(field, partial);
@@ -1977,7 +2057,7 @@ function getSuggestions(text, cursorPos) {
   const sortByMatch = beforeCursor.match(/\bsort\s+by\s+(\S*)$/i);
   if (sortByMatch) {
     const partial = sortByMatch[1].toLowerCase();
-    const sortableFields = ['spread', 'sig', 'dr', 'weight', 'tons', 'bv', 'name'];
+    const sortableFields = ['spread', 'sig', 'dr', 'weight', 'tons', 'bv', 'name', 'role'];
     // Add faction-prefixed sort fields
     if (DATA) {
       for (const code of Object.keys(DATA.factions)) {
@@ -1993,7 +2073,7 @@ function getSuggestions(text, cursorPos) {
   }
 
   // Field name completion
-  const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'year', 'era', 'rating', 'family', 'industrial', 'mode']);
+  const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'role', 'year', 'era', 'rating', 'family', 'industrial', 'mode']);
   const OPERATOR_FIELD_SET = new Set(['spread', 'sig', 'signature', 'dr', 'distinctiveness', 'weight', 'tons', 'tonnage', 'bv', 'battlevalue']);
 
   if (!lastToken.includes('=') && !lastToken.includes('>') && !lastToken.includes('<')) {
@@ -2115,6 +2195,10 @@ function getValueSuggestions(field, lower) {
     case 'tech':
       return [{ text: 'clan', hint: 'Clan tech' }, { text: 'is', hint: 'Inner Sphere' }, { text: 'mixed', hint: 'Mixed tech' }]
         .filter(i => i.text.startsWith(lower));
+    case 'role':
+      return getRoleTaxonomy()
+        .map(r => ({ text: r.toLowerCase(), hint: r }))
+        .filter(i => i.text.startsWith(lower));
     case 'industrial':
       return [{ text: 'show', hint: '' }, { text: 'hide', hint: '' }];
   }
@@ -2138,6 +2222,7 @@ function renderChips(parsed) {
   if (parsed.class) chips.push({ label: 'class' + parsed.class.op + parsed.class.values.join(' OR '), field: 'class' });
   if (parsed.type) chips.push({ label: 'type=' + parsed.type, field: 'type' });
   if (parsed.tech) chips.push({ label: 'tech=' + parsed.tech, field: 'tech' });
+  if (parsed.role) chips.push({ label: 'role=' + parsed.role, field: 'role' });
   if (parsed.spread) chips.push({ label: `spread${parsed.spread.op}${parsed.spread.val}`, field: 'spread' });
   if (parsed.span) chips.push({ label: `span${parsed.span.op}${parsed.span.val}`, field: 'span' });
   // avg-weight and span still parseable but no chip/column
@@ -2440,6 +2525,26 @@ function runQuery() {
         if (!variantMatchesTech(meta.tech, parsed.tech)) continue;
       }
     }
+    if (parsed.role) {
+      // Variant-level role filtering: same pattern as tech filtering
+      const roleFilter = parsed.role;
+      if (data.v) {
+        const filtered = {};
+        let anyMatch = false;
+        for (const [vName, vData] of Object.entries(data.v)) {
+          const vRole = (resolveVariantRole(chassisName, vName, vData.role) || '').toLowerCase();
+          if (vRole === roleFilter || (roleFilter === 'none' && !vRole)) {
+            filtered[vName] = vData;
+            anyMatch = true;
+          }
+        }
+        if (!anyMatch) continue;
+        data = { ...data, v: filtered };
+      } else {
+        const cRole = (resolveChassisRole(chassisName, meta.role) || '').toLowerCase();
+        if (cRole !== roleFilter && !(roleFilter === 'none' && !cRole)) continue;
+      }
+    }
     if (parsed.year && meta.intro && meta.intro > parsed.year) continue;
     if (parsed.tons) {
       // For families with a tonnage range, use the range for filtering
@@ -2732,6 +2837,12 @@ function sortRowsInPlace(rows, sortSpec) {
         vb = Math.max(0, ...Object.values(b.weights));
       } else if (field === 'name' || field === 'chassis') {
         const cmp = dir === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+        if (cmp !== 0) return cmp;
+        continue;
+      } else if (field === 'role') {
+        const ra = resolveChassisRole(a.name, a.meta.role) || 'zzz';
+        const rb = resolveChassisRole(b.name, b.meta.role) || 'zzz';
+        const cmp = dir === 'asc' ? ra.localeCompare(rb) : rb.localeCompare(ra);
         if (cmp !== 0) return cmp;
         continue;
       } else if (field === 'tonnage' || field === 'tons') {
@@ -3478,7 +3589,7 @@ function initQuickFilter() {
   let qfSuggestIndex = -1;
 
   // Known field names that take = values (not sort, not numeric-operator fields used bare)
-  const VALUE_FIELDS = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'year', 'era', 'rating', 'family', 'industrial', 'mode']);
+  const VALUE_FIELDS = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'role', 'year', 'era', 'rating', 'family', 'industrial', 'mode']);
   const OPERATOR_FIELDS = new Set(['spread', 'sig', 'signature', 'dr', 'distinctiveness', 'weight', 'tons', 'tonnage']);
 
   function normalizeFilterText(raw) {
