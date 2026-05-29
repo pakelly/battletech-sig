@@ -811,21 +811,37 @@ function resolveVariantRole(chassis, variant, mulRole) {
 }
 
 /**
- * Resolve the display role for a chassis (used when no variant data).
+ * Resolve the display role for a chassis.
+ * If variant data is available and user overrides exist, recompute from
+ * resolved variant roles. Otherwise apply renames to the chassis metadata.
  * @param {string} chassis - chassis name
  * @param {string|null} mulRole - role from chassis metadata
+ * @param {Object|null} variants - variant data { varName: { role, ... } } if available
  * @returns {string} resolved role name
  */
-function resolveChassisRole(chassis, mulRole) {
+function resolveChassisRole(chassis, mulRole, variants) {
   const userRoles = getUserRoles();
-  if (!userRoles || !mulRole) return mulRole || null;
   
-  // Apply renames to each component of a multi-role (e.g. "Sniper/Juggernaut")
+  // If we have variant data, recompute from resolved variant roles
+  if (variants && userRoles) {
+    const roleCounts = {};
+    for (const [vName, vData] of Object.entries(variants)) {
+      const r = resolveVariantRole(chassis, vName, vData.role) || 'None';
+      if (r !== 'None') roleCounts[r] = (roleCounts[r] || 0) + 1;
+    }
+    const sorted = Object.entries(roleCounts).sort((a, b) => b[1] - a[1]);
+    if (sorted.length === 0) return null;
+    if (sorted.length === 1) return sorted[0][0];
+    const total = sorted.reduce((s, e) => s + e[1], 0);
+    if (sorted[0][1] / total > 0.5) return sorted[0][0];
+    return sorted.slice(0, 2).map(e => e[0]).join('/');
+  }
+  
+  // No variant data or no user roles — apply renames to chassis metadata
+  if (!userRoles || !mulRole) return mulRole || null;
   const parts = mulRole.split('/');
   const resolved = parts.map(r => userRoles.renames?.[r] || r);
-  const role = resolved.join('/');
-  
-  return role;
+  return resolved.join('/');
 }
 
 /**
@@ -1436,7 +1452,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
       const tr = document.createElement('tr');
       let html = `<td class="chassis-name">${escHtml(row.name)}</td>`;
       html += `<td class="tonnage-col">${formatTonnage(row.meta)} <span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>`;
-      const displayRole = resolveChassisRole(row.name, row.meta.role) || '';
+      const displayRole = resolveChassisRole(row.name, row.meta.role, row.variants) || '';
       html += `<td class="role-col">${escHtml(displayRole)}</td>`;
       if (hasBV) {
         if (row.bvRange) {
@@ -1624,7 +1640,7 @@ function renderSingleFaction(rows, faction, eraYear) {
         <td class="chassis-name" style="cursor:pointer" data-chassis="${escAttr(row.name)}" data-faction="${faction}">${escHtml(row.name)}</td>
         <td class="tonnage-col">${formatTonnage(row.meta)}</td>
         <td><span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>
-        <td class="role-col">${escHtml(resolveChassisRole(row.name, row.meta.role) || '')}</td>
+        <td class="role-col">${escHtml(resolveChassisRole(row.name, row.meta.role, row.variants) || '')}</td>
         ${bvCell}
         ${drCell}
         ${probCell}
@@ -2625,7 +2641,7 @@ function runQuery() {
         if (!anyMatch) continue;
         data = { ...data, v: filtered };
       } else {
-        const cRole = (resolveChassisRole(chassisName, meta.role) || '').toLowerCase();
+        const cRole = (resolveChassisRole(chassisName, meta.role, data.v) || '').toLowerCase();
         if (cRole !== roleFilter && !(roleFilter === 'none' && !cRole)) continue;
       }
     }
@@ -2924,8 +2940,8 @@ function sortRowsInPlace(rows, sortSpec) {
         if (cmp !== 0) return cmp;
         continue;
       } else if (field === 'role') {
-        const ra = resolveChassisRole(a.name, a.meta.role) || 'zzz';
-        const rb = resolveChassisRole(b.name, b.meta.role) || 'zzz';
+        const ra = resolveChassisRole(a.name, a.meta.role, a.variants) || 'zzz';
+        const rb = resolveChassisRole(b.name, b.meta.role, b.variants) || 'zzz';
         const cmp = dir === 'asc' ? ra.localeCompare(rb) : rb.localeCompare(ra);
         if (cmp !== 0) return cmp;
         continue;
