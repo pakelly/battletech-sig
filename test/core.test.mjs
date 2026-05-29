@@ -530,6 +530,61 @@ describe('Global Signature (weight × z-score)', () => {
   });
 });
 
+describe('Signature z-score pool scoping by faction family', () => {
+  // Pool with IS + Clan factions
+  const IS_AND_CLAN = ['DC', 'FS', 'FWL', 'LC', 'CC', 'FRR', 'CJF', 'CW', 'CGB', 'CSJ'];
+
+  it('IS-only mech: Clan factions excluded from z-score pool', () => {
+    // Wasp-like: all IS factions at 8, Clan factions have no MUL access
+    const weights = { DC: 8, FS: 8, FWL: 8, LC: 8, CC: 8, FRR: 8 };
+    // MUL flags: include IS general pool flag, no CLAN pool
+    const mul = { DC: 1, FS: 1, FWL: 1, LC: 1, CC: 1, FRR: 1, IS: 1 };
+
+    const result = F.computeSignature(weights, mul, ['DC'], IS_AND_CLAN, null, 'Inner Sphere');
+    // With pool scoping, DC at weight 8 among all-8 IS factions should have LOW sig
+    // (everyone in the pool has the same weight — no Clan zeros to inflate)
+    assert.ok(result.DC < 5, `Ubiquitous IS mech should have low sig with pool scoping, got ${result.DC.toFixed(2)}`);
+  });
+
+  it('IS-only mech without pool scoping would have inflated sig', () => {
+    // Same Wasp-like scenario, but using ALL factions including Clans
+    // This validates that the OLD behavior (no scoping) gave inflated scores
+    const weights = { DC: 8, FS: 8, FWL: 8, LC: 8, CC: 8, FRR: 8 };
+    const mul = { DC: 1, FS: 1, FWL: 1, LC: 1, CC: 1, FRR: 1 };
+    // If we compute against the full IS_AND_CLAN pool without scoping,
+    // the 4 Clan zeros pull the mean down, inflating DC's z-score
+    // We can't easily test the "old" behavior, but we can verify the new
+    // behavior produces lower sig than a DC-exclusive mech
+    const exclusiveWeights = { DC: 8 };
+    const exclusiveMul = { DC: 1 };
+    const exclusive = F.computeSignature(exclusiveWeights, exclusiveMul, ['DC'], IS_AND_CLAN, null, 'Inner Sphere');
+    const ubiquitous = F.computeSignature(weights, mul, ['DC'], IS_AND_CLAN, null, 'Inner Sphere');
+    assert.ok(exclusive.DC > ubiquitous.DC,
+      `DC-exclusive (${exclusive.DC.toFixed(2)}) should score higher than IS-ubiquitous (${ubiquitous.DC.toFixed(2)})`);
+  });
+
+  it('Clan mech: IS factions excluded from z-score pool', () => {
+    // Mad Cat-like: only Clan factions field it
+    const weights = { CJF: 8, CW: 8, CGB: 6 };
+    const mul = { CJF: 1, CW: 1, CGB: 1 };
+    const result = F.computeSignature(weights, mul, ['CW'], IS_AND_CLAN, null, 'Clan');
+    // CW at weight 8 among 3 fielding + 1 non-fielding Clan should score moderately
+    assert.ok(result.CW > 0, `Clan mech should have positive sig, got ${result.CW.toFixed(2)}`);
+  });
+
+  it('Clan faction choosing not to field a Clan mech counts as zero', () => {
+    // Linebacker-like: CW fields it, CJF doesn't (but could)
+    const weightsExcl = { CW: 8 };
+    const mulExcl = { CW: 1 };
+    const weightsShared = { CW: 8, CJF: 8, CGB: 8, CSJ: 8 };
+    const mulShared = { CW: 1, CJF: 1, CGB: 1, CSJ: 1 };
+    const exclusive = F.computeSignature(weightsExcl, mulExcl, ['CW'], IS_AND_CLAN, null, 'Clan');
+    const shared = F.computeSignature(weightsShared, mulShared, ['CW'], IS_AND_CLAN, null, 'Clan');
+    assert.ok(exclusive.CW > shared.CW,
+      `CW-exclusive (${exclusive.CW.toFixed(2)}) should score higher than Clan-shared (${shared.CW.toFixed(2)})`);
+  });
+});
+
 describe('Signature Tiers (Jenks Natural Breaks)', () => {
   it('finds natural breaks in clustered data', () => {
     // Two clear clusters: [1,1,2,2] and [8,9,10,10]

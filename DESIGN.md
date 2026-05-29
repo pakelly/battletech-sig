@@ -94,13 +94,21 @@ The result may be fractional (e.g., 5.3). Values are still on the MegaMek 1–10
 
 Where:
 - **weight** = the faction's raw MegaMek weight for this chassis (1–10).
-- **z-score** = `(weight - mean) / stddev` across ALL factions in the era (non-fielding factions counted as 0). This measures how much this faction's usage stands out from the crowd, including the "crowd" of factions that don't field it at all.
+- **z-score** = `(weight - mean) / stddev` across factions in the chassis's **availability pool** (see below). Non-fielding factions within the pool are counted as 0. This measures how much this faction's usage stands out from the crowd of factions that *could plausibly field this chassis*.
 
-**Why z-score works:** MegaMek weights are relative probabilities within each faction's generation table — they're not comparable across factions by simple summation. But comparing ranks and statistical position IS valid. The z-score measures "how unusual is this faction's weight for this chassis compared to everyone else."
+**Availability pool scoping:** The z-score is computed against factions that belong to a faction family where the chassis exists, not against all factions in the era. Three faction families are defined by the MUL general pools: Inner Sphere, Clan, and Periphery. A faction family is included in a chassis's z-score pool if the chassis has MUL availability in that family's general pool (IS General / Clan General / Periphery General) for the current era. All factions belonging to an included family are in the pool — even if an individual faction within that family doesn't field the chassis (their zero is a meaningful choice, not a technological impossibility).
 
-**Why include zeros:** Non-fielding factions are counted as weight 0. This makes exclusivity emerge naturally — a mech only one faction fields has ~90+ zeros pulling the mean down, so that faction's z-score is enormous. No separate scarcity factor needed.
+**Example:** The Wasp has IS General and Periphery General MUL access but no Clan General access. Its z-score pool includes all IS and Periphery factions but excludes Clan factions entirely. Clan Wolf not fielding the Wasp is irrelevant — they *can't*. But if the Taurian Concordat doesn't field it despite having Periphery General access, their zero counts.
 
-The product `weight × z` captures both signals: high weight (the faction fields it a lot) AND high z (the faction stands out from the crowd). A DC-exclusive mech at weight 6 scores high because z ≈ 6. A ubiquitous mech at weight 6 scores low because z ≈ 1.
+**Example:** The Mad Cat has Clan General MUL access. In early eras, only Clan factions are in the pool. In later eras, if specific IS factions gain direct MUL access to the Mad Cat, those IS factions join the pool (their family — IS — now has access to the chassis). An IS faction's low weight for the Mad Cat correctly produces a low z-score relative to the Clan factions that produce it.
+
+**Why z-score works:** MegaMek weights are relative probabilities within each faction's generation table — they're not comparable across factions by simple summation. But comparing ranks and statistical position IS valid. The z-score measures "how unusual is this faction's weight for this chassis compared to factions that could plausibly field it."
+
+**Why include zeros within the pool:** Non-fielding factions *within the availability pool* are counted as weight 0. A Clan faction that doesn't field a Clan-available mech is making a choice — that zero is meaningful signal. This makes exclusivity within a technology sphere emerge naturally. A mech that only one Clan fields has zeros from every other Clan pulling the mean down, producing a high z-score.
+
+**Why exclude factions outside the pool:** Factions that *cannot* field a chassis (their family has no MUL access) are not making a choice — their absence is a technological boundary, not a signal. Including them inflates z-scores for universally available mechs. Example: without pool scoping, the Wasp (IS ubiquitous, weight 8 for every Great House) showed high distinctiveness for all IS factions because ~30 Clan zeros pulled the mean down. With pool scoping, the Wasp's z-score is computed only against IS/Periphery factions, where nearly everyone fields it — correctly producing low distinctiveness.
+
+The product `weight × z` captures both signals: high weight (the faction fields it a lot) AND high z (the faction stands out from the crowd within its technology sphere). A DC-exclusive mech at weight 6 scores high because z ≈ 6. A ubiquitous IS mech at weight 6 scores low because z ≈ 1 within the IS pool.
 
 **Display: Distinctiveness Rating DR1–DR5 (Jenks Natural Breaks).** The raw `weight × z-score` values are classified into 5 tiers using the Jenks Natural Breaks algorithm, which finds breakpoints that minimize within-tier variance and maximize between-tier variance:
 - **DR1** — Faction-defining. The totemic mechs.
@@ -118,7 +126,7 @@ Earlier iterations used `√(globalPref_normalized × weight_normalized)`, where
 1. **Weight normalization inflated small differences.** A faction with weight range 5–8 mapped weight 5 to 1.0 and weight 8 to 10.0 — a 3-point raw difference became a 9-point normalized gap.
 2. **Preference normalization inflated distinctiveness.** Zeros from Clan factions (who'd never field an IS mech) inflated every IS mech's "distinctiveness" score.
 
-Raw `weight × share` avoids both problems. It stays in meaningful units (weight) and doesn't amplify noise.
+Raw `weight × share` avoids problem 1. Availability pool scoping (see above) avoids problem 2 — Clan zeros are excluded from IS mech z-score computation entirely, so they can't inflate IS distinctiveness scores.
 
 **Expected results — DC in 3039:**
 
@@ -823,6 +831,7 @@ Vanilla HTML/CSS/JS. No framework. Single-page app loading `app-data.json` at st
 14. **Weight class distribution is table-level mixing, not per-chassis adjustment.** Per-faction, per-era tonnage bias from MegaMek's force generator is applied as a display-level mixing proportion when showing all weight classes together, matching MegaMek's `generateTable()` approach. Within a single weight class view, WCD does not apply to **raw weight display** — chassis compete on raw availability only. However, **signature always uses WCD mixing** even in single-class views, because sig answers "how much does this mech belong to this faction?" which inherently includes weight class preferences. This avoids the log-scale distortion that per-chassis probability multiplication caused (crushing low-rated chassis to zero).
 15. **Salvage is excluded.** MegaMek encodes salvage allocation (e.g., DC capturing FedSuns mechs). We deliberately omit this — salvage muddies faction identity rather than defining it. A captured mech isn't "theirs."
 16. **Multi-parent faction averaging.** Factions with multiple parent factions (e.g., FC = FS + LA, FWL breakup states = IS + FWL) have their inherited weights averaged in probability space, matching MegaMek's `mergeFactionAvailability()`. Each parent's rating is converted to `2^(rating/2)`, the weights are averaged, and the result is converted back to a rating. This replaces the previous first-match BFS inheritance which gave composite factions only one parent's data.
+17. **Signature z-score scoped by faction family availability.** The z-score for global signature is computed against factions whose faction family (IS, Clan, Periphery) has MUL access to the chassis — not against all factions in the era. Factions outside the availability pool are excluded entirely (their absence is a technological boundary, not a meaningful zero). Factions inside the pool that don't field the chassis count as zero (choosing not to use something available is real signal). This prevents cross-technology-base inflation (e.g., Clan factions who can't field IS mechs inflating Wasp distinctiveness for IS factions). Family membership is determined at runtime from faction metadata: `clan === true` → Clan pool, `periphery === true` → Periphery pool, else → IS pool. A family is included in a chassis's pool if the chassis has MUL availability in that family's general pool for the era.
 
 ---
 
@@ -973,12 +982,12 @@ Tiers are assigned using Jenks Natural Breaks — a statistical method that find
 ```
 effective_weight = rating × classShare    (always, all views)
 
-z = (effective_weight - mean) / stddev    (across ALL factions, non-fielding = 0)
+z = (effective_weight - mean) / stddev    (across factions in the chassis's availability pool)
 
 signature = effective_weight × max(0, z)
 ```
 
-The z-score measures how unusual this faction's usage is. Non-fielding factions count as 0 in the mean/stddev calculation, so a mech that only one faction fields produces a very high z-score (everyone else pulls the mean down). The product of weight × z captures both signals: the faction uses it a lot AND they stand out from the crowd. Negative z-scores (below-average usage) are clamped to 0 — if a faction uses a mech less than average, it contributes nothing to their identity.
+The z-score measures how unusual this faction's usage is compared to factions that could plausibly field this chassis. The comparison pool is scoped by faction family (IS, Clan, Periphery) — factions whose family has no MUL access to the chassis are excluded entirely (their absence isn't a choice). Within the pool, non-fielding factions count as 0 (choosing not to use something you could is real signal). A mech that only one faction fields within its pool produces a very high z-score. The product of weight × z captures both signals: the faction uses it a lot AND they stand out from the crowd. Negative z-scores (below-average usage) are clamped to 0 — if a faction uses a mech less than average, it contributes nothing to their identity.
 
 Weight class distribution (classShare) is always applied before the z-score calculation, even in single-class views. This means a faction's tonnage preferences always shape their identity — Lyran heavies get boosted, Lyran lights get dampened, reflecting how the faction actually builds its forces. (Raw weight display still skips WCD in single-class views, since within-class competition is the right lens for availability comparison.)
 
