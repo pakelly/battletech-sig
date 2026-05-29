@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
 const APP_VERSION = '1.30.2';
-const DEPLOY_TIME = '20260529.2335';
+const DEPLOY_TIME = '20260529.2343';
 
 let DATA = null; // app-data.json
 
@@ -817,15 +817,21 @@ function resolveVariantRole(chassis, variant, mulRole) {
  * @param {string} chassis - chassis name
  * @param {string|null} mulRole - role from chassis metadata
  * @param {Object|null} variants - variant data { varName: { role, ... } } if available
+ * @param {number|null} targetYear - filter variants by intro year
  * @returns {string} resolved role name
  */
-function resolveChassisRole(chassis, mulRole, variants) {
+function resolveChassisRole(chassis, mulRole, variants, targetYear) {
   const userRoles = getUserRoles();
   
   // If we have variant data, recompute from resolved variant roles
+  // Only count variants that have weight data (actually fielded)
   if (variants && userRoles) {
     const roleCounts = {};
     for (const [vName, vData] of Object.entries(variants)) {
+      // Skip variants with no weight data (not fielded by anyone in scope)
+      if (!vData.w || Object.keys(vData.w).length === 0) continue;
+      // Skip variants not yet introduced
+      if (targetYear && vData.intro && vData.intro > targetYear) continue;
       const r = resolveVariantRole(chassis, vName, vData.role) || 'None';
       if (r !== 'None') roleCounts[r] = (roleCounts[r] || 0) + 1;
     }
@@ -1524,7 +1530,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
       const tr = document.createElement('tr');
       let html = `<td class="chassis-name" style="cursor:pointer" data-chassis="${escAttr(row.name)}">${escHtml(row.name)}</td>`;
       html += `<td class="tonnage-col" style="cursor:pointer" data-chassis="${escAttr(row.name)}">${formatTonnage(row.meta)} <span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>`;
-      const displayRole = resolveChassisRole(row.name, row.meta.role, row.variants) || '';
+      const displayRole = resolveChassisRole(row.name, row.meta.role, row.variants, currentEraYear) || '';
       html += `<td class="role-col" style="cursor:pointer" data-chassis="${escAttr(row.name)}">${escHtml(displayRole)}</td>`;
       if (hasBV) {
         if (row.bvRange) {
@@ -1712,7 +1718,7 @@ function renderSingleFaction(rows, faction, eraYear) {
         <td class="chassis-name" style="cursor:pointer" data-chassis="${escAttr(row.name)}" data-faction="${faction}">${escHtml(row.name)}</td>
         <td class="tonnage-col">${formatTonnage(row.meta)}</td>
         <td><span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>
-        <td class="role-col">${escHtml(resolveChassisRole(row.name, row.meta.role, row.variants) || '')}</td>
+        <td class="role-col">${escHtml(resolveChassisRole(row.name, row.meta.role, row.variants, currentEraYear) || '')}</td>
         ${bvCell}
         ${drCell}
         ${probCell}
@@ -2690,7 +2696,7 @@ function runQuery() {
         if (!anyMatch) continue;
         data = { ...data, v: filtered };
       } else {
-        const cRole = (resolveChassisRole(chassisName, meta.role, data.v) || '').toLowerCase();
+        const cRole = (resolveChassisRole(chassisName, meta.role, data.v, currentEraYear) || '').toLowerCase();
         if (cRole !== roleFilter && !(roleFilter === 'none' && !cRole)) continue;
       }
     }
@@ -2989,8 +2995,8 @@ function sortRowsInPlace(rows, sortSpec) {
         if (cmp !== 0) return cmp;
         continue;
       } else if (field === 'role') {
-        const ra = resolveChassisRole(a.name, a.meta.role, a.variants) || 'zzz';
-        const rb = resolveChassisRole(b.name, b.meta.role, b.variants) || 'zzz';
+        const ra = resolveChassisRole(a.name, a.meta.role, a.variants, currentEraYear) || 'zzz';
+        const rb = resolveChassisRole(b.name, b.meta.role, b.variants, currentEraYear) || 'zzz';
         const cmp = dir === 'asc' ? ra.localeCompare(rb) : rb.localeCompare(ra);
         if (cmp !== 0) return cmp;
         continue;
