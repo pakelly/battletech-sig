@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.27.0';
+const APP_VERSION = '1.27.1';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -853,8 +853,12 @@ function computeSignature(weights, mulData, factions, allFactionCodes, wcdParams
 
     // If at least one pool is identified, scope to those families
     // Include any faction that: belongs to an included family OR actually fields the chassis
+    // Also exclude factions not active in the target era
+    const eraYear = wcdParams?.eraYear;
     if (hasIS || hasClan || hasPeri) {
       compareFactions = allFactionCodes.filter(f => {
+        // Exclude factions not active in this era
+        if (eraYear && !isFactionActiveInYear(f, eraYear)) return false;
         // Always include factions that actually field the chassis (late-era tech sharing)
         if (weights[f] && weights[f] > 0) return true;
         // Include faction if their family pool has MUL access
@@ -864,8 +868,11 @@ function computeSignature(weights, mulData, factions, allFactionCodes, wcdParams
         if (fd.periphery) return hasPeri;
         return hasIS; // default to IS family
       });
+    } else if (eraYear) {
+      // No general pool data (Mode A) — still filter by era activity
+      compareFactions = allFactionCodes.filter(f => isFactionActiveInYear(f, eraYear));
     }
-    // If no general pool data exists, fall back to all factions (Mode A / pre-MUL data)
+    // If no pool data and no era year, fall back to all factions
   }
   
   // Build effective weight array in probability space.

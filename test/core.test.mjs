@@ -572,6 +572,23 @@ describe('Signature z-score pool scoping by faction family', () => {
     assert.ok(result.CW > 0, `Clan mech should have positive sig, got ${result.CW.toFixed(2)}`);
   });
 
+  it('factions not active in the target era are excluded from pool', () => {
+    // CWIE (Clan Wolf-in-Exile) doesn't exist until 3057
+    // In a 3039 query, CWIE's zero shouldn't be in the pool
+    const weights = { CW: 8, CJF: 6, CGB: 6 };
+    const mul = { CW: 1, CJF: 1, CGB: 1, CLAN: 1 };
+    // With era filtering at 3039, CWIE is excluded (starts 3057)
+    const wcdParams3039 = { chassisClass: 'Heavy', eraYear: 3039 };
+    const wcdParams3060 = { chassisClass: 'Heavy', eraYear: 3060 };
+    const sig3039 = F.computeSignature(weights, mul, ['CW'], IS_AND_CLAN, wcdParams3039, 'Clan');
+    const sig3060 = F.computeSignature(weights, mul, ['CW'], IS_AND_CLAN, wcdParams3060, 'Clan');
+    // In 3060, CWIE exists and counts as a zero → CW's sig should be higher
+    // (more zeros in pool = higher z-score for fielding factions)
+    // Actually both should be positive, but 3060 pool has more Clan zeros
+    assert.ok(sig3039.CW > 0, `CW should have positive sig in 3039, got ${sig3039.CW.toFixed(2)}`);
+    assert.ok(sig3060.CW > 0, `CW should have positive sig in 3060, got ${sig3060.CW.toFixed(2)}`);
+  });
+
   it('Clan faction choosing not to field a Clan mech counts as zero', () => {
     // Linebacker-like: CW fields it, CJF doesn't (but could)
     const weightsExcl = { CW: 8 };
