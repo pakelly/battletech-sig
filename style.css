@@ -1299,10 +1299,8 @@ details[open] > .help-section-title::before {
   background: var(--bg-raised);
 }
 .role-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  z-index: 100;
+  position: fixed;
+  z-index: 2000;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 6px;

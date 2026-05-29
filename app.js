@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
 const APP_VERSION = '1.30.1';
-const DEPLOY_TIME = '20260529.2249';
+const DEPLOY_TIME = '20260529.2254';
 
 let DATA = null; // app-data.json
 
@@ -2057,9 +2057,16 @@ function showVariants(chassisName, faction, eraYear) {
       });
       dropdown.appendChild(resetItem);
 
-      // Position near the button
-      btn.style.position = 'relative';
-      btn.appendChild(dropdown);
+      // Position near the button using fixed positioning
+      const btnRect = btn.getBoundingClientRect();
+      dropdown.style.top = (btnRect.bottom + 2) + 'px';
+      dropdown.style.left = btnRect.left + 'px';
+      // If dropdown would go off bottom of screen, position above instead
+      document.body.appendChild(dropdown);
+      const dropRect = dropdown.getBoundingClientRect();
+      if (dropRect.bottom > window.innerHeight) {
+        dropdown.style.top = (btnRect.top - dropRect.height - 2) + 'px';
+      }
 
       // Close on click outside
       const closeDropdown = (ev) => {
