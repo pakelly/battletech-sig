@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.29.0';
+const APP_VERSION = '1.30.0';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -3133,6 +3133,7 @@ function initSettings() {
   document.getElementById('settings-btn').addEventListener('click', () => {
     overlay.classList.remove('hidden');
     renderFamiliesList();
+    renderRolesList();
   });
   document.getElementById('settings-close').addEventListener('click', () => {
     overlay.classList.add('hidden');
@@ -3191,15 +3192,151 @@ function initSettings() {
 
   // Reset to defaults
   document.getElementById('reset-defaults-btn').addEventListener('click', () => {
-    if (!confirm('Reset all preferences to defaults? This clears column visibility, family overrides, and other saved settings.')) return;
+    if (!confirm('Reset all preferences to defaults? This clears column visibility, family overrides, roles, and other saved settings.')) return;
     try {
       localStorage.removeItem(COL_VIS_KEY);
       localStorage.removeItem(FAMILY_STORAGE_KEY);
       localStorage.removeItem(INCOMPLETE_STORAGE_KEY);
       localStorage.removeItem(PAGE_SIZE_KEY);
+      localStorage.removeItem('bt-sig-roles');
     } catch {}
     location.reload();
   });
+
+  // ── Role CRUD ──
+  initRolesCRUD();
+}
+
+const MUL_DEFAULT_ROLES = ['Scout', 'Striker', 'Skirmisher', 'Juggernaut', 'Brawler', 'Missile Boat', 'Sniper', 'Ambusher', 'None'];
+
+function saveUserRoles(roles) {
+  try { localStorage.setItem('bt-sig-roles', JSON.stringify(roles)); } catch {}
+}
+
+function getOrInitUserRoles() {
+  const existing = getUserRoles();
+  if (existing) return existing;
+  return { taxonomy: [...MUL_DEFAULT_ROLES], overrides: {}, renames: {} };
+}
+
+function renderRolesList() {
+  const container = document.getElementById('roles-list');
+  if (!container) return;
+  const roles = getOrInitUserRoles();
+  container.innerHTML = '';
+
+  for (const roleName of roles.taxonomy) {
+    const isFixed = roleName === 'None';
+    const div = document.createElement('div');
+    div.className = 'role-item';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'role-name' + (isFixed ? ' role-fixed' : '');
+    input.value = roleName;
+    input.readOnly = isFixed;
+    input.dataset.original = roleName;
+
+    if (!isFixed) {
+      input.addEventListener('change', () => {
+        const newName = input.value.trim();
+        if (!newName || newName === roleName) { input.value = roleName; return; }
+        // Check for duplicates
+        if (roles.taxonomy.includes(newName)) { input.value = roleName; return; }
+        // Rename in taxonomy
+        const idx = roles.taxonomy.indexOf(roleName);
+        if (idx >= 0) roles.taxonomy[idx] = newName;
+        // Update renames: find original MUL name that maps to this role
+        // If roleName was itself a rename target, update the rename
+        const existingRenameKey = Object.entries(roles.renames).find(([k, v]) => v === roleName);
+        if (existingRenameKey) {
+          roles.renames[existingRenameKey[0]] = newName;
+        } else if (MUL_DEFAULT_ROLES.includes(roleName)) {
+          roles.renames[roleName] = newName;
+        }
+        // Update any overrides pointing to old name
+        for (const [k, v] of Object.entries(roles.overrides)) {
+          if (v === roleName) roles.overrides[k] = newName;
+        }
+        saveUserRoles(roles);
+        renderRolesList();
+        runQuery();
+      });
+    }
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'role-delete';
+    deleteBtn.textContent = '×';
+    deleteBtn.disabled = isFixed;
+    deleteBtn.title = isFixed ? 'None cannot be deleted' : 'Delete role';
+
+    if (!isFixed) {
+      deleteBtn.addEventListener('click', () => {
+        if (!confirm(`Delete role "${roleName}"? All variants with this role will be set to None.`)) return;
+        // Remove from taxonomy
+        roles.taxonomy = roles.taxonomy.filter(r => r !== roleName);
+        // Move overrides pointing to this role to None
+        for (const [k, v] of Object.entries(roles.overrides)) {
+          if (v === roleName) roles.overrides[k] = 'None';
+        }
+        // Clean up renames pointing to this role
+        for (const [k, v] of Object.entries(roles.renames)) {
+          if (v === roleName) delete roles.renames[k];
+        }
+        saveUserRoles(roles);
+        renderRolesList();
+        runQuery();
+      });
+    }
+
+    div.appendChild(input);
+    div.appendChild(deleteBtn);
+    container.appendChild(div);
+  }
+}
+
+function initRolesCRUD() {
+  // Add role button
+  document.getElementById('role-add-btn')?.addEventListener('click', () => {
+    const input = document.getElementById('role-add-input');
+    const name = input.value.trim();
+    if (!name) return;
+    const roles = getOrInitUserRoles();
+    if (roles.taxonomy.includes(name)) { input.value = ''; return; }
+    // Insert before "None" (keep None last)
+    const noneIdx = roles.taxonomy.indexOf('None');
+    if (noneIdx >= 0) {
+      roles.taxonomy.splice(noneIdx, 0, name);
+    } else {
+      roles.taxonomy.push(name);
+    }
+    saveUserRoles(roles);
+    input.value = '';
+    renderRolesList();
+  });
+
+  // Enter key in add input
+  document.getElementById('role-add-input')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('role-add-btn')?.click();
+    }
+  });
+
+  // Reset roles button
+  document.getElementById('reset-roles-btn')?.addEventListener('click', () => {
+    if (!confirm('Reset all role names and assignments to MUL defaults?')) return;
+    try { localStorage.removeItem('bt-sig-roles'); } catch {}
+    renderRolesList();
+    runQuery();
+  });
+
+  // Render initial list when settings open
+  const origOpen = document.getElementById('settings-btn');
+  if (origOpen) {
+    const origHandler = origOpen.onclick;
+    origOpen.addEventListener('click', () => renderRolesList());
+  }
 }
 
 function initHelp() {

@@ -220,8 +220,18 @@ signature = weight × max(0, z)</pre>
             </label>
           </div>
           <div class="settings-section">
+            <h4>Mech Roles</h4>
+            <p class="settings-hint">Alpha Strike roles from the MUL. Add, rename, or delete roles. Reassign individual variants in the drill-down view.</p>
+            <div id="roles-list" class="roles-list"></div>
+            <div class="role-add-row">
+              <input type="text" id="role-add-input" placeholder="New role name..." class="role-input">
+              <button id="role-add-btn" class="role-add-btn" title="Add role">+</button>
+            </div>
+            <button id="reset-roles-btn" class="reset-roles-btn">Reset roles to MUL defaults</button>
+          </div>
+          <div class="settings-section">
             <button id="reset-defaults-btn" class="reset-defaults-btn">Reset to defaults</button>
-            <p class="settings-hint">Clears all saved preferences (column visibility, families, data mode) and reloads.</p>
+            <p class="settings-hint">Clears all saved preferences (column visibility, families, data mode, roles) and reloads.</p>
           </div>
         </div>
       </div>
