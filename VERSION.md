@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.27.1 | 2026-05-29 21:35 UTC | pending |
-| test | 1.30.1 | 2026-05-29 22:49 UTC | pending |
+| test | 1.30.1 | 2026-05-29 22:54 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.30.1 | test | 2026-05-29 22:54 | pending | Fix role dropdown clipping in drill-down panel |
 | 1.30.1 | test | 2026-05-29 22:49 | pending | Add variant role reassignment in drill-down |
 | 1.30.0 | test | 2026-05-29 22:39 | pending | Add role CRUD settings panel + role display/filter/sort |
 | 1.27.1 | prod | 2026-05-29 21:35 | pending | VERSION.md: auto-stamp 1.27.1 test deploy |
