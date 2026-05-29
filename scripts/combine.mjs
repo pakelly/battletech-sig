@@ -211,13 +211,14 @@ for (const file of mulFiles) {
         }
       }
       
-      // Fill variant BV from MUL (primary BV source) and intro if missing
+      // Fill variant BV, intro, and role from MUL (primary source)
       // Keyed per-chassis to avoid collisions between shared variant names
       const vKey = vmKey(chassis, variant);
       if (!variantMeta[vKey]) {
         variantMeta[vKey] = {
           bv: entry.BattleValue || null,
-          intro: entry.DateIntroduced ? parseInt(entry.DateIntroduced) : null
+          intro: entry.DateIntroduced ? parseInt(entry.DateIntroduced) : null,
+          role: entry.Role?.Name || null
         };
       } else {
         if (!variantMeta[vKey].bv && entry.BattleValue) {
@@ -225,6 +226,9 @@ for (const file of mulFiles) {
         }
         if (!variantMeta[vKey].intro && entry.DateIntroduced) {
           variantMeta[vKey].intro = parseInt(entry.DateIntroduced);
+        }
+        if (!variantMeta[vKey].role && entry.Role?.Name) {
+          variantMeta[vKey].role = entry.Role.Name;
         }
       }
     }
@@ -593,7 +597,8 @@ for (const [eraYear, chassisEntries] of Object.entries(scores.eras)) {
           w: combinedW,
           ...(meta?.bv != null ? { bv: meta.bv } : {}),
           ...(meta?.intro != null ? { intro: meta.intro } : {}),
-          ...(meta?.tech != null ? { tech: meta.tech } : {})
+          ...(meta?.tech != null ? { tech: meta.tech } : {}),
+          ...(meta?.role != null && meta.role !== 'None' ? { role: meta.role } : {})
         };
       }
       entry.v = vOut;
@@ -640,13 +645,36 @@ for (const name of allChassis) {
   const meta = chassisMeta[name];
   const tonnage = meta?.tonnage || null;
   const isOmni = !!omniMap[name];
+
+  // Derive chassis-level role from variant roles (most common non-None role)
+  const roleCounts = {};
+  for (const [vKey, vm] of Object.entries(variantMeta)) {
+    if (vKey.startsWith(name + '\0') && vm.role && vm.role !== 'None') {
+      roleCounts[vm.role] = (roleCounts[vm.role] || 0) + 1;
+    }
+  }
+  const roleEntries = Object.entries(roleCounts).sort((a, b) => b[1] - a[1]);
+  let chassisRole = null;
+  if (roleEntries.length === 1) {
+    chassisRole = roleEntries[0][0];
+  } else if (roleEntries.length > 1) {
+    // If top role has clear majority (>50%), use it; otherwise join top roles
+    const total = roleEntries.reduce((s, e) => s + e[1], 0);
+    if (roleEntries[0][1] / total > 0.5) {
+      chassisRole = roleEntries[0][0];
+    } else {
+      chassisRole = roleEntries.slice(0, 2).map(e => e[0]).join('/');
+    }
+  }
+
   appData.chassis[name] = {
     tons: tonnage,
     class: weightClass(tonnage),
     intro: meta?.introDate || null,
     industrial: meta?.type === 'IndustrialMech',
     tech: meta?.tech || null,
-    omni: isOmni
+    omni: isOmni,
+    ...(chassisRole ? { role: chassisRole } : {})
   };
 }
 

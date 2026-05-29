@@ -1114,6 +1114,136 @@ When a query returns zero results (after all filtering in `runQuery()`), instead
 
 The breadcrumb messages render as styled `<p>` elements with clickable `<a>` tags that modify the query bar and re-run the query.
 
+## Alpha Strike Roles
+
+### Data Source
+
+The MUL API provides an official Alpha Strike role per variant (`unit.Role.Name`). Nine canonical roles:
+
+| Id | Role | Description |
+|----|------|-------------|
+| 104 | None | No assigned role |
+| 105 | Scout | Fast recon, minimal combat |
+| 106 | Striker | Fast, close-range burst |
+| 107 | Skirmisher | Mobile, flexible, choose engagements |
+| 108 | Juggernaut | Very tough, multi-range, dangerous everywhere |
+| 109 | Brawler | Close-to-medium range, committed fighter |
+| 110 | Missile Boat | Indirect LRM fire from behind the line |
+| 111 | Sniper | Long-range direct fire |
+| 112 | Ambusher | High burst damage from concealment |
+
+### Data Pipeline
+
+Role follows the same pattern as BV, intro date, and tech base:
+
+1. **`ingest-mul.mjs`** — Already extracts `role: unit.Role?.Name` per variant. No change needed.
+2. **`combine.mjs`** — Carry role into `variantMeta[vKey]` alongside `bv`, `intro`, `tech`. Write to variant output in app-data.json.
+3. **Chassis-level role** — Derived from variant roles: most common non-"None" role across in-scope variants. If split (e.g., half Brawler, half Skirmisher), join with `/` like tech. Stored in chassis metadata or computed at runtime.
+
+### Variant Output Format
+
+```json
+{
+  "w": { "DC": 6.2 },
+  "bv": 1125,
+  "intro": 2754,
+  "tech": "Inner Sphere",
+  "role": "Brawler"
+}
+```
+
+### Filtering
+
+`role=Scout`, `role=Brawler`, etc. **Variant-level filtering** (same pattern as `tech=`):
+- Each variant carries its own role from MUL data
+- When `role=` is set, only variants matching the requested role are included
+- A chassis is excluded entirely if none of its in-scope variants match
+- `role!=None` excludes untyped variants
+- Multiple roles via OR: `role=(Scout OR Striker)`
+
+### Display
+
+- **Chassis row:** Role badge showing the chassis's primary role (most common variant role). Styled like the weight class badge.
+- **Variant drill-down:** Role displayed per variant alongside BV and introduction year.
+- **Single faction roster view:** Role column sortable.
+
+### Sorting
+
+`sort by role asc` — alphabetical role sort. Role is a text field, not numeric.
+
+### User-Editable Customization
+
+MUL roles are the canonical default, but users can customize both the role taxonomy and individual assignments.
+
+#### Custom Role Taxonomy (Full CRUD)
+
+Users can build their own role taxonomy on top of the MUL defaults. The MUL roles are the starting template, not the authority.
+
+**Storage:** Single `localStorage` key:
+
+```json
+{
+  "bt-sig-roles": {
+    "taxonomy": ["Scout", "Striker", "Screen", "Skirmisher", "Cavalry", "Trooper", "Indirect Fire", "Direct Fire", "Juggernaut", "None"],
+    "overrides": { "Panther:PNT-9R": "Trooper", "Victor:VTR-9B": "Cavalry" },
+    "renames": { "Sniper": "Direct Fire", "Missile Boat": "Indirect Fire" }
+  }
+}
+```
+
+**`taxonomy`** — The active list of role names. Initialized from MUL defaults on first use. Users can add, rename, and delete entries. `None` is a fixed role that cannot be deleted — it serves as the catch basin for unassigned or orphaned variants.
+
+**`overrides`** — Per-variant role assignments keyed by `chassis:variant`. Override takes precedence over MUL data.
+
+**`renames`** — Maps MUL role names to user-preferred names. Applied when resolving a variant's MUL role before display.
+
+**Operations:**
+
+| Operation | Effect |
+|-----------|--------|
+| **Create role** | Add a new name to `taxonomy`. No variants are assigned to it until the user moves them. |
+| **Rename role** | Add entry to `renames` (MUL name → new name). Update `taxonomy` to reflect new name. Update any `overrides` pointing to the old name. |
+| **Delete role** | Remove from `taxonomy`. Any variants assigned to it (via `overrides`) are reassigned to `None`. Remove corresponding `renames` entry if any. |
+| **Reassign variant** | Add/update entry in `overrides`. |
+| **Reset variant** | Remove entry from `overrides` — variant reverts to its MUL default (after rename resolution). |
+| **Reset all** | Clear entire `bt-sig-roles` key — taxonomy reverts to MUL defaults, all overrides and renames cleared. |
+
+**Resolution order (per variant):**
+
+1. Check `overrides` for `chassis:variant` key → use if found
+2. Fall back to MUL role from app-data.json
+3. Apply `renames` to the resolved role name
+4. If resolved name is not in `taxonomy`, map to `None` (catches orphans from deleted roles)
+
+**`None` is fixed and undeletable.** Deleting a role reassigns its variants to `None`. Users can then reassign them individually. `None` acts as the inbox/uncategorized bucket.
+
+#### Settings Panel
+
+Role customization lives in the Settings panel (⚙):
+- **Roles** section: list of current roles with inline edit (rename), add (+), and delete (×) controls
+- `None` row is always present, not deletable, greyed-out delete button
+- **Reset All Roles** button: clears `bt-sig-roles` from localStorage entirely
+
+#### Variant Drill-Down
+
+- Role displayed per variant with a clickable badge
+- Clicking opens a dropdown listing all roles in the current taxonomy
+- Selecting a role adds/updates the override
+- A "Reset to default" option removes the override
+
+### Role-Based Faction Analysis
+
+With roles assigned to every variant, the app can compute role distribution per faction — what percentage of a faction's force probability mass falls into each role. This is the data-driven version of the tactical bin analysis from the doctrine framework.
+
+This is a display feature, not a filter. It could appear as:
+- A stacked bar chart per faction in a multi-faction view
+- A role breakdown in the single-faction roster view
+- Sortable: `sort by DC Scout% desc` (future consideration)
+
+Implementation details TBD — the core role data and filtering come first.
+
+---
+
 ## Future Possibilities
 
 - **Faction lineage / succession model:** Many factions merge, splinter, rename, or absorb others across eras. Current approach patches this case-by-case (e.g. LA/LC MUL merge → canonical LC). Needs a proper lineage map that understands rename (LC↔LA), merger (FS+LC→FC), splintering (FRR from DC), conquest-then-absorption (FRR→CGB occupation→RD), brief existence (WOB, ROS, SIC), etc. Scoring implications differ: a rename shares the same force pool, a merger combines two, a splinter starts fresh-ish. Key example: FRR goes DC→FRR→CGB/FRR→RD, with mech roster evolving at each transition.
