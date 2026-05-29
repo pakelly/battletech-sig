@@ -4,13 +4,14 @@
 
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
-| prod | 1.30.2 | 2026-05-29 23:35 UTC | pending |
+| prod | 1.30.2 | 2026-05-29 23:45 UTC | pending |
 | test | 1.30.2 | 2026-05-29 23:44 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.30.2 | prod | 2026-05-29 23:45 | pending | VERSION.md: auto-stamp 1.30.2 test deploy |
 | 1.30.2 | test | 2026-05-29 23:44 | pending | Fix chassis role showing hidden variants' roles |
 | 1.30.2 | prod | 2026-05-29 23:35 | pending | VERSION.md: auto-stamp 1.30.2 test deploy |
 | 1.30.2 | test | 2026-05-29 23:32 | pending | Click chassis name/tons/role to show all variants |
