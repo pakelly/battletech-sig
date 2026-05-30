@@ -227,6 +227,11 @@ signature = weight × max(0, z)</pre>
               <input type="text" id="role-add-input" placeholder="New role name..." class="role-input">
               <button id="role-add-btn" class="role-add-btn" title="Add role">+</button>
             </div>
+            <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+              <button id="export-roles-btn" class="reset-roles-btn" style="flex:1">Export roles</button>
+              <button id="import-roles-btn" class="reset-roles-btn" style="flex:1">Import roles</button>
+            </div>
+            <input type="file" id="import-roles-file" accept=".json" style="display:none">
             <button id="reset-roles-btn" class="reset-roles-btn">Reset roles to MUL defaults</button>
           </div>
           <div class="settings-section">

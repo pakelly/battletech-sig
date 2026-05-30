@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.30.2';
+const APP_VERSION = '1.30.3';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -3486,6 +3486,44 @@ function initRolesCRUD() {
   });
 
   // Reset roles button
+  // Export roles to JSON file
+  document.getElementById('export-roles-btn')?.addEventListener('click', () => {
+    const roles = getOrInitUserRoles();
+    const blob = new Blob([JSON.stringify(roles, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'bt-sig-roles.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  // Import roles from JSON file
+  const importFileInput = document.getElementById('import-roles-file');
+  document.getElementById('import-roles-btn')?.addEventListener('click', () => {
+    importFileInput?.click();
+  });
+  importFileInput?.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const roles = JSON.parse(reader.result);
+        if (!roles.taxonomy || !Array.isArray(roles.taxonomy)) {
+          alert('Invalid roles file — missing taxonomy array');
+          return;
+        }
+        saveUserRoles(roles);
+        renderRolesList();
+        runQuery();
+      } catch (err) {
+        alert('Failed to parse roles file: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+    importFileInput.value = ''; // reset so same file can be re-imported
+  });
+
   document.getElementById('reset-roles-btn')?.addEventListener('click', () => {
     if (!confirm('Reset all role names and assignments to MUL defaults?')) return;
     try { localStorage.removeItem('bt-sig-roles'); } catch {}
