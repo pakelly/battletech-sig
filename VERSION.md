@@ -4,13 +4,14 @@
 
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
-| prod | 1.30.2 | 2026-05-30 01:38 UTC | pending |
+| prod | 1.30.3 | 2026-05-30 02:52 UTC | pending |
 | test | 1.30.2 | 2026-05-30 01:11 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.30.3 | prod | 2026-05-30 02:52 | pending | Add export/import buttons for role customizations |
 | 1.30.2 | prod | 2026-05-30 01:38 | pending | VERSION.md: auto-stamp 1.30.2 test deploy |
 | 1.30.2 | test | 2026-05-30 01:11 | pending | Add OR support for role filter + multi-word role names |
 | 1.30.2 | prod | 2026-05-29 23:45 | pending | VERSION.md: auto-stamp 1.30.2 test deploy |
