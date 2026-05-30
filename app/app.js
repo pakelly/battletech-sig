@@ -2681,14 +2681,17 @@ function runQuery() {
       }
     }
     if (parsed.role) {
-      // Variant-level role filtering: same pattern as tech filtering
-      const roleFilter = parsed.role;
+      // Variant-level role filtering with OR support
+      // Parse OR values: "trooper" or "(trooper or scout)" or "(trooper or direct fire)"
+      const roleRaw = parsed.role.replace(/^\(|\)$/g, '');
+      const roleValues = roleRaw.split(/\s+or\s+/i).map(r => r.trim().toLowerCase());
+      
       if (data.v) {
         const filtered = {};
         let anyMatch = false;
         for (const [vName, vData] of Object.entries(data.v)) {
           const vRole = (resolveVariantRole(chassisName, vName, vData.role) || '').toLowerCase();
-          if (vRole === roleFilter || (roleFilter === 'none' && !vRole)) {
+          if (roleValues.includes(vRole) || (roleValues.includes('none') && !vRole)) {
             filtered[vName] = vData;
             anyMatch = true;
           }
@@ -2697,7 +2700,9 @@ function runQuery() {
         data = { ...data, v: filtered };
       } else {
         const cRole = (resolveChassisRole(chassisName, meta.role, data.v, currentEraYear) || '').toLowerCase();
-        if (cRole !== roleFilter && !(roleFilter === 'none' && !cRole)) continue;
+        // For chassis-level, check if any role component matches any filter value
+        const cRoleParts = cRole.split('/').map(r => r.trim());
+        if (!cRoleParts.some(r => roleValues.includes(r)) && !(roleValues.includes('none') && !cRole)) continue;
       }
     }
     if (parsed.year && meta.intro && meta.intro > parsed.year) continue;
