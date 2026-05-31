@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.31.0';
+const APP_VERSION = '1.31.1';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -887,6 +887,7 @@ function showRoleDropdown(btn) {
         roles.overrides[chassis + ':' + variant] = role;
       }
       saveUserRoles(roles);
+      variantRoleChanged = true;
       dropdown.remove();
       btn.textContent = role;
       btn.dataset.role = role;
@@ -904,6 +905,7 @@ function showRoleDropdown(btn) {
     const roles = getOrInitUserRoles();
     delete roles.overrides[chassis + ':' + variant];
     saveUserRoles(roles);
+    variantRoleChanged = true;
     dropdown.remove();
     const eraData = DATA.eraData[String(currentEraYear)];
     const cData = eraData?.[chassis];
@@ -2245,7 +2247,7 @@ function getSuggestions(text, cursorPos) {
       for (const code of Object.keys(DATA.factions)) {
         sortableFields.push(code + '-sig');
         sortableFields.push(code + '-weight');
-        sortableFields.push(code + '-bw');
+        sortableFields.push(code + '-prob');
       }
     }
     return sortableFields
@@ -2256,7 +2258,7 @@ function getSuggestions(text, cursorPos) {
 
   // Field name completion
   const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'role', 'year', 'era', 'rating', 'family', 'industrial', 'mode']);
-  const OPERATOR_FIELD_SET = new Set(['spread', 'sig', 'signature', 'dr', 'distinctiveness', 'weight', 'tons', 'tonnage', 'bv', 'battlevalue']);
+  const OPERATOR_FIELD_SET = new Set(['spread', 'sig', 'signature', 'dr', 'distinctiveness', 'weight', 'tons', 'tonnage', 'bv', 'battlevalue', 'prob', 'bw']);
 
   if (!lastToken.includes('=') && !lastToken.includes('>') && !lastToken.includes('<')) {
     const lower = lastToken.toLowerCase();
@@ -2506,6 +2508,7 @@ function escAttr(s) {
 
 let currentEraYear = 3049;
 let currentPage = 0;
+let variantRoleChanged = false; // track if a role was reassigned in the drill-down overlay
 const PAGE_SIZES = [25, 50, 100, 0]; // 0 = all
 const PAGE_SIZE_KEY = 'bt-sig-page-size';
 
@@ -3282,15 +3285,15 @@ async function init() {
     });
   });
   
-  // Close variant overlay — re-run query to reflect any role changes
+  // Close variant overlay — only re-run query if a role was changed
   document.getElementById('variant-close').addEventListener('click', () => {
     document.getElementById('variant-overlay').classList.add('hidden');
-    runQuery();
+    if (variantRoleChanged) { variantRoleChanged = false; runQuery(); }
   });
   document.getElementById('variant-overlay').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) {
       e.currentTarget.classList.add('hidden');
-      runQuery();
+      if (variantRoleChanged) { variantRoleChanged = false; runQuery(); }
     }
   });
   
