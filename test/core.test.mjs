@@ -321,6 +321,21 @@ describe('Query Parser', () => {
     assert.strictEqual(p.sort[0].field, 'DC-weight');
   });
 
+  it('parses sort by faction prob (two-token form)', () => {
+    const p = F.parseQuery('sort by FS prob desc');
+    assert.strictEqual(p.sort[0].field, 'FS-prob');
+  });
+
+  it('parses sort by faction-prob (hyphenated form)', () => {
+    const p = F.parseQuery('sort by FS-prob desc');
+    assert.strictEqual(p.sort[0].field, 'FS-prob');
+  });
+
+  it('parses sort by faction-bw as prob', () => {
+    const p = F.parseQuery('sort by DC-bw desc');
+    assert.strictEqual(p.sort[0].field, 'DC-prob');
+  });
+
   it('is case-insensitive for factions', () => {
     const p1 = F.parseQuery('faction=dc');
     const p2 = F.parseQuery('faction=DC');

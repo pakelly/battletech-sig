@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.31.1';
+const APP_VERSION = '1.31.2';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -377,10 +377,14 @@ function parseQuery(queryStr) {
       let field = tokens[0].toLowerCase();
       let dir = 'desc';
       
-      // Handle "DC preference desc" or "DC sig desc" -> field = DC-preference or DC-sig
-      if (tokens.length >= 2 && (tokens[1].toLowerCase() === 'preference' || tokens[1].toLowerCase() === 'weight' || tokens[1].toLowerCase() === 'sig' || tokens[1].toLowerCase() === 'signature' || tokens[1].toLowerCase() === 'dr' || tokens[1].toLowerCase() === 'distinctiveness')) {
+      // Handle "DC preference desc" or "DC sig desc" or "DC prob desc" -> field = DC-weight or DC-sig or DC-prob
+      const SORT_METRICS = new Set(['preference', 'weight', 'sig', 'signature', 'dr', 'distinctiveness', 'prob', 'bw']);
+      if (tokens.length >= 2 && SORT_METRICS.has(tokens[1].toLowerCase())) {
         const factionCode = resolveFaction(tokens[0]);
-        const metric = (tokens[1].toLowerCase() === 'preference' || tokens[1].toLowerCase() === 'weight') ? 'weight' : 'sig'; // dr/distinctiveness also maps to sig
+        const rawMetric = tokens[1].toLowerCase();
+        const metric = (rawMetric === 'preference' || rawMetric === 'weight') ? 'weight'
+          : (rawMetric === 'prob' || rawMetric === 'bw') ? 'prob'
+          : 'sig'; // dr/distinctiveness/sig/signature all map to sig
         if (factionCode) {
           field = factionCode + '-' + metric;
         } else {
@@ -389,11 +393,14 @@ function parseQuery(queryStr) {
         dir = (tokens[2] || 'desc').toLowerCase();
       } else {
         field = tokens[0].toLowerCase();
-        // Handle faction-prefixed fields: fs-sig, dc-pref, dc-preference
-        const prefixMatch = field.match(/^([a-z]+)-(sig|signature|dr|distinctiveness|pref|preference|weight)$/);
+        // Handle faction-prefixed fields: fs-sig, dc-pref, dc-preference, dc-prob, dc-bw
+        const prefixMatch = field.match(/^([a-z]+)-(sig|signature|dr|distinctiveness|pref|preference|weight|prob|bw)$/);
         if (prefixMatch) {
           const fCode = resolveFaction(prefixMatch[1]);
-          const metric = (prefixMatch[2].startsWith('pref') || prefixMatch[2] === 'weight') ? 'weight' : 'sig';
+          const rawMetric = prefixMatch[2];
+          const metric = (rawMetric.startsWith('pref') || rawMetric === 'weight') ? 'weight'
+            : (rawMetric === 'prob' || rawMetric === 'bw') ? 'prob'
+            : 'sig';
           if (fCode) {
             field = fCode + '-' + metric;
           }
