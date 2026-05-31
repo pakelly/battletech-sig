@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.31.0 | 2026-05-31 05:03 UTC | pending |
-| test | 1.31.0 | 2026-05-31 05:02 UTC | pending |
+| test | 1.31.1 | 2026-05-31 06:38 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.31.1 | test | 2026-05-31 06:38 | pending | Fix: variant overlay close no longer resets sort order; prob autocomplete improvements |
 | 1.31.0 | prod | 2026-05-31 05:03 | pending | VERSION.md: auto-stamp 1.31.0 test deploy |
 | 1.31.0 | test | 2026-05-31 05:02 | pending | Add negation for role/type/tech, sortable class/type/tech/prob, prob filter, single-faction sort headers |
 | 1.30.3 | prod | 2026-05-30 02:52 | pending | Add export/import buttons for role customizations |
