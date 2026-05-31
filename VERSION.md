@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.30.3 | 2026-05-30 02:52 UTC | pending |
-| test | 1.30.2 | 2026-05-30 01:11 UTC | pending |
+| test | 1.31.0 | 2026-05-31 05:02 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.31.0 | test | 2026-05-31 05:02 | pending | Add negation for role/type/tech, sortable class/type/tech/prob, prob filter, single-faction sort headers |
 | 1.30.3 | prod | 2026-05-30 02:52 | pending | Add export/import buttons for role customizations |
 | 1.30.2 | prod | 2026-05-30 01:38 | pending | VERSION.md: auto-stamp 1.30.2 test deploy |
 | 1.30.2 | test | 2026-05-30 01:11 | pending | Add OR support for role filter + multi-word role names |
