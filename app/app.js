@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.30.3';
+const APP_VERSION = '1.31.0';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -347,13 +347,15 @@ function parseQuery(queryStr) {
     bv: [],          // [{op, val}] — multiple allowed (bv>1000 bv<1500)
     factionWeight: [],  // [{faction, op, val}]
     factionSig: [],   // [{faction, op, val}]
+    factionProb: [],  // [{faction, op, val}]
+    prob: null,       // {op, val} — biased weight (probability) filter
     year: null,
     era: null,
     rating: null,     // 'A'|'B'|'C'|'D'|'F' or null (cross-tier average)
     family: null,     // 'on' | 'off'
     industrial: null,  // 'show' | 'hide'
-    type: null,        // 'omni' | 'battlemech'
-    tech: null,        // 'clan' | 'is' | 'mixed'
+    type: null,        // {op, value} or null — 'omni' | 'battlemech'
+    tech: null,        // {op, value} or null — 'clan' | 'is' | 'mixed'
     mode: 'B',
     sort: [],          // [{field, dir}]
     raw: queryStr,
@@ -527,13 +529,13 @@ function parseQuery(queryStr) {
         result.industrial = value.toLowerCase();
         break;
       case 'type':
-        result.type = value.toLowerCase();
+        result.type = { op, value: value.toLowerCase() };
         break;
       case 'tech':
-        result.tech = value.toLowerCase();
+        result.tech = { op, value: value.toLowerCase() };
         break;
       case 'role':
-        result.role = value.toLowerCase();
+        result.role = { op, value: value.toLowerCase() };
         break;
       case 'mode':
         result.mode = value.toUpperCase();
@@ -556,15 +558,23 @@ function parseQuery(queryStr) {
       case 'battlevalue':
         result.bv.push({ op, val: parseFloat(value) });
         break;
+      case 'prob':
+      case 'bw':
+        result.prob = { op, val: parseFloat(value) };
+        break;
       default: {
-        // Handle faction-prefixed filters: DC-pref>8, FS-sig>5, etc.
-        const fpMatch = field.match(/^([a-z]+)-(pref|preference|weight|sig|signature|dr|distinctiveness)$/);
+        // Handle faction-prefixed filters: DC-pref>8, FS-sig>5, DC-prob>3, etc.
+        const fpMatch = field.match(/^([a-z]+)-(pref|preference|weight|sig|signature|dr|distinctiveness|prob|bw)$/);
         if (fpMatch) {
           const fCode = resolveFaction(fpMatch[1]);
-          const metric = (fpMatch[2].startsWith('pref') || fpMatch[2].startsWith('w')) ? 'weight' : 'sig'; // dr/distinctiveness also → sig
+          const metricKey = fpMatch[2];
+          const metric = (metricKey.startsWith('pref') || metricKey.startsWith('w')) ? 'weight'
+            : (metricKey === 'prob' || metricKey === 'bw') ? 'prob'
+            : 'sig'; // dr/distinctiveness also → sig
           if (fCode) {
             const entry = { faction: fCode, op, val: parseFloat(value) };
             if (metric === 'weight') result.factionWeight.push(entry);
+            else if (metric === 'prob') result.factionProb.push(entry);
             else result.factionSig.push(entry);
           }
         }
@@ -576,9 +586,11 @@ function parseQuery(queryStr) {
     const canonicalField = (field === 'signature' || field === 'dr' || field === 'distinctiveness') ? 'sig'
       : (field === 'tonnage') ? 'tons'
       : (field === 'battlevalue') ? 'bv'
+      : (field === 'bw') ? 'prob'
       : (field === 'avgpref' || field === 'avg-pref' || field === 'avgweight') ? 'avg-weight'
       : field.match(/^([a-z]+)-(pref|preference|weight)$/) ? field.replace(/-(pref|preference)$/, '-weight')
       : field.match(/^([a-z]+)-(signature|dr|distinctiveness)$/) ? field.replace(/-(signature|dr|distinctiveness)$/, '-sig')
+      : field.match(/^([a-z]+)-(bw)$/) ? field.replace(/-(bw)$/, '-prob')
       : field;
     // For fields that can appear multiple times (bv, factionWeight, factionSig),
     // concatenate raw matches separated by space
@@ -952,9 +964,10 @@ function variantMatchesTech(variantTech, filterTech) {
  * @param {Object} variants - { variantName: { w, bv, intro, tech } }
  * @param {string} filterTech - 'clan', 'is', or 'mixed'
  * @param {string|null} fallbackTech - chassis-level tech for variants missing tech
+ * @param {boolean} [negate=false] - if true, keep variants that do NOT match
  * @returns {Object|null} filtered variants, or null if none match
  */
-function filterVariantsByTech(variants, filterTech, fallbackTech) {
+function filterVariantsByTech(variants, filterTech, fallbackTech, negate = false) {
   if (!variants) return variants; // no variants to filter
   // Only use fallback if the chassis has a single unambiguous tech base.
   // Aggregated values like "Inner Sphere/Mixed/Clan" are ambiguous —
@@ -963,7 +976,8 @@ function filterVariantsByTech(variants, filterTech, fallbackTech) {
   const result = {};
   for (const [name, data] of Object.entries(variants)) {
     const tech = data.tech || usableFallback;
-    if (variantMatchesTech(tech, filterTech)) {
+    const matches = variantMatchesTech(tech, filterTech);
+    if (negate ? !matches : matches) {
       result[name] = data;
     }
   }
@@ -1647,7 +1661,7 @@ function renderSingleFaction(rows, faction, eraYear) {
   const thead = document.createElement('thead');
   const singleHasBV = rows.some(r => r.bvRange);
   const singleHasSig = rows.some(r => r.sig?.[faction] > 0);
-  thead.innerHTML = `<tr><th>Chassis</th><th>Tons</th><th>Class</th><th>Role</th>${singleHasBV ? '<th>BV</th>' : ''}${singleHasSig ? '<th>DR</th>' : ''}<th>Prob</th><th>Availability</th></tr>`;
+  thead.innerHTML = `<tr><th data-sort="name">Chassis</th><th data-sort="tonnage">Tons</th><th data-sort="class">Class</th><th data-sort="role">Role</th>${singleHasBV ? '<th data-sort="bv">BV</th>' : ''}${singleHasSig ? `<th data-sort="${faction}-sig">DR</th>` : ''}<th data-sort="${faction}-bw">Prob</th><th data-sort="${faction}-weight">Availability</th></tr>`;
   table.appendChild(thead);
   
   // Filter to rows with weight > 0
@@ -1733,6 +1747,19 @@ function renderSingleFaction(rows, faction, eraYear) {
   renderPage(currentPage);
   
   table.addEventListener('click', handleCellClick);
+
+  // Sortable headers
+  thead.addEventListener('click', (e) => {
+    const th = e.target.closest('th');
+    if (!th || !th.dataset.sort) return;
+    const field = th.dataset.sort;
+    const wasDesc = th.classList.contains('sorted-desc');
+    thead.querySelectorAll('th').forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
+    const dir = wasDesc ? 'asc' : 'desc';
+    th.classList.add(dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+    sortRowsInPlace(activeRows, [{ field, dir }]);
+    renderPage(0);
+  });
 
   updateColVisibility();
 }
@@ -2184,7 +2211,7 @@ function handleHeaderSort(th, rows, scopedFactions, eraYear, query) {
 
 // ── Auto-Suggest ──
 
-const FIELD_NAMES = ['faction', 'chassis', 'class', 'type', 'tech', 'role', 'spread', 'sig', 'signature', 'dr', 'distinctiveness', 'weight', 'tons', 'tonnage', 'bv', 'year', 'era', 'rating', 'family', 'industrial', 'mode', 'sort'];
+const FIELD_NAMES = ['faction', 'chassis', 'class', 'type', 'tech', 'role', 'spread', 'sig', 'signature', 'dr', 'distinctiveness', 'weight', 'tons', 'tonnage', 'bv', 'prob', 'bw', 'year', 'era', 'rating', 'family', 'industrial', 'mode', 'sort'];
 
 function getSuggestions(text, cursorPos) {
   if (!DATA) return [];
@@ -2212,7 +2239,7 @@ function getSuggestions(text, cursorPos) {
   const sortByMatch = beforeCursor.match(/\bsort\s+by\s+(\S*)$/i);
   if (sortByMatch) {
     const partial = sortByMatch[1].toLowerCase();
-    const sortableFields = ['spread', 'sig', 'dr', 'weight', 'tons', 'bv', 'name', 'role'];
+    const sortableFields = ['spread', 'sig', 'dr', 'weight', 'tons', 'bv', 'name', 'role', 'class', 'type', 'tech', 'prob'];
     // Add faction-prefixed sort fields
     if (DATA) {
       for (const code of Object.keys(DATA.factions)) {
@@ -2246,13 +2273,14 @@ function getSuggestions(text, cursorPos) {
       }
     }
     // Faction-prefixed fields: dc-sig, fs-weight, etc.
-    const fpMatch = lower.match(/^([a-z]+)-(s|si|sig|w|we|wei|weig|weigh|weight)?$/);
+    const fpMatch = lower.match(/^([a-z]+)-(s|si|sig|w|we|wei|weig|weigh|weight|p|pr|pro|prob)?$/);
     if (fpMatch && DATA) {
       const fCode = resolveFaction(fpMatch[1]);
       if (fCode && DATA.factions[fCode]) {
         const partial2 = fpMatch[2] || '';
         if ('dr'.startsWith(partial2) || 'sig'.startsWith(partial2)) suggestions.push({ text: fCode + '-dr>', hint: fCode + ' distinctiveness' });
         if ('weight'.startsWith(partial2)) suggestions.push({ text: fCode + '-weight>', hint: fCode + ' weight' });
+        if ('prob'.startsWith(partial2)) suggestions.push({ text: fCode + '-prob>', hint: fCode + ' probability' });
       }
     }
     // Also suggest "sort by"
@@ -2375,9 +2403,9 @@ function renderChips(parsed) {
     chips.push({ label: 'chassis=' + parsed.chassis.join(' OR '), field: 'chassis' });
   }
   if (parsed.class) chips.push({ label: 'class' + parsed.class.op + parsed.class.values.join(' OR '), field: 'class' });
-  if (parsed.type) chips.push({ label: 'type=' + parsed.type, field: 'type' });
-  if (parsed.tech) chips.push({ label: 'tech=' + parsed.tech, field: 'tech' });
-  if (parsed.role) chips.push({ label: 'role=' + parsed.role, field: 'role' });
+  if (parsed.type) chips.push({ label: 'type' + parsed.type.op + parsed.type.value, field: 'type' });
+  if (parsed.tech) chips.push({ label: 'tech' + parsed.tech.op + parsed.tech.value, field: 'tech' });
+  if (parsed.role) chips.push({ label: 'role' + parsed.role.op + parsed.role.value, field: 'role' });
   if (parsed.spread) chips.push({ label: `spread${parsed.spread.op}${parsed.spread.val}`, field: 'spread' });
   if (parsed.span) chips.push({ label: `span${parsed.span.op}${parsed.span.val}`, field: 'span' });
   // avg-weight and span still parseable but no chip/column
@@ -2392,6 +2420,10 @@ function renderChips(parsed) {
   }
   for (const fs of parsed.factionSig) {
     chips.push({ label: `${fs.faction}-sig${fs.op}${fs.val}`, field: `${fs.faction}-sig` });
+  }
+  if (parsed.prob) chips.push({ label: `prob${parsed.prob.op}${parsed.prob.val}`, field: 'prob' });
+  for (const fp of parsed.factionProb) {
+    chips.push({ label: `${fp.faction}-prob${fp.op}${fp.val}`, field: `${fp.faction}-prob` });
   }
   if (parsed.year) chips.push({ label: 'year=' + parsed.year, field: 'year' });
   if (parsed.era) chips.push({ label: 'era=' + parsed.era, field: 'era' });
@@ -2665,33 +2697,43 @@ function runQuery() {
     if (!getShowIncomplete() && meta.tons == null) continue;
     if (hideIndustrial && meta.industrial) continue;
     if (/\bLAM\b/.test(chassisName)) continue; // LAMs always hidden for now
-    if (parsed.type === 'omni' && !meta.omni) continue;
-    if (parsed.type === 'battlemech' && (meta.omni || meta.industrial)) continue;
+    if (parsed.type) {
+      const typeVal = parsed.type.value;
+      const typeNeg = parsed.type.op === '!=';
+      let typeMatch = false;
+      if (typeVal === 'omni') typeMatch = !!meta.omni;
+      else if (typeVal === 'battlemech') typeMatch = !meta.omni && !meta.industrial;
+      if (typeNeg ? typeMatch : !typeMatch) continue;
+    }
     if (parsed.tech) {
       // Variant-level tech filtering: only include variants whose tech matches,
       // and skip the chassis entirely if no variants pass.
+      const techVal = parsed.tech.value;
+      const techNeg = parsed.tech.op === '!=';
       if (data.v) {
-        const filtered = filterVariantsByTech(data.v, parsed.tech, meta.tech);
+        const filtered = filterVariantsByTech(data.v, techVal, meta.tech, techNeg);
         if (!filtered) continue; // no variants match → skip chassis
         data = { ...data, v: filtered }; // replace variants with filtered set
       } else {
         // No variant data — fall back to chassis-level tech check
-        const t = (meta.tech || '').toLowerCase();
-        if (!variantMatchesTech(meta.tech, parsed.tech)) continue;
+        const matches = variantMatchesTech(meta.tech, techVal);
+        if (techNeg ? matches : !matches) continue;
       }
     }
     if (parsed.role) {
-      // Variant-level role filtering with OR support
+      // Variant-level role filtering with OR and negation support
       // Parse OR values: "trooper" or "(trooper or scout)" or "(trooper or direct fire)"
-      const roleRaw = parsed.role.replace(/^\(|\)$/g, '');
+      const roleRaw = parsed.role.value.replace(/^\(|\)$/g, '');
       const roleValues = roleRaw.split(/\s+or\s+/i).map(r => r.trim().toLowerCase());
+      const roleNeg = parsed.role.op === '!=';
       
       if (data.v) {
         const filtered = {};
         let anyMatch = false;
         for (const [vName, vData] of Object.entries(data.v)) {
           const vRole = (resolveVariantRole(chassisName, vName, vData.role) || '').toLowerCase();
-          if (roleValues.includes(vRole) || (roleValues.includes('none') && !vRole)) {
+          const matches = roleValues.includes(vRole) || (roleValues.includes('none') && !vRole);
+          if (roleNeg ? !matches : matches) {
             filtered[vName] = vData;
             anyMatch = true;
           }
@@ -2702,7 +2744,8 @@ function runQuery() {
         const cRole = (resolveChassisRole(chassisName, meta.role, data.v, currentEraYear) || '').toLowerCase();
         // For chassis-level, check if any role component matches any filter value
         const cRoleParts = cRole.split('/').map(r => r.trim());
-        if (!cRoleParts.some(r => roleValues.includes(r)) && !(roleValues.includes('none') && !cRole)) continue;
+        const matches = cRoleParts.some(r => roleValues.includes(r)) || (roleValues.includes('none') && !cRole);
+        if (roleNeg ? matches : !matches) continue;
       }
     }
     if (parsed.year && meta.intro && meta.intro > parsed.year) continue;
@@ -2900,6 +2943,26 @@ function runQuery() {
       }
     }
   }
+
+  // Apply post-computation filters (prob / biased weight)
+  if (parsed.prob || parsed.factionProb.length > 0) {
+    for (let i = rows.length - 1; i >= 0; i--) {
+      const row = rows[i];
+      if (parsed.prob) {
+        const bw = row.biasedWeights || {};
+        const sf = scopedFactions.length > 0 ? scopedFactions : Object.keys(bw);
+        if (!sf.some(f => compareOp(bw[f] || 0, parsed.prob.op, parsed.prob.val))) {
+          rows.splice(i, 1); continue;
+        }
+      }
+      if (parsed.factionProb.length > 0) {
+        const bw = row.biasedWeights || {};
+        if (!parsed.factionProb.every(fp => compareOp(bw[fp.faction] || 0, fp.op, fp.val))) {
+          rows.splice(i, 1); continue;
+        }
+      }
+    }
+  }
   
   // Sort
   if (parsed.sort.length > 0) {
@@ -3005,6 +3068,26 @@ function sortRowsInPlace(rows, sortSpec) {
         const cmp = dir === 'asc' ? ra.localeCompare(rb) : rb.localeCompare(ra);
         if (cmp !== 0) return cmp;
         continue;
+      } else if (field === 'class') {
+        const classOrder = { light: 0, medium: 1, heavy: 2, assault: 3 };
+        const ca = classOrder[(a.meta.class || '').toLowerCase()] ?? 99;
+        const cb = classOrder[(b.meta.class || '').toLowerCase()] ?? 99;
+        const diff = dir === 'asc' ? (ca - cb) : (cb - ca);
+        if (diff !== 0) return diff;
+        continue;
+      } else if (field === 'type') {
+        // omni < battlemech < industrial (alphabetical happens to work for these)
+        const ta = a.meta.omni ? 'omni' : a.meta.industrial ? 'industrial' : 'battlemech';
+        const tb = b.meta.omni ? 'omni' : b.meta.industrial ? 'industrial' : 'battlemech';
+        const cmp = dir === 'asc' ? ta.localeCompare(tb) : tb.localeCompare(ta);
+        if (cmp !== 0) return cmp;
+        continue;
+      } else if (field === 'tech') {
+        const ta = (a.meta.tech || 'zzz').toLowerCase();
+        const tb = (b.meta.tech || 'zzz').toLowerCase();
+        const cmp = dir === 'asc' ? ta.localeCompare(tb) : tb.localeCompare(ta);
+        if (cmp !== 0) return cmp;
+        continue;
       } else if (field === 'tonnage' || field === 'tons') {
         va = a.meta.tons || 0; vb = b.meta.tons || 0;
       } else if (field === 'bv' || field === 'battlevalue') {
@@ -3014,11 +3097,11 @@ function sortRowsInPlace(rows, sortSpec) {
         } else {
           va = a.bvRange?.bvMax || 0; vb = b.bvRange?.bvMax || 0;
         }
-      } else if (field.endsWith('-bw')) {
-        const fCode = field.replace('-bw', '').toUpperCase();
+      } else if (field.endsWith('-bw') || field.endsWith('-prob')) {
+        const fCode = field.replace(/-(bw|prob)$/, '').toUpperCase();
         va = a.biasedWeights?.[fCode] || 0;
         vb = b.biasedWeights?.[fCode] || 0;
-      } else if (field === 'bw') {
+      } else if (field === 'bw' || field === 'prob') {
         va = a.biasedWeights ? Math.max(0, ...Object.values(a.biasedWeights)) : 0;
         vb = b.biasedWeights ? Math.max(0, ...Object.values(b.biasedWeights)) : 0;
       } else if (field.endsWith('-weight')) {

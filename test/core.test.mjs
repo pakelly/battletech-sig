@@ -210,6 +210,59 @@ describe('Query Parser', () => {
     assert.ok(p.chassis.includes('Locust'));
   });
 
+  it('parses role= as {op, value}', () => {
+    const p = F.parseQuery('role=Scout');
+    assert.deepStrictEqual(p.role, { op: '=', value: 'scout' });
+  });
+
+  it('parses role!= (exclusion)', () => {
+    const p = F.parseQuery('role!=Scout');
+    assert.deepStrictEqual(p.role, { op: '!=', value: 'scout' });
+  });
+
+  it('parses NOT role=Scout as role!=Scout', () => {
+    const p = F.parseQuery('NOT role=Scout');
+    assert.deepStrictEqual(p.role, { op: '!=', value: 'scout' });
+  });
+
+  it('parses type= as {op, value}', () => {
+    const p = F.parseQuery('type=omni');
+    assert.deepStrictEqual(p.type, { op: '=', value: 'omni' });
+  });
+
+  it('parses type!= (exclusion)', () => {
+    const p = F.parseQuery('type!=omni');
+    assert.deepStrictEqual(p.type, { op: '!=', value: 'omni' });
+  });
+
+  it('parses tech= as {op, value}', () => {
+    const p = F.parseQuery('tech=clan');
+    assert.deepStrictEqual(p.tech, { op: '=', value: 'clan' });
+  });
+
+  it('parses tech!= (exclusion)', () => {
+    const p = F.parseQuery('tech!=clan');
+    assert.deepStrictEqual(p.tech, { op: '!=', value: 'clan' });
+  });
+
+  it('parses prob filter', () => {
+    const p = F.parseQuery('prob>5');
+    assert.deepStrictEqual(p.prob, { op: '>', val: 5 });
+  });
+
+  it('parses bw as prob alias', () => {
+    const p = F.parseQuery('bw>3');
+    assert.deepStrictEqual(p.prob, { op: '>', val: 3 });
+  });
+
+  it('parses faction-prob filter', () => {
+    const p = F.parseQuery('DC-prob>5');
+    assert.strictEqual(p.factionProb.length, 1);
+    assert.strictEqual(p.factionProb[0].faction, 'DC');
+    assert.strictEqual(p.factionProb[0].op, '>');
+    assert.strictEqual(p.factionProb[0].val, 5);
+  });
+
   it('parses tons filter', () => {
     const p = F.parseQuery('tons>50');
     assert.deepStrictEqual(p.tons, { op: '>', val: 50 });
@@ -745,6 +798,56 @@ describe('sortRowsInPlace', () => {
     ];
     F.sortRowsInPlace(rows, [{ field: 'DC-weight', dir: 'desc' }]);
     assert.strictEqual(rows[0].name, 'B');
+  });
+
+  it('sorts by class asc (light → medium → heavy → assault)', () => {
+    const rows = [
+      { name: 'Atlas', meta: { class: 'Assault' }, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {} },
+      { name: 'Locust', meta: { class: 'Light' }, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {} },
+      { name: 'Hunchback', meta: { class: 'Medium' }, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {} },
+      { name: 'Marauder', meta: { class: 'Heavy' }, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {} },
+    ];
+    F.sortRowsInPlace(rows, [{ field: 'class', dir: 'asc' }]);
+    assert.strictEqual(rows[0].name, 'Locust');
+    assert.strictEqual(rows[1].name, 'Hunchback');
+    assert.strictEqual(rows[2].name, 'Marauder');
+    assert.strictEqual(rows[3].name, 'Atlas');
+  });
+
+  it('sorts by type asc', () => {
+    const rows = [
+      { name: 'A', meta: { omni: true }, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {} },
+      { name: 'B', meta: { industrial: true }, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {} },
+      { name: 'C', meta: {}, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {} },
+    ];
+    F.sortRowsInPlace(rows, [{ field: 'type', dir: 'asc' }]);
+    assert.strictEqual(rows[0].name, 'C'); // battlemech
+    assert.strictEqual(rows[1].name, 'B'); // industrial
+    assert.strictEqual(rows[2].name, 'A'); // omni
+  });
+
+  it('sorts by tech asc', () => {
+    const rows = [
+      { name: 'A', meta: { tech: 'Inner Sphere' }, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {} },
+      { name: 'B', meta: { tech: 'Clan' }, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {} },
+      { name: 'C', meta: { tech: 'Mixed' }, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {} },
+    ];
+    F.sortRowsInPlace(rows, [{ field: 'tech', dir: 'asc' }]);
+    assert.strictEqual(rows[0].name, 'B'); // Clan
+    assert.strictEqual(rows[1].name, 'A'); // Inner Sphere
+    assert.strictEqual(rows[2].name, 'C'); // Mixed
+  });
+
+  it('sorts by prob desc (max biased weight)', () => {
+    const rows = [
+      { name: 'A', meta: {}, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {}, biasedWeights: { DC: 5 } },
+      { name: 'B', meta: {}, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {}, biasedWeights: { DC: 15 } },
+      { name: 'C', meta: {}, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {}, biasedWeights: { DC: 8 } },
+    ];
+    F.sortRowsInPlace(rows, [{ field: 'prob', dir: 'desc' }]);
+    assert.strictEqual(rows[0].name, 'B');
+    assert.strictEqual(rows[1].name, 'C');
+    assert.strictEqual(rows[2].name, 'A');
   });
 
   it('handles null sig gracefully', () => {

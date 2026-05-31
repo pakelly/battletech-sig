@@ -162,6 +162,8 @@ All of these work as both filters (`field>value`) and sort targets (`sort by fie
 | **sig** (alias: **dr**, **distinctiveness**) | Global signature raw score (weight × share). Max across scoped factions. | `sig>3`, `dr>3` |
 | **DC-pref** | Faction-specific scoped preference. | `DC-pref>8` |
 | **DC-sig** | Faction-specific global signature raw score. | `DC-sig>3` |
+| **prob** (alias: **bw**) | Biased weight (probability × WCD mixing). Max across scoped factions. | `prob>5` |
+| **DC-prob** | Faction-specific biased weight. | `DC-prob>5` |
 | **bv** | Battle Value range filter (variant-level). | `bv>1000`, `bv<1500` |
 
 **All fields that can be filtered can also be sorted, and vice versa.** This is a design invariant.
@@ -599,8 +601,10 @@ All text fields support the `=` and `!=` operators. Multi-value OR is supported 
 | `tons` | numeric | Tonnage filter/sort | `tons>50` |
 | `DC-pref` | numeric | Faction-specific pref filter/sort | `DC-pref>8` |
 | `DC-sig` | numeric | Faction-specific sig filter/sort | `DC-sig>7` |
-| `type` | enum | Mech type filter | `type=omni`, `type=battlemech` |
-| `tech` | enum | Technology base filter (variant-level) | `tech=clan`, `tech=is`, `tech=mixed` |
+| `DC-prob` | numeric | Faction-specific biased weight filter/sort | `DC-prob>5` |
+| `prob` (alias: `bw`) | numeric | Biased weight (probability × WCD). Max across scoped factions. | `prob>5` |
+| `type` | enum | Mech type filter. Supports `!=` for exclusion. | `type=omni`, `type!=omni` |
+| `tech` | enum | Technology base filter (variant-level). Supports `!=` for exclusion. | `tech=clan`, `tech!=clan` |
 | `sort` | keyword | Sort specification | `sort by DC sig desc` |
 | `year` | numeric | Target year | `year=3039` |
 | `era` | text | Era name | `era=ClanInvasion` |
@@ -1157,8 +1161,9 @@ Role follows the same pattern as BV, intro date, and tech base:
 `role=Scout`, `role=Brawler`, etc. **Variant-level filtering** (same pattern as `tech=`):
 - Each variant carries its own role from MUL data
 - When `role=` is set, only variants matching the requested role are included
-- A chassis is excluded entirely if none of its in-scope variants match
-- `role!=None` excludes untyped variants
+- When `role!=` is set, variants matching the role are excluded (negation)
+- A chassis is excluded entirely if none of its in-scope variants pass the filter
+- `role!=None` excludes untyped variants; `role!=Scout` excludes scouts
 - Multiple roles via OR: `role=(Scout OR Striker)`
 
 ### Display
