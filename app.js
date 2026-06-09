@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.33.1';
-const DEPLOY_TIME = '20260609.1725';
+const APP_VERSION = '1.33.2';
+const DEPLOY_TIME = '20260609.1739';
 
 let DATA = null; // app-data.json
 
@@ -1678,6 +1678,28 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
     if (!th || !th.dataset.sort) return;
     handleHeaderSort(th, rows, scopedFactions, eraYear, query);
   });
+
+  // Restore sort indicators from query
+  if (query && query.sort && query.sort.length > 0) {
+    const primarySort = query.sort[0];
+    const secondarySort = query.sort[1];
+    thead.querySelectorAll('th').forEach(th => {
+      if (th.dataset.sort === primarySort.field) {
+        th.classList.add(primarySort.dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+        // For split cells, restore the sort label and split state
+        if (th.textContent.includes('DR | Prob') && secondarySort) {
+          const isSigPrimary = primarySort.field.endsWith('-sig');
+          th.dataset.sortLabel = isSigPrimary ? 'DR' : 'Prob';
+          // Restore split state: 0=DR desc, 1=Prob desc, 2=DR asc, 3=Prob asc
+          if (isSigPrimary) {
+            th.dataset.splitState = primarySort.dir === 'desc' ? '0' : '2';
+          } else {
+            th.dataset.splitState = primarySort.dir === 'desc' ? '1' : '3';
+          }
+        }
+      }
+    });
+  }
 
   updateColVisibility();
 }
