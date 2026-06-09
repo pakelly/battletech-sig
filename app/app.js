@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.33.6';
+const APP_VERSION = '1.33.7';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -1697,11 +1697,11 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
           const fLabel = getFactionLabel(fCode);
           const arrow = primarySort.dir === 'desc' ? '\u25BC' : '\u25B2';
           if (isSigPrimary) {
-            th.textContent = `${fLabel} DR${arrow} | Prob`;
-            th.dataset.splitState = primarySort.dir === 'desc' ? '0' : '2';
+            th.textContent = `${fLabel} DR\u25BC | Prob`;
+            th.dataset.splitState = '0';
           } else {
-            th.textContent = `${fLabel} DR | Prob${arrow}`;
-            th.dataset.splitState = primarySort.dir === 'desc' ? '1' : '3';
+            th.textContent = `${fLabel} DR | Prob\u25BC`;
+            th.dataset.splitState = '1';
           }
         }
       }
@@ -2321,27 +2321,22 @@ function resolveHeaderSort(th) {
     const fLabel = getFactionLabel(fCode);
     const probField = fCode + '-prob';
     
-    // 4-state cycle: 0=DR desc, 1=Prob desc, 2=DR asc, 3=Prob asc
+    // 2-state cycle: 0=DR desc, 1=Prob desc
     const state = parseInt(th.dataset.splitState || '-1');
-    const nextState = (state + 1) % 4;
+    const nextState = (state + 1) % 2;
     th.dataset.splitState = nextState;
     
-    const arrow = nextState < 2 ? '\u25BC' : '\u25B2'; // ▼ or ▲
     const headers = [
-      `${fLabel} DR${arrow} | Prob`,
-      `${fLabel} DR | Prob${arrow}`,
-      `${fLabel} DR${arrow} | Prob`,
-      `${fLabel} DR | Prob${arrow}`,
+      `${fLabel} DR\u25BC | Prob`,
+      `${fLabel} DR | Prob\u25BC`,
     ];
     th.textContent = headers[nextState];
     
     const specs = [
       [{ field, dir: 'desc' }, { field: probField, dir: 'desc' }],
       [{ field: probField, dir: 'desc' }, { field, dir: 'desc' }],
-      [{ field, dir: 'asc' }, { field: probField, dir: 'asc' }],
-      [{ field: probField, dir: 'asc' }, { field, dir: 'asc' }],
     ];
-    return { sort: specs[nextState], dir: nextState < 2 ? 'desc' : 'asc' };
+    return { sort: specs[nextState], dir: 'desc' };
   } else {
     // Regular column: simple desc/asc toggle
     const wasDesc = th.classList.contains('sorted-desc');
