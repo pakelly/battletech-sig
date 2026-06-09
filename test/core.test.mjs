@@ -551,14 +551,15 @@ describe('Derived Values', () => {
 // 4. GLOBAL SIGNATURE
 // ════════════════════════════════════════════════════════
 
-describe('Global Signature (weight × z-score)', () => {
+describe('Global Signature (z-score)', () => {
   // Standard faction pool for tests — 10 factions gives clean math
   const ALL = ['DC', 'FS', 'FWL', 'LC', 'CC', 'FRR', 'CS', 'MERC', 'TC', 'MH'];
 
   it('exclusive mech: high z-score from zeros', () => {
     // Only DC has it at weight 6, 9 others at 0
     const result = F.computeSignature({ DC: 6 }, { DC: 1 }, ['DC'], ALL);
-    assert.ok(result.DC > 15, `Exclusive w=6 should score high, got ${result.DC.toFixed(2)}`);
+    // z-score only: should be positive and substantial (around 3.0 for 1-of-10)
+    assert.ok(result.DC > 2.5, `Exclusive w=6 should score high z, got ${result.DC.toFixed(2)}`);
   });
 
   it('shared mech scores lower than exclusive at same weight', () => {
@@ -571,10 +572,12 @@ describe('Global Signature (weight × z-score)', () => {
     assert.ok(excl.DC > shared.DC, `Exclusive (${excl.DC.toFixed(2)}) should be > shared (${shared.DC.toFixed(2)})`);
   });
 
-  it('higher weight exclusive beats lower weight exclusive', () => {
+  it('exclusives at different weights get same z-score (pure distinctiveness)', () => {
+    // z-score only means exclusivity pattern matters, not weight magnitude
     const high = F.computeSignature({ DC: 8 }, { DC: 1 }, ['DC'], ALL);
     const low = F.computeSignature({ DC: 3 }, { DC: 1 }, ['DC'], ALL);
-    assert.ok(high.DC > low.DC, `Weight 8 (${high.DC.toFixed(2)}) should be > weight 3 (${low.DC.toFixed(2)})`);
+    // Both are 1-of-10 exclusives — z-scores should be equal
+    assert.ok(Math.abs(high.DC - low.DC) < 0.1, `Weight 8 (${high.DC.toFixed(2)}) should ≈ weight 3 (${low.DC.toFixed(2)}) for equal exclusivity`);
   });
 
   it('returns 0 for factions without MUL confirmation', () => {
@@ -590,11 +593,12 @@ describe('Global Signature (weight × z-score)', () => {
     assert.ok(result.FS > result.DC, `FS (${result.FS.toFixed(2)}) should be > DC (${result.DC.toFixed(2)})`);
   });
 
-  it('high weight + many factions can beat low weight + exclusive', () => {
-    // Dragon-like: DC:8 with 3 factions vs Hatamoto-Ku: DC:2 exclusive
-    const dragon = F.computeSignature({ DC: 8, FRR: 5, MERC: 4 }, { DC: 1, FRR: 1, MERC: 1 }, ['DC'], ALL);
+  it('exclusive low-weight beats widely-shared high-weight', () => {
+    // Hatamoto-Ku: DC:2 exclusive vs Dragon-like: DC:8 shared with 3 factions
+    // Pure z-score: exclusivity wins over volume
     const hatKu = F.computeSignature({ DC: 2 }, { DC: 1 }, ['DC'], ALL);
-    assert.ok(dragon.DC > hatKu.DC, `Dragon (${dragon.DC.toFixed(2)}) should be > Hatamoto-Ku (${hatKu.DC.toFixed(2)})`);
+    const dragon = F.computeSignature({ DC: 8, FRR: 5, MERC: 4 }, { DC: 1, FRR: 1, MERC: 1 }, ['DC'], ALL);
+    assert.ok(hatKu.DC > dragon.DC, `Hatamoto-Ku (${hatKu.DC.toFixed(2)}) should be > Dragon (${dragon.DC.toFixed(2)})`);
   });
 });
 
@@ -980,30 +984,28 @@ describe('End-to-End Sort — sig desc produces correct order', () => {
     return rows;
   }
 
-  it('Dragon is top 3 and Hatamoto-Chi is in roster for DC 3039 sorted by sig', () => {
-    // Hatamoto-Chi is DC-exclusive but an Assault — DC's tiny assault share (10%)
-    // dampens it heavily via WCD. Light exclusives (Jenner, Panther) dominate.
-    // This matches the app's actual behavior.
+  it('Hatamoto-Chi is in top 10 and Dragon in roster for DC 3039 sorted by sig', () => {
+    // With z-score-only, DC-exclusive mechs like Hatamoto-Chi rank higher
+    // because exclusivity is no longer suppressed by low weight.
     const era = APP_DATA.eraData['3039'];
     const rows = buildSigRows(era, 'DC');
     F.sortRowsInPlace(rows, [{ field: 'sig', dir: 'desc' }]);
 
-    const top3 = rows.slice(0, 3).map(r => r.name);
+    const top10 = rows.slice(0, 10).map(r => r.name);
     const allNames = rows.map(r => r.name);
-    assert.ok(top3.includes('Dragon'), `Dragon should be in top 3, got: ${top3.join(', ')}`);
-    assert.ok(allNames.includes('Hatamoto-Chi'), `Hatamoto-Chi should appear in DC roster`);
-    // Hatamoto-Chi sig should be positive (it IS exclusive, just WCD-dampened)
+    assert.ok(top10.includes('Hatamoto-Chi'), `Hatamoto-Chi should be in top 10, got: ${top10.join(', ')}`);
+    assert.ok(allNames.includes('Dragon'), `Dragon should appear in DC roster`);
     const hatRow = rows.find(r => r.name === 'Hatamoto-Chi');
     assert.ok(hatRow.sig.DC > 0, `Hatamoto-Chi sig should be positive, got ${hatRow.sig.DC.toFixed(2)}`);
   });
 
-  it('Dragon is top 5 for DC 3039 sorted by sig', () => {
+  it('Dragon is in roster for DC 3039 sorted by sig', () => {
     const era = APP_DATA.eraData['3039'];
     const rows = buildSigRows(era, 'DC');
     F.sortRowsInPlace(rows, [{ field: 'sig', dir: 'desc' }]);
 
-    const top5 = rows.slice(0, 5).map(r => r.name);
-    assert.ok(top5.includes('Dragon'), `Dragon should be in top 5, got: ${top5.join(', ')}`);
+    const allNames = rows.map(r => r.name);
+    assert.ok(allNames.includes('Dragon'), `Dragon should appear in DC roster`);
   });
 
   it('FS 3039 sig sort puts FS-exclusive mechs at top', () => {

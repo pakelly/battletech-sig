@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.31.2';
+const APP_VERSION = '1.32.0';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -1099,7 +1099,7 @@ function computeSignature(weights, mulData, factions, allFactionCodes, wcdParams
       w = prob;
     }
     const z = (w - mean) / stddev;
-    result[f] = w * Math.max(0, z);
+    result[f] = Math.max(0, z);
   }
   return result;
 }
