@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.33.0';
-const DEPLOY_TIME = '20260609.1719';
+const APP_VERSION = '1.33.1';
+const DEPLOY_TIME = '20260609.1725';
 
 let DATA = null; // app-data.json
 
@@ -1835,12 +1835,15 @@ function renderSingleFaction(rows, faction, eraYear) {
   thead.addEventListener('click', (e) => {
     const th = e.target.closest('th');
     if (!th || !th.dataset.sort) return;
-    const field = th.dataset.sort;
-    const wasDesc = th.classList.contains('sorted-desc');
-    thead.querySelectorAll('th').forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
-    const dir = wasDesc ? 'asc' : 'desc';
+    // Clear sort indicators and split state on OTHER headers
+    thead.querySelectorAll('th').forEach(h => {
+      h.classList.remove('sorted-asc', 'sorted-desc');
+      if (h !== th) { delete h.dataset.splitState; delete h.dataset.sortLabel; }
+    });
+    const { sort, dir } = resolveHeaderSort(th);
     th.classList.add(dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
-    sortRowsInPlace(activeRows, [{ field, dir }]);
+    if (!th.textContent.includes('DR | Prob')) delete th.dataset.sortLabel;
+    sortRowsInPlace(activeRows, sort);
     renderPage(0);
   });
 
@@ -2270,25 +2273,59 @@ function handleCellClick(e) {
   }
 }
 
-function handleHeaderSort(th, rows, scopedFactions, eraYear, query) {
-  // Toggle sort direction
+/**
+ * Resolve sort spec for a header click. Split-cell columns (DR | Prob)
+ * cycle through 4 states: DR desc → Prob desc → DR asc → Prob asc.
+ * Regular columns toggle desc/asc.
+ */
+function resolveHeaderSort(th) {
   const field = th.dataset.sort;
-  const wasDesc = th.classList.contains('sorted-desc');
+  const isSplit = th.textContent.includes('DR | Prob');
   
-  // Clear all sort indicators
+  if (isSplit) {
+    // Extract faction code from data-sort (e.g. "DC-sig" → "DC")
+    const fCode = field.replace(/-(sig|dr|signature|distinctiveness)$/, '');
+    const probField = fCode + '-prob';
+    
+    // 4-state cycle: 0=DR desc, 1=Prob desc, 2=DR asc, 3=Prob asc
+    const state = parseInt(th.dataset.splitState || '-1');
+    const nextState = (state + 1) % 4;
+    th.dataset.splitState = nextState;
+    
+    const specs = [
+      { sort: [{ field, dir: 'desc' }, { field: probField, dir: 'desc' }], label: 'DR' },
+      { sort: [{ field: probField, dir: 'desc' }, { field, dir: 'desc' }], label: 'Prob' },
+      { sort: [{ field, dir: 'asc' }, { field: probField, dir: 'asc' }], label: 'DR' },
+      { sort: [{ field: probField, dir: 'asc' }, { field, dir: 'asc' }], label: 'Prob' },
+    ];
+    th.dataset.sortLabel = specs[nextState].label;
+    return { sort: specs[nextState].sort, dir: nextState < 2 ? 'desc' : 'asc' };
+  } else {
+    // Regular column: simple desc/asc toggle
+    const wasDesc = th.classList.contains('sorted-desc');
+    const dir = wasDesc ? 'asc' : 'desc';
+    return { sort: [{ field, dir }], dir };
+  }
+}
+
+function handleHeaderSort(th, rows, scopedFactions, eraYear, query) {
+  // Clear sort indicators and split state on OTHER headers
   th.closest('thead').querySelectorAll('th').forEach(h => {
     h.classList.remove('sorted-asc', 'sorted-desc');
+    if (h !== th) { delete h.dataset.splitState; delete h.dataset.sortLabel; }
   });
   
-  const dir = wasDesc ? 'asc' : 'desc';
+  const { sort, dir } = resolveHeaderSort(th);
   th.classList.add(dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+  // Clear label for non-split columns
+  if (!th.textContent.includes('DR | Prob')) delete th.dataset.sortLabel;
   
   // Update query sort
-  const newQuery = { ...query, sort: [{ field, dir }] };
+  const newQuery = { ...query, sort };
   
   // Re-sort and re-render
   const sorted = [...rows];
-  sortRowsInPlace(sorted, [{ field, dir }]);
+  sortRowsInPlace(sorted, sort);
   renderFactionComparison(sorted, scopedFactions, eraYear, newQuery);
 }
 
