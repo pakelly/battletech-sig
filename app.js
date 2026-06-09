@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.33.3';
-const DEPLOY_TIME = '20260609.1745';
+const APP_VERSION = '1.33.4';
+const DEPLOY_TIME = '20260609.1746';
 
 let DATA = null; // app-data.json
 
@@ -1525,7 +1525,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   // Split cell columns: DR | Prob in one cell per faction
   if (hasSig) {
     for (const f of scopedFactions) {
-      headerHTML += `<th data-sort="${f}-sig" title="${getFactionFullName(f)} Distinctiveness | Probability">${getFactionLabel(f)} DR | Prob</th>`;
+      headerHTML += `<th data-sort="${f}-sig" data-split="1" title="${getFactionFullName(f)} Distinctiveness | Probability">${getFactionLabel(f)} DR | Prob</th>`;
     }
   }
   // Separate columns (hidden by default, available in column menu)
@@ -1687,7 +1687,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
       if (th.dataset.sort === primarySort.field) {
         th.classList.add(primarySort.dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
         // For split cells, restore the sort label and split state
-        if (th.textContent.includes('DR | Prob') && secondarySort) {
+        if (th.dataset.split && secondarySort) {
           const isSigPrimary = primarySort.field.endsWith('-sig');
           th.dataset.sortLabel = isSigPrimary ? 'D' : 'P';
           // Restore split state: 0=DR desc, 1=Prob desc, 2=DR asc, 3=Prob asc
@@ -1736,7 +1736,7 @@ function renderSingleFaction(rows, faction, eraYear) {
   let singleHeaderHTML = `<tr><th data-sort="name">Chassis</th><th data-sort="tonnage">Tons</th><th data-sort="class">Class</th><th data-sort="role">Role</th>`;
   if (singleHasBV) singleHeaderHTML += '<th data-sort="bv">BV</th>';
   // Split cell
-  if (singleHasSig) singleHeaderHTML += `<th data-sort="${faction}-sig" title="Distinctiveness | Probability">${getFactionLabel(faction)} DR | Prob</th>`;
+  if (singleHasSig) singleHeaderHTML += `<th data-sort="${faction}-sig" data-split="1" title="Distinctiveness | Probability">${getFactionLabel(faction)} DR | Prob</th>`;
   // Separate columns (hidden by default)
   if (singleHasSig) singleHeaderHTML += `<th data-sort="${faction}-sig">DR</th>`;
   singleHeaderHTML += `<th data-sort="${faction}-bw">Prob</th>`;
@@ -1864,7 +1864,7 @@ function renderSingleFaction(rows, faction, eraYear) {
     });
     const { sort, dir } = resolveHeaderSort(th);
     th.classList.add(dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
-    if (!th.textContent.includes('DR | Prob')) delete th.dataset.sortLabel;
+    if (!th.dataset.split) delete th.dataset.sortLabel;
     sortRowsInPlace(activeRows, sort);
     renderPage(0);
   });
@@ -2302,7 +2302,7 @@ function handleCellClick(e) {
  */
 function resolveHeaderSort(th) {
   const field = th.dataset.sort;
-  const isSplit = th.textContent.includes('DR | Prob');
+  const isSplit = th.dataset.split;
   
   if (isSplit) {
     // Extract faction code from data-sort (e.g. "DC-sig" → "DC")
@@ -2340,7 +2340,7 @@ function handleHeaderSort(th, rows, scopedFactions, eraYear, query) {
   const { sort, dir } = resolveHeaderSort(th);
   th.classList.add(dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
   // Clear label for non-split columns
-  if (!th.textContent.includes('DR | Prob')) delete th.dataset.sortLabel;
+  if (!th.dataset.split) delete th.dataset.sortLabel;
   
   // Update query sort
   const newQuery = { ...query, sort };
