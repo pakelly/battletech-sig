@@ -679,20 +679,34 @@ All string matching is case-insensitive with partial match support. Faction code
 
 The primary view for multi-faction queries. Table with:
 - **Rows:** Chassis (one per row)
-- **Columns:** One per scoped faction, plus stat columns
+- **Columns:** One per scoped faction (split cell), plus metadata and stat columns
 
-Each faction has two columns:
-- **DR column** — Distinctiveness Rating (DR1–DR5) + raw signature score, heat-colored by tier
-- **Weight column** — Raw MegaMek weight (1–10 log scale), heat-colored by value
+Each faction gets one **split cell** combining two independently heat-colored halves:
+- **Left half:** Raw signature score (z-score), heat-colored by DR tier (DR1=hottest → DR5=coolest). This measures how statistically distinctive the chassis is for this faction.
+- **Right half:** Probability value (biased weight = probability × WCD mixing), heat-colored by a fixed log-scale (same scale as the standalone Prob column). This measures how likely the chassis is to appear on the battlefield for this faction.
 
-Additional columns: Biased Weight (BW, hidden by default), Spread (hidden by default).
+The split cell gives the complete picture at a glance:
+- 🟠🟠 Hot/Hot = distinctive AND common (faction-defining workhorse)
+- 🟠🔵 Hot/Cool = distinctive but rare (exclusive niche mech)
+- 🔵🟠 Cool/Hot = not distinctive but common (universal workhorse)
+- 🔵🔵 Cool/Cool = not distinctive, not common (filler)
+
+**Column header:** `[Faction] DR | Prob`. Clicking the header sorts by the faction's sig score.
+
+**Hidden by default (available in ☰ menu):**
+- Separate DR column (raw signature score only)
+- Separate Weight column (raw MegaMek 1-10 weight)
+- Separate Prob column (biased weight only)
+- Spread column
+
+When a chassis is not fielded by a faction, the split cell shows "—" with no-data styling.
 
 ### Single Faction Roster View
 
-For single-faction queries without explicit sort/sig. Key columns:
-- Chassis, Tons, Class, BV (if available), DR (Distinctiveness Rating tier + raw score), Prob (probability weight including WCD), Weight (raw availability + bar)
+For single-faction queries without explicit sort/sig. Uses the same split cell layout as the comparison view for consistency. Key columns:
+- Chassis, Tons, Class, Role, BV (if available), split DR|Prob cell, Availability (weight bar)
 - Default sort: DR desc (most iconic mechs first)
-- DR and Prob use the same heat-colored styling as multi-faction view
+- Separate DR, Prob, and Weight columns hidden by default (available in ☰ menu)
 - Weight bar shows raw weight with percentage fill relative to the faction's max weight
 
 ### Chassis Detail Drill-Down

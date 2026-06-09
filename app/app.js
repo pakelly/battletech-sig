@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.32.0';
+const APP_VERSION = '1.33.0';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -1522,6 +1522,13 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   const hasBV = rows.some(r => r.bvRange);
   let headerHTML = '<tr><th data-sort="name">Chassis</th><th data-sort="tonnage">Tons</th><th data-sort="role">Role</th>';
   if (hasBV) headerHTML += '<th data-sort="bv">BV</th>';
+  // Split cell columns: DR | Prob in one cell per faction
+  if (hasSig) {
+    for (const f of scopedFactions) {
+      headerHTML += `<th data-sort="${f}-sig" title="${getFactionFullName(f)} Distinctiveness | Probability">${getFactionLabel(f)} DR | Prob</th>`;
+    }
+  }
+  // Separate columns (hidden by default, available in column menu)
   if (hasSig) {
     for (const f of scopedFactions) {
       headerHTML += `<th data-sort="${f}-sig" title="${getFactionFullName(f)} Distinctiveness">${getFactionLabel(f)} DR</th>`;
@@ -1566,6 +1573,42 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
         }
       }
       
+      // Split cells: DR | Prob in one cell per faction
+      if (hasSig) {
+        for (const f of scopedFactions) {
+          const sigVal = row.sig?.[f] || 0;
+          const sigTier = row.sig?.[f + '_tier'] || 0;
+          const hasWeight = (row.weights[f] || 0) > 0;
+          const bw = row.biasedWeights?.[f] || 0;
+          
+          html += `<td class="faction-cell split-cell" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
+          html += '<div class="split-cell-inner">';
+          
+          // Left half: DR (sig score)
+          if (sigVal > 0) {
+            const sigHeat = sigTierToHeat(sigTier);
+            html += `<div class="split-half ${sigHeat}">${sigVal.toFixed(1)}</div>`;
+          } else if (hasWeight) {
+            html += '<div class="split-half heat-1">0</div>';
+          } else {
+            html += '<div class="split-half no-data">&mdash;</div>';
+          }
+          
+          html += '<div class="split-divider"></div>';
+          
+          // Right half: Prob (biased weight)
+          if (bw > 0) {
+            const bwCls = bwHeatClass(bw);
+            html += `<div class="split-half ${bwCls}">${bw.toFixed(1)}</div>`;
+          } else {
+            html += '<div class="split-half no-data">&mdash;</div>';
+          }
+          
+          html += '</div></td>';
+        }
+      }
+
+      // Separate DR columns (hidden by default)
       if (hasSig) {
         for (const f of scopedFactions) {
           const sigVal = row.sig?.[f] || 0;
@@ -1576,10 +1619,8 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
             html += `<td class="faction-cell ${sigHeat}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
             html += `<span class="pref-value">DR${sigTier}</span>`;
             html += `<span class="sig-raw">${sigVal.toFixed(1)}</span>`;
-            html += `<span class="weight-value">w:${(row.weights[f] || 0).toFixed(1)}</span>`;
             html += '</td>';
           } else if (hasWeight) {
-            // Faction fields the chassis but sig is 0 (below-average usage after WCD)
             html += `<td class="faction-cell heat-1" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
             html += `<span class="pref-value">DR5</span>`;
             html += '</td>';
@@ -1670,7 +1711,15 @@ function renderSingleFaction(rows, faction, eraYear) {
   const thead = document.createElement('thead');
   const singleHasBV = rows.some(r => r.bvRange);
   const singleHasSig = rows.some(r => r.sig?.[faction] > 0);
-  thead.innerHTML = `<tr><th data-sort="name">Chassis</th><th data-sort="tonnage">Tons</th><th data-sort="class">Class</th><th data-sort="role">Role</th>${singleHasBV ? '<th data-sort="bv">BV</th>' : ''}${singleHasSig ? `<th data-sort="${faction}-sig">DR</th>` : ''}<th data-sort="${faction}-bw">Prob</th><th data-sort="${faction}-weight">Availability</th></tr>`;
+  let singleHeaderHTML = `<tr><th data-sort="name">Chassis</th><th data-sort="tonnage">Tons</th><th data-sort="class">Class</th><th data-sort="role">Role</th>`;
+  if (singleHasBV) singleHeaderHTML += '<th data-sort="bv">BV</th>';
+  // Split cell
+  if (singleHasSig) singleHeaderHTML += `<th data-sort="${faction}-sig" title="Distinctiveness | Probability">${getFactionLabel(faction)} DR | Prob</th>`;
+  // Separate columns (hidden by default)
+  if (singleHasSig) singleHeaderHTML += `<th data-sort="${faction}-sig">DR</th>`;
+  singleHeaderHTML += `<th data-sort="${faction}-bw">Prob</th>`;
+  singleHeaderHTML += `<th data-sort="${faction}-weight">Availability</th></tr>`;
+  thead.innerHTML = singleHeaderHTML;
   table.appendChild(thead);
   
   // Filter to rows with weight > 0
@@ -1712,7 +1761,31 @@ function renderSingleFaction(rows, faction, eraYear) {
         }
       }
 
-      // DR cell
+      // Split cell: DR | Prob
+      let splitCell = '';
+      if (singleHasSig) {
+        const sigVal = row.sig?.[faction] || 0;
+        const sigTier = row.sig?.[faction + '_tier'] || 0;
+        const bw = row.biasedWeights?.[faction] || 0;
+        
+        splitCell = `<td class="faction-cell split-cell" data-chassis="${escAttr(row.name)}" data-faction="${faction}"><div class="split-cell-inner">`;
+        if (sigVal > 0) {
+          const sigHeat = sigTierToHeat(sigTier);
+          splitCell += `<div class="split-half ${sigHeat}">${sigVal.toFixed(1)}</div>`;
+        } else {
+          splitCell += '<div class="split-half heat-1">0</div>';
+        }
+        splitCell += '<div class="split-divider"></div>';
+        if (bw > 0) {
+          const bwCls = bwHeatClass(bw);
+          splitCell += `<div class="split-half ${bwCls}">${bw.toFixed(1)}</div>`;
+        } else {
+          splitCell += '<div class="split-half no-data">&mdash;</div>';
+        }
+        splitCell += '</div></td>';
+      }
+
+      // Separate DR cell (hidden by default)
       let drCell = '';
       if (singleHasSig) {
         const sigVal = row.sig?.[faction] || 0;
@@ -1725,12 +1798,12 @@ function renderSingleFaction(rows, faction, eraYear) {
         }
       }
 
-      // Prob cell
-      const bw = row.biasedWeights?.[faction] || 0;
+      // Separate Prob cell (hidden by default)
+      const bwSep = row.biasedWeights?.[faction] || 0;
       let probCell;
-      if (bw > 0) {
-        const bwCls = bwHeatClass(bw);
-        probCell = `<td class="faction-cell ${bwCls}" data-chassis="${escAttr(row.name)}" data-faction="${faction}"><span class="pref-value">${bw.toFixed(2)}</span></td>`;
+      if (bwSep > 0) {
+        const bwCls = bwHeatClass(bwSep);
+        probCell = `<td class="faction-cell ${bwCls}" data-chassis="${escAttr(row.name)}" data-faction="${faction}"><span class="pref-value">${bwSep.toFixed(2)}</span></td>`;
       } else {
         probCell = `<td class="faction-cell no-data">—</td>`;
       }
@@ -1743,6 +1816,7 @@ function renderSingleFaction(rows, faction, eraYear) {
         <td><span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>
         <td class="role-col">${escHtml(resolveChassisRole(row.name, row.meta.role, row.variants, currentEraYear) || '')}</td>
         ${bvCell}
+        ${splitCell}
         ${drCell}
         ${probCell}
         <td><div class="weight-bar-container"><div class="weight-bar" style="width:${pct}%"></div><span class="weight-bar-label">${w.toFixed(1)}</span></div></td>
@@ -3976,10 +4050,18 @@ function updateColVisibility() {
 }
 
 function isDefaultHidden(name) {
-  const isSigCol = name.endsWith(' Sig');
-  const isWeightCol = !isSigCol && DATA?.factions?.[name];
-  const isSpread = name === 'Spread';
-  return isWeightCol || isSpread;
+  // Split cell ("DC DR | Prob") is visible by default
+  if (name.endsWith(' DR | Prob')) return false;
+  // Separate DR column ("DC DR") — hidden, superseded by split cell
+  if (name.endsWith(' DR')) return true;
+  // Separate Prob column ("DC Prob") — hidden, superseded by split cell
+  if (name.endsWith(' Prob')) return true;
+  // Weight column (faction code like "DC") — hidden
+  const isWeightCol = DATA?.factions?.[name];
+  if (isWeightCol) return true;
+  // Spread — hidden
+  if (name === 'Spread') return true;
+  return false;
 }
 
 function applyColVisibility() {

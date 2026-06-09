@@ -1063,6 +1063,40 @@ details[open] > .help-section-title::before {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Split cell: two independently heat-colored halves */
+.split-cell {
+  padding: 0 !important;
+  min-width: 100px;
+}
+.split-cell-inner {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+.split-half {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: opacity 0.15s;
+}
+.split-half:hover {
+  opacity: 0.8;
+}
+.split-half.no-data {
+  color: var(--text-dim);
+  opacity: 0.3;
+}
+.split-divider {
+  width: 1px;
+  background: rgba(255,255,255,0.1);
+  align-self: stretch;
+}
+
 .data-table td,
 .data-table th {
   -webkit-tap-highlight-color: transparent;
