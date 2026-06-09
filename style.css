@@ -1038,8 +1038,9 @@ details[open] > .help-section-title::before {
 
 .data-table th.sorted-asc::after { content: ' ▲'; color: var(--accent); font-size: 0.7rem; }
 .data-table th.sorted-desc::after { content: ' ▼'; color: var(--accent); font-size: 0.7rem; }
-.data-table th[data-sort-label].sorted-asc::after { content: ' ' attr(data-sort-label) ' ▲'; }
-.data-table th[data-sort-label].sorted-desc::after { content: ' ' attr(data-sort-label) ' ▼'; }
+/* Split cell headers use inline arrows in textContent instead of ::after */
+.data-table th[data-split].sorted-asc::after,
+.data-table th[data-split].sorted-desc::after { content: none; }
 
 .data-table td {
   padding: 0.4rem 0.6rem;
