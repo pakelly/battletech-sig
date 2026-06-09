@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.31.2 | 2026-05-31 06:50 UTC | pending |
-| test | 1.33.6 | 2026-06-09 17:54 UTC | pending |
+| test | 1.33.7 | 2026-06-09 18:05 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.33.7 | test | 2026-06-09 18:05 | pending | Simplify split cell sort to 2-state toggle: DR desc ↔ Prob desc |
 | 1.33.6 | test | 2026-06-09 17:54 | pending | Fix: sort arrows in split cell headers broke column visibility |
 | 1.33.5 | test | 2026-06-09 17:50 | pending | Inline sort arrows in split cell header text instead of CSS ::after |
 | 1.33.4 | test | 2026-06-09 17:46 | pending | Use data-split attribute instead of textContent check for split cells |
