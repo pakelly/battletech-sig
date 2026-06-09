@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.33.5';
+const APP_VERSION = '1.33.6';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -1525,7 +1525,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   // Split cell columns: DR | Prob in one cell per faction
   if (hasSig) {
     for (const f of scopedFactions) {
-      headerHTML += `<th data-sort="${f}-sig" data-split="1" title="${getFactionFullName(f)} Distinctiveness | Probability">${getFactionLabel(f)} DR | Prob</th>`;
+      headerHTML += `<th data-sort="${f}-sig" data-split="1" data-col-name="${getFactionLabel(f)} DR | Prob" title="${getFactionFullName(f)} Distinctiveness | Probability">${getFactionLabel(f)} DR | Prob</th>`;
     }
   }
   // Separate columns (hidden by default, available in column menu)
@@ -1743,7 +1743,7 @@ function renderSingleFaction(rows, faction, eraYear) {
   let singleHeaderHTML = `<tr><th data-sort="name">Chassis</th><th data-sort="tonnage">Tons</th><th data-sort="class">Class</th><th data-sort="role">Role</th>`;
   if (singleHasBV) singleHeaderHTML += '<th data-sort="bv">BV</th>';
   // Split cell
-  if (singleHasSig) singleHeaderHTML += `<th data-sort="${faction}-sig" data-split="1" title="Distinctiveness | Probability">${getFactionLabel(faction)} DR | Prob</th>`;
+  if (singleHasSig) singleHeaderHTML += `<th data-sort="${faction}-sig" data-split="1" data-col-name="${getFactionLabel(faction)} DR | Prob" title="Distinctiveness | Probability">${getFactionLabel(faction)} DR | Prob</th>`;
   // Separate columns (hidden by default)
   if (singleHasSig) singleHeaderHTML += `<th data-sort="${faction}-sig">DR</th>`;
   singleHeaderHTML += `<th data-sort="${faction}-bw">Prob</th>`;
@@ -4081,6 +4081,11 @@ function initColVisibility() {
  * Called after any table render. Reads headers from the rendered table,
  * builds the checkbox menu, and applies stored visibility.
  */
+/** Stable column name for visibility state — uses data-col-name if set, else textContent */
+function getColName(th) {
+  return th.dataset.colName || th.textContent.trim();
+}
+
 function updateColVisibility() {
   const bar = document.getElementById('col-vis-bar');
   const menu = document.getElementById('col-vis-menu');
@@ -4102,7 +4107,7 @@ function updateColVisibility() {
 
   menu.innerHTML = '';
   headers.forEach((th, idx) => {
-    const name = th.textContent.trim();
+    const name = getColName(th);
     if (!name) return;
 
     // Chassis column (index 0) is always visible
@@ -4158,7 +4163,7 @@ function applyColVisibility() {
   // Pre-compute visibility array for all columns
   const colVisible = [];
   headers.forEach((th, idx) => {
-    const name = th.textContent.trim();
+    const name = getColName(th);
     const isLocked = idx === 0;
     const visible = isLocked || (state[name] !== undefined ? state[name] !== false : !isDefaultHidden(name));
     colVisible.push(visible);
