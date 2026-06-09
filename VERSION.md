@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.31.2 | 2026-05-31 06:50 UTC | pending |
-| test | 1.33.3 | 2026-06-09 17:45 UTC | pending |
+| test | 1.33.4 | 2026-06-09 17:46 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.33.4 | test | 2026-06-09 17:46 | pending | Use data-split attribute instead of textContent check for split cells |
 | 1.33.3 | test | 2026-06-09 17:45 | pending | Shorten split-cell sort labels for mobile (DR→D, Prob→P) |
 | 1.33.2 | test | 2026-06-09 17:39 | pending | Fix: sort indicators persist after re-render in comparison view |
 | 1.33.1 | test | 2026-06-09 17:25 | pending | Split cell 4-state sort cycle: DR desc → Prob desc → DR asc → Prob asc |
