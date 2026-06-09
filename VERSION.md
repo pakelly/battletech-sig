@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.31.2 | 2026-05-31 06:50 UTC | pending |
-| test | 1.33.4 | 2026-06-09 17:46 UTC | pending |
+| test | 1.33.5 | 2026-06-09 17:50 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.33.5 | test | 2026-06-09 17:50 | pending | Inline sort arrows in split cell header text instead of CSS ::after |
 | 1.33.4 | test | 2026-06-09 17:46 | pending | Use data-split attribute instead of textContent check for split cells |
 | 1.33.3 | test | 2026-06-09 17:45 | pending | Shorten split-cell sort labels for mobile (DR→D, Prob→P) |
 | 1.33.2 | test | 2026-06-09 17:39 | pending | Fix: sort indicators persist after re-render in comparison view |
