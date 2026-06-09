@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.33.2';
-const DEPLOY_TIME = '20260609.1739';
+const APP_VERSION = '1.33.3';
+const DEPLOY_TIME = '20260609.1745';
 
 let DATA = null; // app-data.json
 
@@ -1689,7 +1689,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
         // For split cells, restore the sort label and split state
         if (th.textContent.includes('DR | Prob') && secondarySort) {
           const isSigPrimary = primarySort.field.endsWith('-sig');
-          th.dataset.sortLabel = isSigPrimary ? 'DR' : 'Prob';
+          th.dataset.sortLabel = isSigPrimary ? 'D' : 'P';
           // Restore split state: 0=DR desc, 1=Prob desc, 2=DR asc, 3=Prob asc
           if (isSigPrimary) {
             th.dataset.splitState = primarySort.dir === 'desc' ? '0' : '2';
@@ -2315,10 +2315,10 @@ function resolveHeaderSort(th) {
     th.dataset.splitState = nextState;
     
     const specs = [
-      { sort: [{ field, dir: 'desc' }, { field: probField, dir: 'desc' }], label: 'DR' },
-      { sort: [{ field: probField, dir: 'desc' }, { field, dir: 'desc' }], label: 'Prob' },
-      { sort: [{ field, dir: 'asc' }, { field: probField, dir: 'asc' }], label: 'DR' },
-      { sort: [{ field: probField, dir: 'asc' }, { field, dir: 'asc' }], label: 'Prob' },
+      { sort: [{ field, dir: 'desc' }, { field: probField, dir: 'desc' }], label: 'D' },
+      { sort: [{ field: probField, dir: 'desc' }, { field, dir: 'desc' }], label: 'P' },
+      { sort: [{ field, dir: 'asc' }, { field: probField, dir: 'asc' }], label: 'D' },
+      { sort: [{ field: probField, dir: 'asc' }, { field, dir: 'asc' }], label: 'P' },
     ];
     th.dataset.sortLabel = specs[nextState].label;
     return { sort: specs[nextState].sort, dir: nextState < 2 ? 'desc' : 'asc' };
