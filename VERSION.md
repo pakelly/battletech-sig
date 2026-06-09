@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.31.2 | 2026-05-31 06:50 UTC | pending |
-| test | 1.32.0 | 2026-06-09 15:04 UTC | pending |
+| test | 1.33.0 | 2026-06-09 17:19 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.33.0 | test | 2026-06-09 17:19 | pending | Split cell UI: DR | Prob in one heat-colored cell per faction |
 | 1.32.0 | test | 2026-06-09 15:04 | pending | Experimental: signature uses z-score only (drop weight multiplier) |
 | 1.31.2 | prod | 2026-05-31 06:50 | pending | VERSION.md: auto-stamp 1.31.2 test deploy |
 | 1.31.2 | test | 2026-05-31 06:46 | pending | Fix sort parser for faction-prob/bw (was concatenating to 'fsprob') |
