@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.33.8';
+const APP_VERSION = '1.33.9';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -2340,8 +2340,16 @@ function resolveHeaderSort(th) {
     return { sort: specs[nextState], dir: 'desc' };
   } else {
     // Regular column: simple desc/asc toggle
+    // "Natural" columns (name, tonnage, bv) default to asc first; score columns default to desc
+    const ascFirst = ['name', 'chassis', 'tonnage', 'tons', 'bv', 'battlevalue', 'class'].includes(field);
+    const wasAsc = th.classList.contains('sorted-asc');
     const wasDesc = th.classList.contains('sorted-desc');
-    const dir = wasDesc ? 'asc' : 'desc';
+    let dir;
+    if (!wasAsc && !wasDesc) {
+      dir = ascFirst ? 'asc' : 'desc';
+    } else {
+      dir = wasDesc ? 'asc' : 'desc';
+    }
     return { sort: [{ field, dir }], dir };
   }
 }
