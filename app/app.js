@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.33.7';
+const APP_VERSION = '1.33.8';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -1864,10 +1864,10 @@ function renderSingleFaction(rows, faction, eraYear) {
   thead.addEventListener('click', (e) => {
     const th = e.target.closest('th');
     if (!th || !th.dataset.sort) return;
-    // Clear sort indicators and split state on OTHER headers
+    // Clear sort indicators and split state on OTHER headers (not th — resolveHeaderSort reads it)
     thead.querySelectorAll('th').forEach(h => {
-      h.classList.remove('sorted-asc', 'sorted-desc');
       if (h !== th) {
+        h.classList.remove('sorted-asc', 'sorted-desc');
         delete h.dataset.splitState;
         if (h.dataset.split) {
           const fCode = h.dataset.sort.replace(/-(sig|dr|signature|distinctiveness)$/, '');
@@ -1876,6 +1876,7 @@ function renderSingleFaction(rows, faction, eraYear) {
       }
     });
     const { sort, dir } = resolveHeaderSort(th);
+    th.classList.remove('sorted-asc', 'sorted-desc');
     th.classList.add(dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
     sortRowsInPlace(activeRows, sort);
     renderPage(0);
@@ -2346,12 +2347,11 @@ function resolveHeaderSort(th) {
 }
 
 function handleHeaderSort(th, rows, scopedFactions, eraYear, query) {
-  // Clear sort indicators and split state on OTHER headers
+  // Clear sort indicators and split state on OTHER headers (not th itself — resolveHeaderSort reads it)
   th.closest('thead').querySelectorAll('th').forEach(h => {
-    h.classList.remove('sorted-asc', 'sorted-desc');
     if (h !== th) {
+      h.classList.remove('sorted-asc', 'sorted-desc');
       delete h.dataset.splitState;
-      // Reset split header text to remove arrows
       if (h.dataset.split) {
         const fCode = h.dataset.sort.replace(/-(sig|dr|signature|distinctiveness)$/, '');
         h.textContent = getFactionLabel(fCode) + ' DR | Prob';
@@ -2360,6 +2360,8 @@ function handleHeaderSort(th, rows, scopedFactions, eraYear, query) {
   });
   
   const { sort, dir } = resolveHeaderSort(th);
+  // Now replace th's class with the new direction
+  th.classList.remove('sorted-asc', 'sorted-desc');
   th.classList.add(dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
   
   // Update query sort
