@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.33.7 | 2026-06-09 18:08 UTC | pending |
-| test | 1.33.7 | 2026-06-09 18:05 UTC | pending |
+| test | 1.33.8 | 2026-06-10 19:40 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.33.8 | test | 2026-06-10 19:40 | pending | Fix: column sort toggle always returned desc (never toggled to asc) |
 | 1.33.7 | prod | 2026-06-09 18:08 | pending | VERSION.md: auto-stamp 1.33.7 test deploy |
 | 1.33.7 | test | 2026-06-09 18:05 | pending | Simplify split cell sort to 2-state toggle: DR desc ↔ Prob desc |
 | 1.33.6 | test | 2026-06-09 17:54 | pending | Fix: sort arrows in split cell headers broke column visibility |
