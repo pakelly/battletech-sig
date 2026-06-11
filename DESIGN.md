@@ -682,14 +682,18 @@ The primary view for multi-faction queries. Table with:
 - **Columns:** One per scoped faction (split cell), plus metadata and stat columns
 
 Each faction gets one **split cell** combining two independently heat-colored halves:
-- **Left half:** Raw signature score (z-score), heat-colored by DR tier (DR1=hottest → DR5=coolest). This measures how statistically distinctive the chassis is for this faction.
-- **Right half:** Probability value (biased weight = probability × WCD mixing), heat-colored by a fixed log-scale (same scale as the standalone Prob column). This measures how likely the chassis is to appear on the battlefield for this faction.
+- **Left half:** Raw signature score (z-score), heat-colored by DR tier using the **warm amber palette** (`--heat-1` through `--heat-10`). DR1=hottest → DR5=coolest. This measures how statistically distinctive the chassis is for this faction.
+- **Right half:** Probability value (biased weight = probability × WCD mixing), heat-colored by a fixed log-scale using the **cool blue palette** (`--cool-1` through `--cool-10`). This measures how likely the chassis is to appear on the battlefield for this faction.
+
+**Two distinct color families** make it easy to tell which axis you're looking at while scrolling:
+- **Warm amber** (DR) = fire/intensity → "how distinctive is this?"
+- **Cool blue** (Prob) = ocean/depth → "how common is this?"
 
 The split cell gives the complete picture at a glance:
-- 🟠🟠 Hot/Hot = distinctive AND common (faction-defining workhorse)
-- 🟠🔵 Hot/Cool = distinctive but rare (exclusive niche mech)
-- 🔵🟠 Cool/Hot = not distinctive but common (universal workhorse)
-- 🔵🔵 Cool/Cool = not distinctive, not common (filler)
+- 🟠🟦 Hot/Hot = distinctive AND common (faction-defining workhorse)
+- 🟠⬛ Hot/Cool = distinctive but rare (exclusive niche mech)
+- ⬛🟦 Cool/Hot = not distinctive but common (universal workhorse)
+- ⬛⬛ Cool/Cool = not distinctive, not common (filler)
 
 **Column header:** `[Faction] DR | Prob`. Clicking the header sorts by the faction's sig score.
 

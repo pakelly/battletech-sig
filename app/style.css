@@ -51,6 +51,18 @@
   --heat-8: #c06030;
   --heat-9: #dd7030;
   --heat-10: #f0883e;
+  /* Cool blue palette (Prob axis) */
+  --cool-0: transparent;
+  --cool-1: #0a1a2d;
+  --cool-2: #0e2240;
+  --cool-3: #132c52;
+  --cool-4: #1a3866;
+  --cool-5: #22457a;
+  --cool-6: #2a5590;
+  --cool-7: #3268a8;
+  --cool-8: #3a7cc0;
+  --cool-9: #4090d8;
+  --cool-10: #48a6f0;
   --chip-bg: #21262d;
   --chip-text: #c9d1d9;
   --suggest-bg: #1c2128;
@@ -1238,6 +1250,17 @@ details[open] > .help-section-title::before {
 .heat-8  { background-color: var(--heat-8) !important; }
 .heat-9  { background-color: var(--heat-9) !important; }
 .heat-10 { background-color: var(--heat-10) !important; color: #000; }
+
+.cool-1  { background-color: var(--cool-1) !important; }
+.cool-2  { background-color: var(--cool-2) !important; }
+.cool-3  { background-color: var(--cool-3) !important; }
+.cool-4  { background-color: var(--cool-4) !important; }
+.cool-5  { background-color: var(--cool-5) !important; }
+.cool-6  { background-color: var(--cool-6) !important; }
+.cool-7  { background-color: var(--cool-7) !important; }
+.cool-8  { background-color: var(--cool-8) !important; }
+.cool-9  { background-color: var(--cool-9) !important; }
+.cool-10 { background-color: var(--cool-10) !important; color: #000; }
 
 .no-data {
   color: var(--text-dim);

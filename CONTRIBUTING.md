@@ -132,6 +132,35 @@ Every new feature gets tests. Every bug fix gets a regression test. Tests are no
 10. Verify live deployment (hard-refresh, run a query, check console)
 ```
 
+## Dev Logging
+
+During development, **do not send stream-of-consciousness messages to Patrick.** Write them to a dev log instead.
+
+### During Development
+
+1. **Create a dev log** at `docs/dev-logs/YYYY-MM-DD-<feature-slug>.md`
+2. **Write all interstitial commentary there** — what you're doing, what you tried, what failed, what you're thinking, test results, etc.
+3. **Only message Patrick directly for:**
+   - "Starting work on X" / "Done with X, ready for review"
+   - Questions or decisions that block progress
+   - Significant surprises ("this is way more complex than expected, here's why")
+   - Errors or failures that require his input
+4. The dev log is always available if Patrick wants to peek at progress mid-flight
+
+### On Completion (accepted or aborted)
+
+1. **Distill** key decisions, architecture choices, gotchas, and lessons into `DESIGN.md`
+2. **Capture** lasting lessons in `memory/topic-lessons.md` (workspace)
+3. **Archive or delete** the raw dev log (Patrick's call — default: delete after distillation)
+
+### Convention
+
+- **Location:** `docs/dev-logs/YYYY-MM-DD-<feature-slug>.md`
+- **Format:** Chronological markdown with timestamps, code snippets, and decision rationale
+- **Naming:** Date work started + short kebab-case descriptor (e.g. `2026-06-11-queue-refactor.md`)
+
+---
+
 ## What Went Wrong (2026-05-09)
 
 Captured here so we don't repeat it:

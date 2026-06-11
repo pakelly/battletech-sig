@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.34.0';
+const APP_VERSION = '1.34.1';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -1480,10 +1480,10 @@ function heatClass(pref) {
 
 function bwHeatClass(bw) {
   if (!bw || bw <= 0) return 'no-data';
-  // Log-scale heat: map log2(bw) from [-3.5, 3.5] to heat 1–10
+  // Log-scale: map log2(bw) from [-3.5, 3.5] to 1–10, using cool blue palette
   const l = Math.log2(bw);
-  const heat = Math.round(1 + 9 * (l + 3.5) / 7);
-  return 'heat-' + Math.max(1, Math.min(10, heat));
+  const level = Math.round(1 + 9 * (l + 3.5) / 7);
+  return 'cool-' + Math.max(1, Math.min(10, level));
 }
 
 function sigTierToHeat(tier) {
