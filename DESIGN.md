@@ -909,6 +909,34 @@ A hamburger menu (☰) attached to the results table that lets users show/hide c
 
 ---
 
+## Column Order
+
+A reorder button (⇅) next to the column visibility button (☰) that lets users customize column display order.
+
+**Trigger:** ⇅ button in the col-vis-bar, appears when a table is rendered.
+
+**Panel:** Dropdown/popover listing all currently visible columns in their current display order.
+- **Chassis** — always first, locked in position (cannot be moved)
+- All other visible columns can be reordered
+
+**Interaction:** Each column entry has up (▲) and down (▼) buttons to move it in the list. Reordering updates the table immediately.
+
+**Persistence:**
+- Column order saved to `localStorage` (key: `bt-sig-col-order`), separate from visibility state.
+- Stored as an ordered array of column names (using stable `data-col-name` or `textContent`).
+- On render, saved order is applied after column visibility. Columns not in the saved order appear at the end in their default position.
+- Order persists across queries and sessions.
+
+**Interaction with visibility:** Only currently visible columns appear in the reorder menu. Hiding a column removes it from the reorder list; showing it again appends it at the end (or restores its saved position if one exists).
+
+**Implementation:**
+- `loadColOrder()` / `saveColOrder()` — localStorage helpers
+- `applyColOrder()` — reorders `<th>` and corresponding `<td>` cells in the DOM
+- `renderColOrderMenu()` — builds the reorder UI
+- Both `renderFactionComparison` and `renderSingleFaction` call `applyColOrder()` after `applyColVisibility()`
+
+---
+
 ## Incomplete Chassis Filter
 
 ### Background

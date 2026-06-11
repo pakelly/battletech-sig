@@ -99,6 +99,7 @@ before(() => {
         computeVariantDistribution,
         variantMatchesTech,
         filterVariantsByTech,
+        computeColOrder,
       };
     }
   `);
@@ -1831,5 +1832,67 @@ describe('filterVariantsByTech', () => {
   it('returns input unchanged when variants is null/undefined', () => {
     assert.strictEqual(F.filterVariantsByTech(null, 'clan', 'Clan'), null);
     assert.strictEqual(F.filterVariantsByTech(undefined, 'clan', 'Clan'), undefined);
+  });
+});
+
+// ════════════════════════════════════════════════════════
+// COLUMN ORDER
+// ════════════════════════════════════════════════════════
+
+describe('computeColOrder', () => {
+  it('returns identity order when no saved order', () => {
+    const cols = ['Chassis', 'Tons', 'Class', 'DC DR | Prob'];
+    const result = F.computeColOrder(cols, []);
+    assert.deepStrictEqual(result, [0, 1, 2, 3]);
+  });
+
+  it('returns identity order when saved order is null', () => {
+    const cols = ['Chassis', 'Tons', 'Class'];
+    const result = F.computeColOrder(cols, null);
+    assert.deepStrictEqual(result, [0, 1, 2]);
+  });
+
+  it('reorders columns according to saved order', () => {
+    const cols = ['Chassis', 'Tons', 'Class', 'Role'];
+    const saved = ['Chassis', 'Role', 'Tons', 'Class'];
+    const result = F.computeColOrder(cols, saved);
+    // Chassis=0 stays 0, Role=3 moves to 1, Tons=1 moves to 2, Class=2 moves to 3
+    assert.deepStrictEqual(result, [0, 3, 1, 2]);
+  });
+
+  it('keeps Chassis locked at position 0 even if saved order moves it', () => {
+    const cols = ['Chassis', 'Tons', 'Class'];
+    const saved = ['Tons', 'Chassis', 'Class'];
+    const result = F.computeColOrder(cols, saved);
+    // Chassis must stay at 0; Tons and Class follow saved order
+    assert.strictEqual(result[0], 0); // Chassis stays first
+    assert.deepStrictEqual(result, [0, 1, 2]);
+  });
+
+  it('appends columns not in saved order at the end', () => {
+    const cols = ['Chassis', 'Tons', 'Class', 'Role', 'BV'];
+    const saved = ['Chassis', 'Class', 'Tons'];
+    const result = F.computeColOrder(cols, saved);
+    // Chassis=0, Class=2→1, Tons=1→2, then Role=3 and BV=4 appended
+    assert.deepStrictEqual(result, [0, 2, 1, 3, 4]);
+  });
+
+  it('ignores saved entries that are not in current columns', () => {
+    const cols = ['Chassis', 'Tons', 'Class'];
+    const saved = ['Chassis', 'BV', 'Class', 'Tons'];
+    const result = F.computeColOrder(cols, saved);
+    // BV is not in cols, skip it; Class=2→1, Tons=1→2
+    assert.deepStrictEqual(result, [0, 2, 1]);
+  });
+
+  it('handles single column', () => {
+    const cols = ['Chassis'];
+    const result = F.computeColOrder(cols, ['Chassis']);
+    assert.deepStrictEqual(result, [0]);
+  });
+
+  it('handles empty columns', () => {
+    const result = F.computeColOrder([], []);
+    assert.deepStrictEqual(result, []);
   });
 });
