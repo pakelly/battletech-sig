@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.33.9 | 2026-06-10 19:46 UTC | pending |
-| test | 1.33.9 | 2026-06-10 19:43 UTC | pending |
+| test | 1.34.0 | 2026-06-11 14:46 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.34.0 | test | 2026-06-11 14:46 | pending | Column order customization: reorder columns via ⇅ Order button |
 | 1.33.9 | prod | 2026-06-10 19:46 | pending | VERSION.md: auto-stamp 1.33.9 test deploy |
 | 1.33.9 | test | 2026-06-10 19:43 | pending | Natural sort direction: name/tonnage/BV/class default asc, scores default desc |
 | 1.33.8 | test | 2026-06-10 19:40 | pending | Fix: column sort toggle always returned desc (never toggled to asc) |
