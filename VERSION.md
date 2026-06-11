@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.34.0 | 2026-06-11 17:37 UTC | pending |
-| test | 1.34.0 | 2026-06-11 14:46 UTC | pending |
+| test | 1.34.1 | 2026-06-11 17:51 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.34.1 | test | 2026-06-11 17:51 | pending | Dual color palettes: warm amber for DR, cool blue for Prob |
 | 1.34.0 | prod | 2026-06-11 17:37 | pending | VERSION.md: auto-stamp 1.34.0 test deploy |
 | 1.34.0 | test | 2026-06-11 14:46 | pending | Column order customization: reorder columns via ⇅ Order button |
 | 1.33.9 | prod | 2026-06-10 19:46 | pending | VERSION.md: auto-stamp 1.33.9 test deploy |
