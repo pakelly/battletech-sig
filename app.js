@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.33.9';
-const DEPLOY_TIME = '20260610.1946';
+const APP_VERSION = '1.34.0';
+const DEPLOY_TIME = '20260611.1446';
 
 let DATA = null; // app-data.json
 
@@ -1709,6 +1709,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   }
 
   updateColVisibility();
+  applyColOrder();
 }
 
 function renderSingleFaction(rows, faction, eraYear) {
@@ -1883,6 +1884,7 @@ function renderSingleFaction(rows, faction, eraYear) {
   });
 
   updateColVisibility();
+  applyColOrder();
 }
 
 function renderMechView(rows, eraYear, chassisName) {
@@ -1963,6 +1965,7 @@ function renderMechView(rows, eraYear, chassisName) {
   }
 
   updateColVisibility();
+  applyColOrder();
 }
 
 // ── Variant Drill-down ──
@@ -3484,6 +3487,7 @@ async function init() {
 
   // ── Column Visibility ──
   initColVisibility();
+  initColOrder();
 
   // ── Quick Filter Insert ──
   initQuickFilter();
@@ -4056,6 +4060,7 @@ function openFamilyEditor(familyName) {
 // ── Column Visibility ──
 
 const COL_VIS_KEY = 'bt-sig-col-visibility';
+const COL_ORDER_KEY = 'bt-sig-col-order';
 
 function loadColVisibility() {
   try { return JSON.parse(localStorage.getItem(COL_VIS_KEY) || '{}'); } catch { return {}; }
@@ -4071,6 +4076,8 @@ function initColVisibility() {
 
   toggle.addEventListener('click', (e) => {
     e.stopPropagation();
+    // Close the order menu if open
+    document.getElementById('col-order-menu')?.classList.add('hidden');
     menu.classList.toggle('hidden');
   });
 
@@ -4183,6 +4190,193 @@ function applyColVisibility() {
       cells[idx].style.display = colVisible[idx] ? '' : 'none';
     }
   }
+}
+
+// ── Column Order ──
+
+function loadColOrder() {
+  try { return JSON.parse(localStorage.getItem(COL_ORDER_KEY) || '[]'); } catch { return []; }
+}
+
+function saveColOrder(order) {
+  localStorage.setItem(COL_ORDER_KEY, JSON.stringify(order));
+}
+
+/**
+ * Compute column index mapping from saved order.
+ * @param {string[]} cols - current column names in DOM order
+ * @param {string[]|null} savedOrder - saved column name order
+ * @returns {number[]} - array where result[newPos] = originalIndex
+ */
+function computeColOrder(cols, savedOrder) {
+  if (!cols.length) return [];
+  if (!savedOrder || !savedOrder.length) return cols.map((_, i) => i);
+  
+  const nameToIdx = new Map();
+  cols.forEach((name, idx) => nameToIdx.set(name, idx));
+  
+  const result = [0]; // Chassis (idx 0) always first
+  const placed = new Set([0]);
+  
+  // Place columns in saved order (skip Chassis and unknown columns)
+  for (const name of savedOrder) {
+    const idx = nameToIdx.get(name);
+    if (idx !== undefined && idx !== 0 && !placed.has(idx)) {
+      result.push(idx);
+      placed.add(idx);
+    }
+  }
+  
+  // Append remaining columns not in saved order
+  for (let i = 1; i < cols.length; i++) {
+    if (!placed.has(i)) result.push(i);
+  }
+  
+  return result;
+}
+
+function applyColOrder() {
+  const table = document.querySelector('#view-container .data-table');
+  if (!table) return;
+  
+  const thead = table.querySelector('thead');
+  const headers = Array.from(thead.querySelectorAll('th'));
+  if (headers.length <= 1) return;
+  
+  // Get visible column names in current DOM order
+  const colNames = headers.map(th => getColName(th));
+  const savedOrder = loadColOrder();
+  const order = computeColOrder(colNames, savedOrder);
+  
+  // Check if already in correct order
+  const isIdentity = order.every((idx, pos) => idx === pos);
+  if (isIdentity) return;
+  
+  // Reorder header cells
+  const headerRow = thead.querySelector('tr');
+  const orderedHeaders = order.map(idx => headers[idx]);
+  orderedHeaders.forEach(th => headerRow.appendChild(th));
+  
+  // Reorder body cells
+  const rows = table.querySelectorAll('tbody tr');
+  for (const tr of rows) {
+    const cells = Array.from(tr.children);
+    const orderedCells = order.map(idx => cells[idx]);
+    orderedCells.forEach(td => tr.appendChild(td));
+  }
+}
+
+function initColOrder() {
+  const toggle = document.getElementById('col-order-toggle');
+  const menu = document.getElementById('col-order-menu');
+  if (!toggle || !menu) return;
+  
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // Close the visibility menu if open
+    document.getElementById('col-vis-menu')?.classList.add('hidden');
+    menu.classList.toggle('hidden');
+    if (!menu.classList.contains('hidden')) renderColOrderMenu();
+  });
+  
+  // Close on click-outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#col-order-menu') && !e.target.closest('#col-order-toggle')) {
+      menu.classList.add('hidden');
+    }
+  });
+}
+
+function renderColOrderMenu() {
+  const menu = document.getElementById('col-order-menu');
+  if (!menu) return;
+  
+  const table = document.querySelector('#view-container .data-table');
+  if (!table) return;
+  
+  const headers = Array.from(table.querySelectorAll('thead th'));
+  // Only show visible columns
+  const visibleCols = [];
+  headers.forEach((th, idx) => {
+    if (th.style.display !== 'none') {
+      visibleCols.push({ name: getColName(th), idx });
+    }
+  });
+  
+  menu.innerHTML = '';
+  
+  visibleCols.forEach((col, pos) => {
+    const row = document.createElement('div');
+    row.className = 'col-order-item';
+    
+    const label = document.createElement('span');
+    label.className = 'col-order-label';
+    label.textContent = col.name;
+    
+    const btnGroup = document.createElement('span');
+    btnGroup.className = 'col-order-btns';
+    
+    if (pos > 1) { // Can't move above Chassis (pos 0), so first moveable is pos 1
+      const upBtn = document.createElement('button');
+      upBtn.className = 'col-order-btn';
+      upBtn.textContent = '\u25B2';
+      upBtn.title = 'Move up';
+      upBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        moveCol(visibleCols, pos, -1);
+      });
+      btnGroup.appendChild(upBtn);
+    }
+    
+    if (pos > 0 && pos < visibleCols.length - 1) {
+      const downBtn = document.createElement('button');
+      downBtn.className = 'col-order-btn';
+      downBtn.textContent = '\u25BC';
+      downBtn.title = 'Move down';
+      downBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        moveCol(visibleCols, pos, 1);
+      });
+      btnGroup.appendChild(downBtn);
+    }
+    
+    row.appendChild(label);
+    row.appendChild(btnGroup);
+    menu.appendChild(row);
+  });
+  
+  // Reset button
+  const resetRow = document.createElement('div');
+  resetRow.className = 'col-order-reset';
+  const resetBtn = document.createElement('button');
+  resetBtn.className = 'col-order-btn col-order-reset-btn';
+  resetBtn.textContent = 'Reset order';
+  resetBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    localStorage.removeItem(COL_ORDER_KEY);
+    // Re-render by re-running the query
+    runQuery();
+    document.getElementById('col-order-menu')?.classList.add('hidden');
+  });
+  resetRow.appendChild(resetBtn);
+  menu.appendChild(resetRow);
+}
+
+function moveCol(visibleCols, pos, direction) {
+  const newPos = pos + direction;
+  if (newPos < 1 || newPos >= visibleCols.length) return; // Can't move to pos 0 (Chassis)
+  
+  // Swap in the visible cols array
+  const temp = visibleCols[pos];
+  visibleCols[pos] = visibleCols[newPos];
+  visibleCols[newPos] = temp;
+  
+  // Save the new order
+  saveColOrder(visibleCols.map(c => c.name));
+  
+  // Apply and re-render menu
+  applyColOrder();
+  renderColOrderMenu();
 }
 
 // ── Quick Filter Insert ──
