@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.34.1';
-const DEPLOY_TIME = '20260611.1751';
+const APP_VERSION = '1.35.0';
+const DEPLOY_TIME = '20260617.0544';
 
 let DATA = null; // app-data.json
 
