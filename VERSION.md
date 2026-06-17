@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.34.0 | 2026-06-11 17:37 UTC | pending |
-| test | 1.35.0 | 2026-06-17 05:44 UTC | pending |
+| test | 1.35.1 | 2026-06-17 07:51 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.35.1 | test | 2026-06-17 07:51 | pending | Revert sub-faction rollup (over-correction), rebuild data |
 | 1.35.0 | test | 2026-06-17 05:44 | pending | Fix: roll up sub-faction weights into parent faction |
 | 1.34.1 | test | 2026-06-11 17:51 | pending | Dual color palettes: warm amber for DR, cool blue for Prob |
 | 1.34.0 | prod | 2026-06-11 17:37 | pending | VERSION.md: auto-stamp 1.34.0 test deploy |
