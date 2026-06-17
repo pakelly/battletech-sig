@@ -426,10 +426,10 @@ function remapFactionKeys(obj) {
   if (!obj) return obj;
   const result = {};
   for (const [k, v] of Object.entries(obj)) {
-    // Roll up sub-unit factions (e.g. DC.GHO → DC) into parent
-    const baseCode = k.includes('.') ? k.split('.')[0] : k;
-    const newKey = remapFactionCode(baseCode);
-    // If remapped key already exists, keep the higher peak value (merge LA+LC, sub-units)
+    // Skip sub-unit factions (codes with dots)
+    if (k.includes('.')) continue;
+    const newKey = remapFactionCode(k);
+    // If remapped key already exists, keep the higher peak value (merge LA+LC)
     if (result[newKey] !== undefined) {
       if (peakWeight(v) > peakWeight(result[newKey])) {
         result[newKey] = v;
@@ -610,9 +610,9 @@ for (const [eraYear, chassisEntries] of Object.entries(scores.eras)) {
     if (mulEra) {
       const mul = {};
       for (const faction of Object.keys(data.weights)) {
-        const baseFaction = faction.includes('.') ? faction.split('.')[0] : faction;
-        if (hasMulAvail(baseFaction, mulEra, mulLookupName)) {
-          mul[remapFactionCode(baseFaction)] = 1;
+        if (faction.includes('.')) continue; // skip sub-unit factions
+        if (hasMulAvail(faction, mulEra, mulLookupName)) {
+          mul[remapFactionCode(faction)] = 1;
         }
       }
       if (Object.keys(mul).length > 0) {
