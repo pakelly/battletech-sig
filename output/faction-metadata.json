@@ -235,7 +235,7 @@
     "name": "Arc-Royal Defense Cordon",
     "yearsActive": [
       {
-        "start": 3058,
+        "start": 3057,
         "end": 3067
       }
     ],
@@ -278,7 +278,7 @@
     "name": "Axumite Providence",
     "yearsActive": [
       {
-        "start": 2392,
+        "start": 2245,
         "end": 3075
       }
     ],
@@ -1335,7 +1335,7 @@
         "end": 3040
       },
       {
-        "start": 3079
+        "start": 3075
       }
     ],
     "tags": [
@@ -1377,6 +1377,29 @@
       "red": 237,
       "green": 28,
       "blue": 36
+    }
+  },
+  "DD": {
+    "key": "DD",
+    "name": "Duchy of Don't",
+    "yearsActive": [
+      {
+        "start": 2822,
+        "end": 2900
+      }
+    ],
+    "tags": [
+      "MINOR",
+      "PERIPHERY"
+    ],
+    "parentFaction": null,
+    "sucsCodes": [
+      "DD"
+    ],
+    "color": {
+      "red": 122,
+      "green": 103,
+      "blue": 84
     }
   },
   "DGM": {
@@ -2312,6 +2335,10 @@
     "name": "Marik Commonwealth",
     "yearsActive": [
       {
+        "start": 2246,
+        "end": 2317
+      },
+      {
         "start": 3079,
         "end": 3082
       }
@@ -2945,21 +2972,29 @@
     "name": "Pentagon Powers",
     "yearsActive": [
       {
-        "start": 2801,
-        "end": 2822
+        "start": 2802,
+        "end": 2821
       }
     ],
     "tags": [],
     "parentFaction": null,
     "sucsCodes": [],
-    "color": null
+    "color": {
+      "red": 192,
+      "green": 192,
+      "blue": 192
+    }
   },
   "PR": {
     "key": "PR",
     "name": "Principality of Regulus",
     "yearsActive": [
       {
-        "start": 3079,
+        "start": 2243,
+        "end": 2317
+      },
+      {
+        "start": 3078,
         "end": 3086
       }
     ],
@@ -3122,7 +3157,8 @@
     "name": "Regulan Fiefs",
     "yearsActive": [
       {
-        "start": 3086
+        "start": 3086,
+        "end": 3148
       }
     ],
     "tags": [
@@ -3145,7 +3181,7 @@
     "yearsActive": [
       {
         "start": 3079,
-        "end": 3086
+        "end": 3104
       }
     ],
     "tags": [
@@ -3403,6 +3439,10 @@
     "name": "Stewart Commonality",
     "yearsActive": [
       {
+        "start": 2271,
+        "end": 2317
+      },
+      {
         "start": 3079,
         "end": 3082
       }
@@ -3547,7 +3587,9 @@
       "IS"
     ],
     "parentFaction": null,
-    "sucsCodes": [],
+    "sucsCodes": [
+      "SIML"
+    ],
     "color": {
       "red": 153,
       "green": 198,
@@ -3569,7 +3611,8 @@
     ],
     "parentFaction": null,
     "sucsCodes": [
-      "SiS"
+      "SiS",
+      "SCo"
     ],
     "color": {
       "red": 145,
@@ -3637,7 +3680,9 @@
     ],
     "tags": [],
     "parentFaction": null,
-    "sucsCodes": [],
+    "sucsCodes": [
+      "3SL"
+    ],
     "color": null
   },
   "SLIE": {
@@ -3895,7 +3940,7 @@
     "name": "Tortuga Dominions",
     "yearsActive": [
       {
-        "start": 2785
+        "start": 2596
       }
     ],
     "tags": [

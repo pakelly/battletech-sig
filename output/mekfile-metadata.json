@@ -1,12 +1,12 @@
 {
-  "_generated": "2026-05-26T14:54:36.369Z",
+  "_generated": "2026-06-17T07:50:45.728Z",
   "_source": "mm-data/data/mekfiles/meks",
   "_note": "BV (Battle Value) is not present in .mtf files — MegaMek calculates it at runtime. All BV fields are null.",
   "stats": {
-    "totalFiles": 4281,
-    "totalVariants": 3217,
-    "totalChassis": 731,
-    "totalPrefixes": 495,
+    "totalFiles": 4294,
+    "totalVariants": 3230,
+    "totalChassis": 734,
+    "totalPrefixes": 496,
     "parseErrors": 0,
     "skipped": 0
   },
@@ -423,7 +423,7 @@
       "omni": false,
       "role": "Skirmisher",
       "class": "Heavy",
-      "variants": 6
+      "variants": 11
     },
     "Falcon": {
       "tonnage": 30,
@@ -787,12 +787,12 @@
     },
     "Axman": {
       "tonnage": 65,
-      "intro": 3048,
+      "intro": 3031,
       "tech": "Inner Sphere/Mixed",
       "omni": false,
       "role": "Skirmisher",
       "class": "Heavy",
-      "variants": 8
+      "variants": 12
     },
     "Black Hawk": {
       "tonnage": 50,
@@ -5992,6 +5992,15 @@
       "class": "Heavy",
       "variants": 1
     },
+    "Hybrid Rifleman": {
+      "tonnage": 60,
+      "intro": 3024,
+      "tech": "Mixed/Inner Sphere",
+      "omni": false,
+      "role": "Sniper",
+      "class": "Heavy",
+      "variants": 2
+    },
     "Burrower": {
       "tonnage": 65,
       "intro": 3115,
@@ -6397,6 +6406,15 @@
       "class": "Assault",
       "variants": 10
     },
+    "Temax Cat Ninjabolt": {
+      "tonnage": 65,
+      "intro": 3075,
+      "tech": "Inner Sphere",
+      "omni": false,
+      "role": "Sniper",
+      "class": "Heavy",
+      "variants": 1
+    },
     "Liberator": {
       "tonnage": 40,
       "intro": 3018,
@@ -6476,6 +6494,15 @@
       "omni": false,
       "role": "Scout",
       "class": "Light",
+      "variants": 1
+    },
+    "Schwerer Gustav": {
+      "tonnage": 100,
+      "intro": 3073,
+      "tech": "Mixed",
+      "omni": false,
+      "role": "Missile Boat",
+      "class": "Assault",
       "variants": 1
     },
     "Icarus": {
@@ -36940,6 +36967,105 @@
       "omni": false,
       "clanname": null
     },
+    "AXM-1X": {
+      "chassis": "Axman",
+      "tonnage": 65,
+      "bv": null,
+      "intro": 3031,
+      "tech": "Inner Sphere",
+      "role": "Brawler",
+      "mulId": null,
+      "omni": false,
+      "clanname": null
+    },
+    "AXM-2R": {
+      "chassis": "Axman",
+      "tonnage": 65,
+      "bv": null,
+      "intro": 3049,
+      "tech": "Inner Sphere",
+      "role": "Skirmisher",
+      "mulId": null,
+      "omni": false,
+      "clanname": null
+    },
+    "AXM-5R": {
+      "chassis": "Axman",
+      "tonnage": 65,
+      "bv": null,
+      "intro": 3077,
+      "tech": "Mixed",
+      "role": "Brawler",
+      "mulId": null,
+      "omni": false,
+      "clanname": null
+    },
+    "AXM-5S": {
+      "chassis": "Axman",
+      "tonnage": 65,
+      "bv": null,
+      "intro": 3074,
+      "tech": "Mixed",
+      "role": "Brawler",
+      "mulId": null,
+      "omni": false,
+      "clanname": null
+    },
+    "DRG-1ALAG": {
+      "chassis": "Dragon",
+      "tonnage": 60,
+      "bv": null,
+      "intro": 3000,
+      "tech": "Inner Sphere",
+      "role": "Skirmisher",
+      "mulId": null,
+      "omni": false,
+      "clanname": null
+    },
+    "DRG-2ALAG": {
+      "chassis": "Dragon",
+      "tonnage": 60,
+      "bv": null,
+      "intro": 3000,
+      "tech": "Inner Sphere",
+      "role": "Skirmisher",
+      "mulId": null,
+      "omni": false,
+      "clanname": null
+    },
+    "DRG-5ALAG": {
+      "chassis": "Dragon",
+      "tonnage": 60,
+      "bv": null,
+      "intro": 3060,
+      "tech": "Inner Sphere",
+      "role": "Skirmisher",
+      "mulId": null,
+      "omni": false,
+      "clanname": null
+    },
+    "DRG-7ALAG": {
+      "chassis": "Dragon",
+      "tonnage": 60,
+      "bv": null,
+      "intro": 3060,
+      "tech": "Inner Sphere",
+      "role": "Skirmisher",
+      "mulId": null,
+      "omni": false,
+      "clanname": null
+    },
+    "DRG-8ALAG": {
+      "chassis": "Dragon",
+      "tonnage": 60,
+      "bv": null,
+      "intro": 3060,
+      "tech": "Inner Sphere",
+      "role": "Skirmisher",
+      "mulId": null,
+      "omni": false,
+      "clanname": null
+    },
     "UM-R100": {
       "chassis": "SuburbanMech",
       "tonnage": 30,
@@ -37101,6 +37227,28 @@
       "intro": 3142,
       "tech": "Mixed",
       "role": "Brawler",
+      "mulId": null,
+      "omni": false,
+      "clanname": null
+    },
+    "RFL-3N (Sneede II)": {
+      "chassis": "Hybrid Rifleman",
+      "tonnage": 60,
+      "bv": null,
+      "intro": 3147,
+      "tech": "Mixed",
+      "role": "Sniper",
+      "mulId": null,
+      "omni": false,
+      "clanname": null
+    },
+    "RFL-3N (Sneede)": {
+      "chassis": "Hybrid Rifleman",
+      "tonnage": 60,
+      "bv": null,
+      "intro": 3024,
+      "tech": "Inner Sphere",
+      "role": "Sniper",
       "mulId": null,
       "omni": false,
       "clanname": null
@@ -40009,6 +40157,17 @@
       "omni": false,
       "clanname": null
     },
+    "TMC-NB": {
+      "chassis": "Temax Cat Ninjabolt",
+      "tonnage": 65,
+      "bv": null,
+      "intro": 3075,
+      "tech": "Inner Sphere",
+      "role": "Sniper",
+      "mulId": 3168,
+      "omni": false,
+      "clanname": null
+    },
     "WTH-5S": {
       "chassis": "Whitworth",
       "tonnage": 40,
@@ -40721,6 +40880,17 @@
       "tech": "Mixed",
       "role": "Sniper",
       "mulId": 1544,
+      "omni": false,
+      "clanname": null
+    },
+    "Schwerer Gustav": {
+      "chassis": "Schwerer Gustav",
+      "tonnage": 100,
+      "bv": null,
+      "intro": 3073,
+      "tech": "Mixed",
+      "role": "Missile Boat",
+      "mulId": 2828,
       "omni": false,
       "clanname": null
     },
@@ -41784,7 +41954,7 @@
       "chassis": "Hunchback",
       "tonnage": 50,
       "bv": null,
-      "intro": 3100,
+      "intro": 3138,
       "tech": "Mixed",
       "role": "Juggernaut",
       "mulId": 8374,
@@ -41795,7 +41965,7 @@
       "chassis": "Hunchback",
       "tonnage": 50,
       "bv": null,
-      "intro": 3100,
+      "intro": 3138,
       "tech": "Mixed",
       "role": "Striker",
       "mulId": 8375,
@@ -42497,6 +42667,7 @@
     "Manul": "Sun Spider",
     "US": "Pariah (Septicemia)",
     "UW": "Pariah (Septicemia)",
+    "TMC": "Temax Cat Ninjabolt",
     "LIB": "Liberator",
     "XR": "Cougar",
     "PR": "Ursus",
