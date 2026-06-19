@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
 const APP_VERSION = '1.35.1';
-const DEPLOY_TIME = '20260617.0751';
+const DEPLOY_TIME = '20260619.0528';
 
 let DATA = null; // app-data.json
 
@@ -2012,6 +2012,27 @@ function computeVariantDistribution(variants, faction, targetYear, chassisName) 
   return { sorted, variantBV, variantIntro, variantRoles, total };
 }
 
+// Get sub-faction data for a chassis+faction+era combination
+function getSubFactionData(chassisNames, faction, eraYear) {
+  if (!faction) return null;
+  
+  const eraData = DATA.eraData[String(eraYear)];
+  if (!eraData) return null;
+  
+  let allSubFactionData = {};
+  
+  // Collect sub-faction data from all chassis names (handles families)
+  for (const chassisName of chassisNames) {
+    const chassisData = eraData[chassisName];
+    if (chassisData && chassisData.sf && chassisData.sf[faction]) {
+      // Merge sub-faction data from this chassis
+      Object.assign(allSubFactionData, chassisData.sf[faction]);
+    }
+  }
+  
+  return Object.keys(allSubFactionData).length > 0 ? allSubFactionData : null;
+}
+
 function showVariants(chassisName, faction, eraYear) {
   const overlay = document.getElementById('variant-overlay');
   const title = document.getElementById('variant-title');
@@ -2255,6 +2276,34 @@ function showVariants(chassisName, faction, eraYear) {
         <div class="wcd-bar-container"><div class="wcd-bar" style="width:${pct}%"></div></div>
         <span class="wcd-pct">${pct.toFixed(0)}%</span>
       </div>`;
+    }
+    html += '</div>';
+  }
+
+  // ── Sub-Command Availability Section ──
+  // Show sub-faction weights for this chassis+faction+era if they exist
+  const subfactionData = getSubFactionData(chassisNames, faction, eraYear);
+  if (subfactionData && Object.keys(subfactionData).length > 0) {
+    html += '<div class="drilldown-section"><h4 class="drilldown-section-title">Sub-Command Availability</h4>';
+    
+    // Sort sub-factions by weight (highest first)
+    const sortedSubFactions = Object.entries(subfactionData)
+      .sort((a, b) => b[1] - a[1]);
+    
+    // Find max weight for bar scaling
+    const maxWeight = Math.max(...Object.values(subfactionData));
+    
+    for (const [subFactionCode, weight] of sortedSubFactions) {
+      const barWidth = maxWeight > 0 ? (weight / maxWeight * 100) : 0;
+      html += `
+        <div class="subfaction-row">
+          <span class="subfaction-name">${escHtml(subFactionCode)}</span>
+          <div class="subfaction-bar-container">
+            <div class="subfaction-bar" style="width:${barWidth}%"></div>
+          </div>
+          <span class="subfaction-weight">${weight}</span>
+        </div>
+      `;
     }
     html += '</div>';
   }
