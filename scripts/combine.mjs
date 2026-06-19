@@ -420,14 +420,29 @@ function peakWeight(entry) {
   return entry; // plain number
 }
 
+// Check if a sub-faction is active in the given era year.
+// Uses factionMeta years field (e.g. "3033-", "3029-3067", "2319-").
+function isSubFactionActiveInYear(sfCode, year) {
+  const meta = scores.factionMeta[sfCode];
+  if (!meta || !meta.years) return true; // no data → permissive
+  const yearsStr = String(meta.years).trim();
+  if (!yearsStr) return true;
+  const match = yearsStr.match(/^(\d+)\s*-\s*(\d*)$/);
+  if (!match) return true;
+  const start = parseInt(match[1], 10);
+  const end = match[2] ? parseInt(match[2], 10) : Infinity;
+  return year >= start && year <= end;
+}
+
 // Inject epsilon weights when parent faction has no entry but sub-factions exist
-function injectEpsilonWeights(chassisWeights) {
+function injectEpsilonWeights(chassisWeights, eraYear) {
   const result = { ...chassisWeights };
   const subFactions = {}; // parent -> array of {code, weight}
   
-  // Collect sub-faction data
+  // Collect sub-faction data (only sub-factions active in this era)
   for (const [fCode, weight] of Object.entries(chassisWeights)) {
     if (fCode.includes('.')) {
+      if (eraYear && !isSubFactionActiveInYear(fCode, eraYear)) continue;
       const parent = remapFactionCode(fCode.split('.')[0]);
       const peakW = peakWeight(weight);
       if (peakW > 0) {
@@ -453,7 +468,7 @@ function injectEpsilonWeights(chassisWeights) {
 // Only includes sub-factions whose peak weight DIFFERS from the parent's peak weight,
 // or where the parent has no entry (epsilon case). This keeps app-data.json lean —
 // inherited-same-as-parent entries are the vast majority and carry no information.
-function collectSubFactionData(chassisWeights) {
+function collectSubFactionData(chassisWeights, eraYear) {
   const subFactionData = {}; // parent -> {subCode: weight}
   
   // First pass: gather parent peak weights
@@ -465,9 +480,10 @@ function collectSubFactionData(chassisWeights) {
     }
   }
   
-  // Second pass: collect sub-factions that differ from parent
+  // Second pass: collect sub-factions that differ from parent (era-filtered)
   for (const [fCode, weight] of Object.entries(chassisWeights)) {
     if (fCode.includes('.')) {
+      if (eraYear && !isSubFactionActiveInYear(fCode, eraYear)) continue;
       const parent = remapFactionCode(fCode.split('.')[0]);
       const peakW = peakWeight(weight);
       if (peakW > 0) {
@@ -586,11 +602,12 @@ for (const [eraYear, chassisEntries] of Object.entries(scores.eras)) {
     // If this chassis has a tonnage split, partition variants by tonnage
     allChassis.add(chassisName);
     
-    // Apply epsilon weight injection for sub-factions
-    const epsilonWeights = injectEpsilonWeights(data.weights);
+    // Apply epsilon weight injection for sub-factions (era-filtered)
+    const eraYearNum = parseInt(eraYear, 10);
+    const epsilonWeights = injectEpsilonWeights(data.weights, eraYearNum);
     
-    // Collect sub-faction data for UI
-    const subFactionData = collectSubFactionData(data.weights);
+    // Collect sub-faction data for UI (era-filtered)
+    const subFactionData = collectSubFactionData(data.weights, eraYearNum);
     
     const entry = { w: remapFactionKeys(epsilonWeights) };
     
