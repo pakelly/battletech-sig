@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.34.0 | 2026-06-11 17:37 UTC | pending |
-| test | 1.35.1 | 2026-06-19 05:28 UTC | pending |
+| test | 1.35.1 | 2026-06-19 05:46 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.35.1 | test | 2026-06-19 05:46 | pending | Fix epsilon visibility, move sub-faction below variants, add name tooltips |
 | 1.35.1 | test | 2026-06-19 05:28 | pending | Rebuild app-data.json with sub-faction visibility data |
 | 1.35.1 | test | 2026-06-17 07:51 | pending | Revert sub-faction rollup (over-correction), rebuild data |
 | 1.35.0 | test | 2026-06-17 05:44 | pending | Fix: roll up sub-faction weights into parent faction |
