@@ -1295,6 +1295,119 @@ Implementation details TBD — the core role data and filtering come first.
 
 ---
 
+## Sub-Faction Visibility (v1.22.0)
+
+### Background
+
+MegaMek force generator data includes sub-faction entries (e.g., `DC.GHO` for Draconis Combine Ghost Regiments, `FS.RG` for Federated Suns Robinson Rangers) with their own availability weights for chassis. Currently the data pipeline drops all faction codes containing dots, losing this granular sub-command data.
+
+Sub-factions represent elite regiments, specialized units, or regional commands within a parent faction. They often have distinct equipment preferences that differ from the parent faction's general roster — e.g., Ghost Regiments fielding more advanced Kurita designs, or Robinson Rangers having different access patterns than standard AFFS units.
+
+### Feature Design
+
+Two-part implementation to surface sub-faction data without overwhelming the main UI:
+
+#### Part 1: Epsilon Weight Injection (Data Pipeline)
+
+**Problem:** Parent factions (e.g., `DC`) sometimes have no weight entry for a chassis, but their sub-factions (e.g., `DC.GHO`, `DC.SL`) do. This makes the chassis invisible in faction searches despite being fielded by sub-commands.
+
+**Solution:** When processing chassis weights in `combine.mjs`, if a parent faction has no entry (missing or zero weight) but any sub-faction with that parent prefix has a non-zero weight, inject an **epsilon weight** of `[0.1, 0]` (base 0.1, flat modifier) for the parent faction.
+
+**Constraints:**
+- Epsilon weight value: **0.1** (below minimum real weight of 1, above zero threshold)
+- Only applied when parent has no existing entry or explicit zero
+- Parent's real weight (if non-zero) is never overridden
+- Sub-faction data must be carried through to app-data.json for UI display
+- Epsilon injection uses the `remapFactionCode()` function for parent extraction (handles LA→LC remapping)
+
+#### Part 2: Sub-Command Availability Drill-Down (UI)
+
+**Location:** Chassis detail overlay (opened by clicking faction cells), inserted between "Weight Class Distribution" and "Variants" sections.
+
+**Display:** "Sub-Command Availability" section showing horizontal bar chart of sub-faction weights for the selected chassis+faction+era combination.
+
+**Data presentation:**
+- Sub-faction code displayed as-is (raw, not remapped — these are display labels)
+- Peak weight extracted using existing `peakWeight()` logic
+- Bars styled similarly to variant distribution
+- Only shown when sub-faction data exists for the clicked faction
+
+**Implementation:**
+- `combine.mjs`: Collect sub-faction weights per chassis per era in new `sf` field
+- `app.js`: Read `sf` data in `showVariants()` function and render bar chart
+- Data structure: `sf: { "DC.GHO": 4, "DC.SL": 2 }` nested under each era+chassis entry
+
+### Data Flow
+
+```
+[MegaMek XMLs with sub-factions] 
+  ↓ parse (currently filtered out)
+[Scores with parent + sub-faction weights]
+  ↓ epsilon injection + sub-faction collection
+[app-data.json with sf field]
+  ↓ UI rendering
+[Drill-down with sub-command section]
+```
+
+### Epsilon Weight Formula
+
+```javascript
+// For each chassis, for each era:
+const subFactions = {}; // collect sub-faction weights
+for (const [fCode, weight] of Object.entries(chassisWeights)) {
+  if (fCode.includes('.')) {
+    const parent = remapFactionCode(fCode.split('.')[0]);
+    const peakW = peakWeight(weight);
+    if (peakW > 0) {
+      subFactions[parent] = subFactions[parent] || [];
+      subFactions[parent].push({ code: fCode, weight: peakW });
+    }
+  }
+}
+
+// Epsilon injection
+for (const [parent, subs] of Object.entries(subFactions)) {
+  const parentWeight = chassisWeights[parent];
+  const parentPeak = parentWeight ? peakWeight(parentWeight) : 0;
+  if (parentPeak === 0) {
+    chassisWeights[parent] = [0.1, 0]; // epsilon weight
+  }
+}
+```
+
+### UI Mockup
+
+```
+Dragon — DC (3039)
+
+[Rating Tiers section]
+
+[Weight Class Distribution section]
+
+┌─ Sub-Command Availability ──────────┐
+│ DC.GHO (Ghost Regiments)     ████████ 6  │
+│ DC.SL (Sword of Light)       ████     4  │
+│ DC.RL (Ryuken Regiments)     ██       2  │
+└────────────────────────────────────────┘
+
+[Variants section]
+```
+
+### Benefits
+
+1. **Discoverability:** Chassis become visible in parent faction searches even when only sub-factions field them
+2. **Granularity:** Users can see which specific regiments/commands favor each chassis
+3. **Identity depth:** Reveals tactical specialization within factions (e.g., elite units vs. line units)
+4. **Minimal UI impact:** Sub-faction data only appears in drill-down, not cluttering main table
+
+### Scope Limitations
+
+- Sub-faction codes in display only (not filterable or sortable)
+- No sub-faction-specific queries (`DC.GHO-sig>5`) — parent faction remains the unit of analysis
+- Epsilon weights don't participate in signature computation (too small to affect z-scores meaningfully)
+
+---
+
 ## Future Possibilities
 
 - **Faction lineage / succession model:** Many factions merge, splinter, rename, or absorb others across eras. Current approach patches this case-by-case (e.g. LA/LC MUL merge → canonical LC). Needs a proper lineage map that understands rename (LC↔LA), merger (FS+LC→FC), splintering (FRR from DC), conquest-then-absorption (FRR→CGB occupation→RD), brief existence (WOB, ROS, SIC), etc. Scoring implications differ: a rename shares the same force pool, a merger combines two, a splinter starts fresh-ish. Key example: FRR goes DC→FRR→CGB/FRR→RD, with mech roster evolving at each transition.
