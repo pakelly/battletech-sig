@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.34.0 | 2026-06-11 17:37 UTC | pending |
-| test | 1.35.1 | 2026-06-19 10:01 UTC | pending |
+| test | 1.35.1 | 2026-06-19 14:30 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.35.1 | test | 2026-06-19 14:30 | pending | Reduce epsilon weight from 0.1 to 0.01 |
 | 1.35.1 | test | 2026-06-19 10:01 | pending | Era-filter sub-faction data using factions.xml year ranges |
 | 1.35.1 | test | 2026-06-19 05:57 | pending | Fix Mode B zeroing of epsilon weights with sub-faction data |
 | 1.35.1 | test | 2026-06-19 05:46 | pending | Fix epsilon visibility, move sub-faction below variants, add name tooltips |
