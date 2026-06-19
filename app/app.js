@@ -764,7 +764,7 @@ function computeAvgWeight(weights, scopedFactions) {
  *   - Have BV data
  * Returns { bvMin, bvMax, bvList } or null if no BV data.
  */
-function computeBVRange(variants, scopedFactions, mul, modeB, targetYear) {
+function computeBVRange(variants, scopedFactions, mul, modeB, targetYear, chassisWeights) {
   if (!variants) return null;
   const bvValues = [];
   for (const [varName, varData] of Object.entries(variants)) {
@@ -777,10 +777,15 @@ function computeBVRange(variants, scopedFactions, mul, modeB, targetYear) {
     // Combined variant weights can be negative (meaning "less common than chassis
     // average") — a defined value still indicates the faction fields this variant.
     // The chassis-level hasAnyWeight check already confirmed positive availability.
+    // Also accept variants when a scoped faction has chassis-level weight (e.g.
+    // epsilon from sub-faction injection) even if the variant lacks per-faction data.
     const factions = scopedFactions.length > 0 ? scopedFactions : Object.keys(vWeights);
     const hasFaction = factions.some(f => {
       const raw = vWeights[f];
-      return raw !== undefined && raw !== null;
+      if (raw !== undefined && raw !== null) return true;
+      // Fallback: chassis-level weight exists for this faction (epsilon / sub-faction derived)
+      if (chassisWeights && (chassisWeights[f] || 0) > 0) return true;
+      return false;
     });
     if (!hasFaction) continue;
     bvValues.push(bv);
@@ -2280,34 +2285,6 @@ function showVariants(chassisName, faction, eraYear) {
     html += '</div>';
   }
 
-  // ── Sub-Command Availability Section ──
-  // Show sub-faction weights for this chassis+faction+era if they exist
-  const subfactionData = getSubFactionData(chassisNames, faction, eraYear);
-  if (subfactionData && Object.keys(subfactionData).length > 0) {
-    html += '<div class="drilldown-section"><h4 class="drilldown-section-title">Sub-Command Availability</h4>';
-    
-    // Sort sub-factions by weight (highest first)
-    const sortedSubFactions = Object.entries(subfactionData)
-      .sort((a, b) => b[1] - a[1]);
-    
-    // Find max weight for bar scaling
-    const maxWeight = Math.max(...Object.values(subfactionData));
-    
-    for (const [subFactionCode, weight] of sortedSubFactions) {
-      const barWidth = maxWeight > 0 ? (weight / maxWeight * 100) : 0;
-      html += `
-        <div class="subfaction-row">
-          <span class="subfaction-name">${escHtml(subFactionCode)}</span>
-          <div class="subfaction-bar-container">
-            <div class="subfaction-bar" style="width:${barWidth}%"></div>
-          </div>
-          <span class="subfaction-weight">${weight}</span>
-        </div>
-      `;
-    }
-    html += '</div>';
-  }
-
   // ── Variant Breakdown Section ──
   if (sorted.length > 0) {
     html += '<div class="drilldown-section"><h4 class="drilldown-section-title">Variants</h4>';
@@ -2326,6 +2303,36 @@ function showVariants(chassisName, faction, eraYear) {
             <div class="variant-bar" style="width:${pct}%"></div>
           </div>
           <span class="variant-pct">${pct}%</span>
+        </div>
+      `;
+    }
+    html += '</div>';
+  }
+
+  // ── Sub-Command Availability Section ──
+  // Show sub-faction weights for this chassis+faction+era if they exist
+  const subfactionData = getSubFactionData(chassisNames, faction, eraYear);
+  if (subfactionData && Object.keys(subfactionData).length > 0) {
+    html += '<div class="drilldown-section"><h4 class="drilldown-section-title">Sub-Command Availability</h4>';
+    
+    // Sort sub-factions by weight (highest first)
+    const sortedSubFactions = Object.entries(subfactionData)
+      .sort((a, b) => b[1] - a[1]);
+    
+    // Find max weight for bar scaling
+    const maxWeight = Math.max(...Object.values(subfactionData));
+    
+    for (const [subFactionCode, weight] of sortedSubFactions) {
+      const barWidth = maxWeight > 0 ? (weight / maxWeight * 100) : 0;
+      const sfFullName = DATA.sfNames?.[subFactionCode] || '';
+      const tooltipAttr = sfFullName ? ` title="${escAttr(sfFullName)}"` : '';
+      html += `
+        <div class="subfaction-row">
+          <span class="subfaction-name"${tooltipAttr}>${escHtml(subFactionCode)}${sfFullName ? `<span class="subfaction-fullname">${escHtml(sfFullName)}</span>` : ''}</span>
+          <div class="subfaction-bar-container">
+            <div class="subfaction-bar" style="width:${barWidth}%"></div>
+          </div>
+          <span class="subfaction-weight">${weight}</span>
         </div>
       `;
     }
@@ -3056,7 +3063,7 @@ function runQuery() {
     if (!hasAnyWeight) continue;
     
     // Compute BV range from in-scope variants
-    const bvRange = computeBVRange(data.v, scopedFactions, data.mul, modeB, parsed.year);
+    const bvRange = computeBVRange(data.v, scopedFactions, data.mul, modeB, parsed.year, weights);
     
     // Skip chassis with no BV data (IndustrialMechs, obscure designs without MUL entries)
     if (!bvRange) continue;

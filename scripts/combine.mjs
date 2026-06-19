@@ -449,17 +449,34 @@ function injectEpsilonWeights(chassisWeights) {
   return result;
 }
 
-// Collect sub-faction data for UI display
+// Collect sub-faction data for UI display.
+// Only includes sub-factions whose peak weight DIFFERS from the parent's peak weight,
+// or where the parent has no entry (epsilon case). This keeps app-data.json lean —
+// inherited-same-as-parent entries are the vast majority and carry no information.
 function collectSubFactionData(chassisWeights) {
   const subFactionData = {}; // parent -> {subCode: weight}
   
+  // First pass: gather parent peak weights
+  const parentPeaks = {};
+  for (const [fCode, weight] of Object.entries(chassisWeights)) {
+    if (!fCode.includes('.')) {
+      const remapped = remapFactionCode(fCode);
+      parentPeaks[remapped] = peakWeight(weight);
+    }
+  }
+  
+  // Second pass: collect sub-factions that differ from parent
   for (const [fCode, weight] of Object.entries(chassisWeights)) {
     if (fCode.includes('.')) {
       const parent = remapFactionCode(fCode.split('.')[0]);
       const peakW = peakWeight(weight);
       if (peakW > 0) {
-        subFactionData[parent] = subFactionData[parent] || {};
-        subFactionData[parent][fCode] = peakW; // Use raw sub-faction code, not remapped
+        const parentPeak = parentPeaks[parent] || 0;
+        // Include if: parent has no weight (epsilon), or sub-faction weight differs from parent
+        if (parentPeak === 0 || peakW !== parentPeak) {
+          subFactionData[parent] = subFactionData[parent] || {};
+          subFactionData[parent][fCode] = peakW;
+        }
       }
     }
   }
@@ -537,9 +554,18 @@ const appData = {
   eras: ERA_LIST,
   families: families,
   modelPrefixes,
+  sfNames: {},
   chassis: {},
   eraData: {}
 };
+
+// Populate sub-faction names from scores.factionMeta
+for (const [code, meta] of Object.entries(scores.factionMeta)) {
+  if (code.includes('.') && meta.name) {
+    appData.sfNames[code] = meta.name;
+  }
+}
+console.log(`Indexed ${Object.keys(appData.sfNames).length} sub-faction names`);
 
 const allChassis = new Set();
 
