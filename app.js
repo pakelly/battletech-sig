@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
 const APP_VERSION = '1.35.1';
-const DEPLOY_TIME = '20260619.1430';
+const DEPLOY_TIME = '20260619.1443';
 
 let DATA = null; // app-data.json
 
@@ -235,6 +235,9 @@ function resolveWeights(weights, ratingIdx) {
 // MegaMek availability ratings use a base-2 log scale: probability_weight = 2^(rating/2)
 function toProb(rating) {
   if (rating <= 0) return 0;
+  // Epsilon weights (sub-faction derived, < 0.1) should produce a vanishingly
+  // small probability so they don't distort signature calculations.
+  if (rating < 0.1) return 0.001;
   return Math.pow(2, rating / 2);
 }
 
