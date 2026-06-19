@@ -420,6 +420,25 @@ function peakWeight(entry) {
   return entry; // plain number
 }
 
+// Resolve the true parent faction for a sub-faction code.
+// Uses factionMeta.parents when available (authoritative), falls back to code prefix.
+// Some MegaMek codes have misleading prefixes, e.g. FS.RG → parentFaction: CC.
+// Walks up the parent chain until we find a non-dotted (top-level) faction code.
+function resolveSubFactionParent(sfCode) {
+  const meta = scores.factionMeta[sfCode];
+  if (meta?.parents?.length > 0) {
+    // Use the first parent. If it's also a sub-faction (has dots), walk up.
+    for (const p of meta.parents) {
+      if (!p.includes('.')) return remapFactionCode(p);
+      // Parent is also a sub-faction — recurse
+      const grandparent = resolveSubFactionParent(p);
+      if (grandparent) return grandparent;
+    }
+  }
+  // Fallback: code prefix
+  return remapFactionCode(sfCode.split('.')[0]);
+}
+
 // Check if a sub-faction is active in the given era year.
 // Uses factionMeta years field (e.g. "3033-", "3029-3067", "2319-").
 function isSubFactionActiveInYear(sfCode, year) {
@@ -443,7 +462,7 @@ function injectEpsilonWeights(chassisWeights, eraYear) {
   for (const [fCode, weight] of Object.entries(chassisWeights)) {
     if (fCode.includes('.')) {
       if (eraYear && !isSubFactionActiveInYear(fCode, eraYear)) continue;
-      const parent = remapFactionCode(fCode.split('.')[0]);
+      const parent = resolveSubFactionParent(fCode);
       const peakW = peakWeight(weight);
       if (peakW > 0) {
         subFactions[parent] = subFactions[parent] || [];
@@ -484,7 +503,7 @@ function collectSubFactionData(chassisWeights, eraYear) {
   for (const [fCode, weight] of Object.entries(chassisWeights)) {
     if (fCode.includes('.')) {
       if (eraYear && !isSubFactionActiveInYear(fCode, eraYear)) continue;
-      const parent = remapFactionCode(fCode.split('.')[0]);
+      const parent = resolveSubFactionParent(fCode);
       const peakW = peakWeight(weight);
       if (peakW > 0) {
         const parentPeak = parentPeaks[parent] || 0;
