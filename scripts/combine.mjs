@@ -420,6 +420,53 @@ function peakWeight(entry) {
   return entry; // plain number
 }
 
+// Inject epsilon weights when parent faction has no entry but sub-factions exist
+function injectEpsilonWeights(chassisWeights) {
+  const result = { ...chassisWeights };
+  const subFactions = {}; // parent -> array of {code, weight}
+  
+  // Collect sub-faction data
+  for (const [fCode, weight] of Object.entries(chassisWeights)) {
+    if (fCode.includes('.')) {
+      const parent = remapFactionCode(fCode.split('.')[0]);
+      const peakW = peakWeight(weight);
+      if (peakW > 0) {
+        subFactions[parent] = subFactions[parent] || [];
+        subFactions[parent].push({ code: fCode, weight: peakW });
+      }
+    }
+  }
+  
+  // Epsilon injection
+  for (const [parent, subs] of Object.entries(subFactions)) {
+    const parentWeight = result[parent];
+    const parentPeak = parentWeight ? peakWeight(parentWeight) : 0;
+    if (parentPeak === 0 && subs.length > 0) {
+      result[parent] = [0.1, 0]; // epsilon weight
+    }
+  }
+  
+  return result;
+}
+
+// Collect sub-faction data for UI display
+function collectSubFactionData(chassisWeights) {
+  const subFactionData = {}; // parent -> {subCode: weight}
+  
+  for (const [fCode, weight] of Object.entries(chassisWeights)) {
+    if (fCode.includes('.')) {
+      const parent = remapFactionCode(fCode.split('.')[0]);
+      const peakW = peakWeight(weight);
+      if (peakW > 0) {
+        subFactionData[parent] = subFactionData[parent] || {};
+        subFactionData[parent][fCode] = peakW; // Use raw sub-faction code, not remapped
+      }
+    }
+  }
+  
+  return subFactionData;
+}
+
 // Remap faction keys in an object { factionCode: value } → { remappedCode: value }
 // Values can be numbers, [base, mod] arrays, or {level: weight} objects
 function remapFactionKeys(obj) {
@@ -513,7 +560,18 @@ for (const [eraYear, chassisEntries] of Object.entries(scores.eras)) {
     // If this chassis has a tonnage split, partition variants by tonnage
     allChassis.add(chassisName);
     
-    const entry = { w: remapFactionKeys(data.weights) };
+    // Apply epsilon weight injection for sub-factions
+    const epsilonWeights = injectEpsilonWeights(data.weights);
+    
+    // Collect sub-faction data for UI
+    const subFactionData = collectSubFactionData(data.weights);
+    
+    const entry = { w: remapFactionKeys(epsilonWeights) };
+    
+    // Add sub-faction data if any exists
+    if (Object.keys(subFactionData).length > 0) {
+      entry.sf = subFactionData;
+    }
     
     if (data.variants && Object.keys(data.variants).length > 0) {
       const vOut = {};
