@@ -1625,6 +1625,42 @@ details[open] > .help-section-title::before {
   font-size: 0.82rem;
 }
 
+/* Sub-Command Availability */
+.subfaction-row {
+  display: flex;
+  align-items: center;
+  padding: 0.2rem 0;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+.subfaction-name {
+  width: 120px;
+  flex-shrink: 0;
+  color: var(--text);
+  font-size: 0.78rem;
+  font-family: var(--mono-font);
+}
+.subfaction-bar-container {
+  flex: 1;
+  height: 14px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.subfaction-bar {
+  height: 100%;
+  background: #e67e22;  /* Orange/amber color for distinction from WCD green */
+  border-radius: 3px;
+  opacity: 0.8;
+}
+.subfaction-weight {
+  width: 24px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
 .bv-col {
   font-size: 0.85rem;
   white-space: nowrap;
