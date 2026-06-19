@@ -3031,6 +3031,9 @@ function runQuery() {
     if (modeB) {
       for (const f of Object.keys(weights)) {
         if (data.mul && !data.mul[f]) {
+          // Don't zero factions that have sub-faction data — sub-commands field
+          // this chassis even if the parent isn't MUL-listed (epsilon weight case)
+          if (data.sf && data.sf[f]) continue;
           weights[f] = 0;
         } else if (!data.mul) {
           // No MUL data at all for this chassis — in Mode B, keep MegaMek data as-is
