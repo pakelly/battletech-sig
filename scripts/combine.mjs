@@ -457,7 +457,7 @@ function injectEpsilonWeights(chassisWeights, eraYear) {
     const parentWeight = result[parent];
     const parentPeak = parentWeight ? peakWeight(parentWeight) : 0;
     if (parentPeak === 0 && subs.length > 0) {
-      result[parent] = [0.1, 0]; // epsilon weight
+      result[parent] = [0.01, 0]; // epsilon weight
     }
   }
   
