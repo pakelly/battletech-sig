@@ -1186,7 +1186,7 @@ details[open] > .help-section-title::before {
 /* Split cell: two independently heat-colored halves */
 .split-cell {
   padding: 0 !important;
-  min-width: 100px;
+  min-width: 120px;
 }
 .split-cell-inner {
   display: flex;

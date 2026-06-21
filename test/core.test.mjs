@@ -1897,7 +1897,7 @@ describe('filterVariantsByTech', () => {
 
 describe('computeColOrder', () => {
   it('returns identity order when no saved order', () => {
-    const cols = ['Chassis', 'Tons', 'Class', 'DC DR | Prob'];
+    const cols = ['Chassis', 'Tons', 'Class', 'DC DR | Prob | Cmb'];
     const result = F.computeColOrder(cols, []);
     assert.deepStrictEqual(result, [0, 1, 2, 3]);
   });

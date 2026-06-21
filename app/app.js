@@ -1550,7 +1550,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   // Split cell columns: DR | Prob in one cell per faction
   if (hasSig) {
     for (const f of scopedFactions) {
-      headerHTML += `<th data-sort="${f}-sig" data-split="1" data-col-name="${getFactionLabel(f)} DR | Prob" title="${getFactionFullName(f)} Distinctiveness | Probability">${getFactionLabel(f)} DR | Prob</th>`;
+      headerHTML += `<th data-sort="${f}-sig" data-split="1" data-col-name="${getFactionLabel(f)} DR | Prob | Cmb" title="${getFactionFullName(f)} Distinctiveness | Probability | Combined">${getFactionLabel(f)} DR | Prob | Cmb</th>`;
     }
   }
   // Separate columns (hidden by default, available in column menu)
@@ -1751,22 +1751,27 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
     const secondarySort = query.sort[1];
     thead.querySelectorAll('th').forEach(th => {
       const matchesPrimary = th.dataset.sort === primarySort.field;
-      // For split cells, also match if the primary sort is the prob field for this faction
+      // For split cells, also match if the primary sort is the prob or cmb field for this faction
       const isSplitProbSort = th.dataset.split && primarySort.field.endsWith('-prob') &&
         th.dataset.sort === primarySort.field.replace(/-prob$/, '-sig');
+      const isSplitCmbSort = th.dataset.split && primarySort.field.endsWith('-cmb') &&
+        th.dataset.sort === primarySort.field.replace(/-cmb$/, '-sig');
       
-      if (matchesPrimary || isSplitProbSort) {
+      if (matchesPrimary || isSplitProbSort || isSplitCmbSort) {
         th.classList.add(primarySort.dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
-        if (th.dataset.split && secondarySort) {
+        if (th.dataset.split) {
           const isSigPrimary = primarySort.field.endsWith('-sig');
+          const isCmbPrimary = primarySort.field.endsWith('-cmb');
           const fCode = th.dataset.sort.replace(/-(sig|dr|signature|distinctiveness)$/, '');
           const fLabel = getFactionLabel(fCode);
-          const arrow = primarySort.dir === 'desc' ? '\u25BC' : '\u25B2';
-          if (isSigPrimary) {
-            th.textContent = `${fLabel} DR\u25BC | Prob`;
+          if (isCmbPrimary) {
+            th.textContent = `${fLabel} DR | Prob | Cmb\u25BC`;
+            th.dataset.splitState = '2';
+          } else if (isSigPrimary) {
+            th.textContent = `${fLabel} DR\u25BC | Prob | Cmb`;
             th.dataset.splitState = '0';
           } else {
-            th.textContent = `${fLabel} DR | Prob\u25BC`;
+            th.textContent = `${fLabel} DR | Prob\u25BC | Cmb`;
             th.dataset.splitState = '1';
           }
         }
@@ -1810,7 +1815,7 @@ function renderSingleFaction(rows, faction, eraYear) {
   let singleHeaderHTML = `<tr><th data-sort="name">Chassis</th><th data-sort="tonnage">Tons</th><th data-sort="class">Class</th><th data-sort="role">Role</th>`;
   if (singleHasBV) singleHeaderHTML += '<th data-sort="bv">BV</th>';
   // Split cell
-  if (singleHasSig) singleHeaderHTML += `<th data-sort="${faction}-sig" data-split="1" data-col-name="${getFactionLabel(faction)} DR | Prob" title="Distinctiveness | Probability">${getFactionLabel(faction)} DR | Prob</th>`;
+  if (singleHasSig) singleHeaderHTML += `<th data-sort="${faction}-sig" data-split="1" data-col-name="${getFactionLabel(faction)} DR | Prob | Cmb" title="Distinctiveness | Probability | Combined">${getFactionLabel(faction)} DR | Prob | Cmb</th>`;
   // Separate columns (hidden by default)
   if (singleHasSig) singleHeaderHTML += `<th data-sort="${faction}-sig">DR</th>`;
   singleHeaderHTML += `<th data-sort="${faction}-bw">Prob</th>`;
@@ -1950,7 +1955,7 @@ function renderSingleFaction(rows, faction, eraYear) {
         delete h.dataset.splitState;
         if (h.dataset.split) {
           const fCode = h.dataset.sort.replace(/-(sig|dr|signature|distinctiveness)$/, '');
-          h.textContent = getFactionLabel(fCode) + ' DR | Prob';
+          h.textContent = getFactionLabel(fCode) + ' DR | Prob | Cmb';
         }
       }
     });
@@ -2461,9 +2466,9 @@ function resolveHeaderSort(th) {
     th.dataset.splitState = nextState;
     
     const headers = [
-      `${fLabel} DR\u25BC | Prob`,
-      `${fLabel} DR | Prob\u25BC`,
-      `${fLabel} Cmb\u25BC`,
+      `${fLabel} DR\u25BC | Prob | Cmb`,
+      `${fLabel} DR | Prob\u25BC | Cmb`,
+      `${fLabel} DR | Prob | Cmb\u25BC`,
     ];
     th.textContent = headers[nextState];
     
@@ -2497,7 +2502,7 @@ function handleHeaderSort(th, rows, scopedFactions, eraYear, query) {
       delete h.dataset.splitState;
       if (h.dataset.split) {
         const fCode = h.dataset.sort.replace(/-(sig|dr|signature|distinctiveness)$/, '');
-        h.textContent = getFactionLabel(fCode) + ' DR | Prob';
+        h.textContent = getFactionLabel(fCode) + ' DR | Prob | Cmb';
       }
     }
   });
@@ -4335,7 +4340,9 @@ function updateColVisibility() {
 }
 
 function isDefaultHidden(name) {
-  // Split cell ("DC DR | Prob") is visible by default
+  // Split cell ("DC DR | Prob | Cmb") is visible by default
+  if (name.endsWith(' DR | Prob | Cmb')) return false;
+  // Legacy split cell name ("DC DR | Prob") — also visible
   if (name.endsWith(' DR | Prob')) return false;
   // Separate DR column ("DC DR") — hidden, superseded by split cell
   if (name.endsWith(' DR')) return true;
