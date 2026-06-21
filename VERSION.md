@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.35.1 | 2026-06-19 15:27 UTC | pending |
-| test | 1.35.1 | 2026-06-21 01:14 UTC | pending |
+| test | 1.35.1 | 2026-06-21 01:34 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.35.1 | test | 2026-06-21 01:34 | pending | Add Cmb breadcrumb to split column headers and sort states |
 | 1.35.1 | test | 2026-06-21 01:14 | pending | Add Combined Score column (DR + Prob normalized sum) |
 | 1.35.1 | prod | 2026-06-19 15:27 | pending | VERSION.md: auto-stamp 1.35.1 test deploy |
 | 1.35.1 | test | 2026-06-19 15:03 | pending | Use factionMeta.parentFaction for sub-faction parent resolution |
