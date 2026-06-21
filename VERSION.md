@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.35.1 | 2026-06-19 15:27 UTC | pending |
-| test | 1.35.1 | 2026-06-19 15:03 UTC | pending |
+| test | 1.35.1 | 2026-06-21 01:14 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.35.1 | test | 2026-06-21 01:14 | pending | Add Combined Score column (DR + Prob normalized sum) |
 | 1.35.1 | prod | 2026-06-19 15:27 | pending | VERSION.md: auto-stamp 1.35.1 test deploy |
 | 1.35.1 | test | 2026-06-19 15:03 | pending | Use factionMeta.parentFaction for sub-faction parent resolution |
 | 1.35.1 | test | 2026-06-19 14:43 | pending | Clamp epsilon weights to tiny probability in toProb() |
