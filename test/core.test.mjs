@@ -1952,3 +1952,70 @@ describe('computeColOrder', () => {
     assert.deepStrictEqual(result, []);
   });
 });
+
+// ── Combined Score ──────────────────────────────────────────────────────────
+
+describe('Combined Score', () => {
+  // Combined Score = DR_norm + Prob_norm
+  // DR_norm = min(1, max(0, DR / 4.0))
+  // Prob_norm = min(1, max(0, log2(biasedWeight) / 5.0))
+  
+  it('computes combined score correctly', () => {
+    // Test the combined score computation with known DR and biased weight values
+    const testCases = [
+      // { DR, biasedWeight, expectedCombined }
+      { dr: 4.0, bw: 32.0, expected: 2.0 },  // Max values: 1.0 + 1.0 = 2.0
+      { dr: 0.0, bw: 1.0, expected: 0.0 },   // Min values: 0.0 + 0.0 = 0.0
+      { dr: 2.0, bw: 4.0, expected: 0.9 },   // Mid values: 0.5 + 0.4 = 0.9
+      { dr: 8.0, bw: 64.0, expected: 2.0 },  // Over-max (should clamp): 1.0 + 1.0 = 2.0
+      { dr: -1.0, bw: 0.5, expected: 0.0 }   // Negative DR (should clamp): 0.0 + (-0.2→0.0) = 0.0
+    ];
+    
+    for (const { dr, bw, expected } of testCases) {
+      const drNorm = Math.min(1, Math.max(0, dr / 4.0));
+      const probNorm = Math.min(1, Math.max(0, Math.log2(bw) / 5.0));
+      const combined = drNorm + probNorm;
+      
+      assert.ok(Math.abs(combined - expected) < 0.1, 
+        `DR=${dr}, BW=${bw}: expected ~${expected}, got ${combined.toFixed(2)}`);
+    }
+  });
+  
+  it('sorts by combined score desc', () => {
+    const rows = [
+      { name: 'A', meta: {}, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {}, combined: { DC: 1.2 } },
+      { name: 'B', meta: {}, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {}, combined: { DC: 1.8 } },
+      { name: 'C', meta: {}, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {}, combined: { DC: 0.9 } },
+    ];
+    F.sortRowsInPlace(rows, [{ field: 'DC-cmb', dir: 'desc' }]);
+    assert.strictEqual(rows[0].name, 'B');
+    assert.strictEqual(rows[1].name, 'A');
+    assert.strictEqual(rows[2].name, 'C');
+  });
+  
+  it('sorts by combined score max across factions', () => {
+    const rows = [
+      { name: 'A', meta: {}, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {}, combined: { DC: 1.2, FS: 0.8 } },
+      { name: 'B', meta: {}, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {}, combined: { DC: 0.9, FS: 1.6 } },
+      { name: 'C', meta: {}, sig: null, spread: 0, span: 0, avgWeight: 0, weights: {}, combined: { DC: 0.5, FS: 0.7 } },
+    ];
+    F.sortRowsInPlace(rows, [{ field: 'cmb', dir: 'desc' }]);
+    assert.strictEqual(rows[0].name, 'B');  // max 1.6
+    assert.strictEqual(rows[1].name, 'A');  // max 1.2
+    assert.strictEqual(rows[2].name, 'C');  // max 0.7
+  });
+  
+  it('parses combined score filters', () => {
+    const p1 = F.parseQuery('cmb>1.5');
+    assert.deepStrictEqual(p1.combined, { op: '>', val: 1.5 });
+    
+    const p2 = F.parseQuery('DC-cmb<1.2');
+    assert.strictEqual(p2.factionCmb.length, 1);
+    assert.strictEqual(p2.factionCmb[0].faction, 'DC');
+    assert.strictEqual(p2.factionCmb[0].op, '<');
+    assert.strictEqual(p2.factionCmb[0].val, 1.2);
+    
+    const p3 = F.parseQuery('combined>=0.8');
+    assert.deepStrictEqual(p3.combined, { op: '>=', val: 0.8 });
+  });
+});

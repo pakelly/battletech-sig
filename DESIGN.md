@@ -602,7 +602,9 @@ All text fields support the `=` and `!=` operators. Multi-value OR is supported 
 | `DC-pref` | numeric | Faction-specific pref filter/sort | `DC-pref>8` |
 | `DC-sig` | numeric | Faction-specific sig filter/sort | `DC-sig>7` |
 | `DC-prob` | numeric | Faction-specific biased weight filter/sort | `DC-prob>5` |
+| `DC-cmb` | numeric | Faction-specific combined score filter/sort | `DC-cmb>1.5` |
 | `prob` (alias: `bw`) | numeric | Biased weight (probability × WCD). Max across scoped factions. | `prob>5` |
+| `cmb` (alias: `combined`) | numeric | Combined score (DR_norm + Prob_norm). Max across scoped factions. | `cmb>1.2` |
 | `type` | enum | Mech type filter. Supports `!=` for exclusion. | `type=omni`, `type!=omni` |
 | `tech` | enum | Technology base filter (variant-level). Supports `!=` for exclusion. | `tech=clan`, `tech!=clan` |
 | `sort` | keyword | Sort specification | `sort by DC sig desc` |
@@ -681,26 +683,45 @@ The primary view for multi-faction queries. Table with:
 - **Rows:** Chassis (one per row)
 - **Columns:** One per scoped faction (split cell), plus metadata and stat columns
 
-Each faction gets one **split cell** combining two independently heat-colored halves:
+Each faction gets one **split cell** with three display modes (cycling via header click):
+
+#### Mode 1: DR | Prob (default)
 - **Left half:** Raw signature score (z-score), heat-colored by DR tier using the **warm amber palette** (`--heat-1` through `--heat-10`). DR1=hottest → DR5=coolest. This measures how statistically distinctive the chassis is for this faction.
 - **Right half:** Probability value (biased weight = probability × WCD mixing), heat-colored by a fixed log-scale using the **cool blue palette** (`--cool-1` through `--cool-10`). This measures how likely the chassis is to appear on the battlefield for this faction.
 
-**Two distinct color families** make it easy to tell which axis you're looking at while scrolling:
+#### Mode 2: Prob (Probability focus)
+- **Full cell:** Shows probability value with cool blue heat coloring. Header displays sort arrow for probability.
+
+#### Mode 3: Combined Score
+- **Full cell:** Shows normalized DR + normalized Prob sum (range 0-2.0), heat-colored using the **green emerald palette** (`--emerald-1` through `--emerald-10`). This combines both distinctiveness and usage into a single "faction strength" metric.
+
+**Formula:**
+```
+Combined = DR_norm + Prob_norm
+DR_norm = min(1, max(0, DR / 4.0))     // Clamp to [0, 1]
+Prob_norm = min(1, max(0, log2(biasedWeight) / 5.0))  // Clamp to [0, 1]
+```
+
+**Display cycling:** Header click cycles through: `[Faction] DR▼ | Prob` → `[Faction] DR | Prob▼` → `[Faction] Cmb▼` → back to start.
+
+**Two/three distinct color families** make it easy to tell which axis you're looking at:
 - **Warm amber** (DR) = fire/intensity → "how distinctive is this?"
 - **Cool blue** (Prob) = ocean/depth → "how common is this?"
+- **Green emerald** (Combined) = nature/growth → "how strong is this overall?"
 
-The split cell gives the complete picture at a glance:
+The split cell (Mode 1) gives the complete picture at a glance:
 - 🟠🟦 Hot/Hot = distinctive AND common (faction-defining workhorse)
 - 🟠⬛ Hot/Cool = distinctive but rare (exclusive niche mech)
 - ⬛🟦 Cool/Hot = not distinctive but common (universal workhorse)
 - ⬛⬛ Cool/Cool = not distinctive, not common (filler)
 
-**Column header:** `[Faction] DR | Prob`. Clicking the header sorts by the faction's sig score.
+**Column header:** Displays current mode and sort direction. Clicking cycles through display modes and updates sort.
 
 **Hidden by default (available in ☰ menu):**
 - Separate DR column (raw signature score only)
 - Separate Weight column (raw MegaMek 1-10 weight)
 - Separate Prob column (biased weight only)
+- Separate Combined column (combined score only)
 - Spread column
 
 When a chassis is not fielded by a faction, the split cell shows "—" with no-data styling.
