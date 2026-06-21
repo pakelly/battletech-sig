@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
 const APP_VERSION = '1.35.1';
-const DEPLOY_TIME = '20260619.1527';
+const DEPLOY_TIME = '20260621.0114';
 
 let DATA = null; // app-data.json
 
@@ -351,7 +351,9 @@ function parseQuery(queryStr) {
     factionWeight: [],  // [{faction, op, val}]
     factionSig: [],   // [{faction, op, val}]
     factionProb: [],  // [{faction, op, val}]
+    factionCmb: [],   // [{faction, op, val}]
     prob: null,       // {op, val} — biased weight (probability) filter
+    combined: null,   // {op, val} — combined score filter
     year: null,
     era: null,
     rating: null,     // 'A'|'B'|'C'|'D'|'F' or null (cross-tier average)
@@ -381,12 +383,13 @@ function parseQuery(queryStr) {
       let dir = 'desc';
       
       // Handle "DC preference desc" or "DC sig desc" or "DC prob desc" -> field = DC-weight or DC-sig or DC-prob
-      const SORT_METRICS = new Set(['preference', 'weight', 'sig', 'signature', 'dr', 'distinctiveness', 'prob', 'bw']);
+      const SORT_METRICS = new Set(['preference', 'weight', 'sig', 'signature', 'dr', 'distinctiveness', 'prob', 'bw', 'cmb', 'combined']);
       if (tokens.length >= 2 && SORT_METRICS.has(tokens[1].toLowerCase())) {
         const factionCode = resolveFaction(tokens[0]);
         const rawMetric = tokens[1].toLowerCase();
         const metric = (rawMetric === 'preference' || rawMetric === 'weight') ? 'weight'
           : (rawMetric === 'prob' || rawMetric === 'bw') ? 'prob'
+          : (rawMetric === 'cmb' || rawMetric === 'combined') ? 'cmb'
           : 'sig'; // dr/distinctiveness/sig/signature all map to sig
         if (factionCode) {
           field = factionCode + '-' + metric;
@@ -396,13 +399,14 @@ function parseQuery(queryStr) {
         dir = (tokens[2] || 'desc').toLowerCase();
       } else {
         field = tokens[0].toLowerCase();
-        // Handle faction-prefixed fields: fs-sig, dc-pref, dc-preference, dc-prob, dc-bw
-        const prefixMatch = field.match(/^([a-z]+)-(sig|signature|dr|distinctiveness|pref|preference|weight|prob|bw)$/);
+        // Handle faction-prefixed fields: fs-sig, dc-pref, dc-preference, dc-prob, dc-bw, dc-cmb, dc-combined
+        const prefixMatch = field.match(/^([a-z]+)-(sig|signature|dr|distinctiveness|pref|preference|weight|prob|bw|cmb|combined)$/);
         if (prefixMatch) {
           const fCode = resolveFaction(prefixMatch[1]);
           const rawMetric = prefixMatch[2];
           const metric = (rawMetric.startsWith('pref') || rawMetric === 'weight') ? 'weight'
             : (rawMetric === 'prob' || rawMetric === 'bw') ? 'prob'
+            : (rawMetric === 'cmb' || rawMetric === 'combined') ? 'cmb'
             : 'sig';
           if (fCode) {
             field = fCode + '-' + metric;
@@ -572,19 +576,25 @@ function parseQuery(queryStr) {
       case 'bw':
         result.prob = { op, val: parseFloat(value) };
         break;
+      case 'cmb':
+      case 'combined':
+        result.combined = { op, val: parseFloat(value) };
+        break;
       default: {
-        // Handle faction-prefixed filters: DC-pref>8, FS-sig>5, DC-prob>3, etc.
-        const fpMatch = field.match(/^([a-z]+)-(pref|preference|weight|sig|signature|dr|distinctiveness|prob|bw)$/);
+        // Handle faction-prefixed filters: DC-pref>8, FS-sig>5, DC-prob>3, DC-cmb>1.5, etc.
+        const fpMatch = field.match(/^([a-z]+)-(pref|preference|weight|sig|signature|dr|distinctiveness|prob|bw|cmb|combined)$/);
         if (fpMatch) {
           const fCode = resolveFaction(fpMatch[1]);
           const metricKey = fpMatch[2];
           const metric = (metricKey.startsWith('pref') || metricKey.startsWith('w')) ? 'weight'
             : (metricKey === 'prob' || metricKey === 'bw') ? 'prob'
+            : (metricKey === 'cmb' || metricKey === 'combined') ? 'cmb'
             : 'sig'; // dr/distinctiveness also → sig
           if (fCode) {
             const entry = { faction: fCode, op, val: parseFloat(value) };
             if (metric === 'weight') result.factionWeight.push(entry);
             else if (metric === 'prob') result.factionProb.push(entry);
+            else if (metric === 'cmb') result.factionCmb.push(entry);
             else result.factionSig.push(entry);
           }
         }
@@ -1494,6 +1504,13 @@ function bwHeatClass(bw) {
   return 'cool-' + Math.max(1, Math.min(10, level));
 }
 
+function cmbHeatClass(cmb) {
+  if (!cmb || cmb <= 0) return 'no-data';
+  // Linear scale: map combined score from 0-2.0 to 1-10, using emerald green palette
+  const level = Math.round(1 + 9 * (cmb / 2.0));
+  return 'emerald-' + Math.max(1, Math.min(10, level));
+}
+
 function sigTierToHeat(tier) {
   // T1 (most iconic) = hottest, T5 = coolest
   const map = { 1: 'heat-10', 2: 'heat-8', 3: 'heat-6', 4: 'heat-3', 5: 'heat-1' };
@@ -1548,6 +1565,9 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   for (const f of scopedFactions) {
     headerHTML += `<th data-sort="${f}-bw" title="${getFactionFullName(f)} Probability Weight">${getFactionLabel(f)} Prob</th>`;
   }
+  for (const f of scopedFactions) {
+    headerHTML += `<th data-sort="${f}-cmb" title="${getFactionFullName(f)} Combined Score">${getFactionLabel(f)} Cmb</th>`;
+  }
   headerHTML += '<th data-sort="spread">Spread</th></tr>';
   thead.innerHTML = headerHTML;
   table.appendChild(thead);
@@ -1581,35 +1601,62 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
         }
       }
       
-      // Split cells: DR | Prob in one cell per faction
+      // Split cells: DR | Prob | Combined in one cell per faction
       if (hasSig) {
         for (const f of scopedFactions) {
           const sigVal = row.sig?.[f] || 0;
           const sigTier = row.sig?.[f + '_tier'] || 0;
           const hasWeight = (row.weights[f] || 0) > 0;
           const bw = row.biasedWeights?.[f] || 0;
+          const cmb = row.combined?.[f] || 0;
+          
+          // Determine display mode from header state (default to mode 0: DR|Prob)
+          const header = document.querySelector(`th[data-sort="${f.toUpperCase()}-sig"][data-split="1"]`);
+          const splitState = header ? parseInt(header.dataset.splitState || '0') : 0;
           
           html += `<td class="faction-cell split-cell" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
-          html += '<div class="split-cell-inner">';
           
-          // Left half: DR (sig score)
-          if (sigVal > 0) {
-            const sigHeat = sigTierToHeat(sigTier);
-            html += `<div class="split-half ${sigHeat}">${sigVal.toFixed(1)}</div>`;
-          } else if (hasWeight) {
-            html += '<div class="split-half heat-1">0</div>';
+          if (splitState === 2) {
+            // Mode 2: Combined score (full cell)
+            if (cmb > 0) {
+              const cmbHeat = cmbHeatClass(cmb);
+              html += `<div class="full-cell ${cmbHeat}">${cmb.toFixed(2)}</div>`;
+            } else {
+              html += '<div class="full-cell no-data">&mdash;</div>';
+            }
+          } else if (splitState === 1) {
+            // Mode 1: Prob only (full cell)
+            if (bw > 0) {
+              const bwCls = bwHeatClass(bw);
+              html += `<div class="full-cell ${bwCls}">${bw.toFixed(1)}</div>`;
+            } else {
+              html += '<div class="full-cell no-data">&mdash;</div>';
+            }
           } else {
-            html += '<div class="split-half no-data">&mdash;</div>';
-          }
-          
-          html += '<div class="split-divider"></div>';
-          
-          // Right half: Prob (biased weight)
-          if (bw > 0) {
-            const bwCls = bwHeatClass(bw);
-            html += `<div class="split-half ${bwCls}">${bw.toFixed(1)}</div>`;
-          } else {
-            html += '<div class="split-half no-data">&mdash;</div>';
+            // Mode 0: DR | Prob split (default)
+            html += '<div class="split-cell-inner">';
+            
+            // Left half: DR (sig score)
+            if (sigVal > 0) {
+              const sigHeat = sigTierToHeat(sigTier);
+              html += `<div class="split-half ${sigHeat}">${sigVal.toFixed(1)}</div>`;
+            } else if (hasWeight) {
+              html += '<div class="split-half heat-1">0</div>';
+            } else {
+              html += '<div class="split-half no-data">&mdash;</div>';
+            }
+            
+            html += '<div class="split-divider"></div>';
+            
+            // Right half: Prob (biased weight)
+            if (bw > 0) {
+              const bwCls = bwHeatClass(bw);
+              html += `<div class="split-half ${bwCls}">${bw.toFixed(1)}</div>`;
+            } else {
+              html += '<div class="split-half no-data">&mdash;</div>';
+            }
+            
+            html += '</div>';
           }
           
           html += '</div></td>';
@@ -1660,6 +1707,17 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
           const bwCls = bwHeatClass(bw);
           html += `<td class="faction-cell ${bwCls}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
           html += `<span class="pref-value">${bw.toFixed(2)}</span>`;
+          html += '</td>';
+        } else {
+          html += `<td class="faction-cell no-data" data-chassis="${escAttr(row.name)}" data-faction="${f}">—</td>`;
+        }
+      }
+      for (const f of scopedFactions) {
+        const cmb = row.combined?.[f] || 0;
+        if (cmb > 0) {
+          const cmbCls = cmbHeatClass(cmb);
+          html += `<td class="faction-cell ${cmbCls}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
+          html += `<span class="pref-value">${cmb.toFixed(2)}</span>`;
           html += '</td>';
         } else {
           html += `<td class="faction-cell no-data" data-chassis="${escAttr(row.name)}" data-faction="${f}">—</td>`;
@@ -1756,6 +1814,7 @@ function renderSingleFaction(rows, faction, eraYear) {
   // Separate columns (hidden by default)
   if (singleHasSig) singleHeaderHTML += `<th data-sort="${faction}-sig">DR</th>`;
   singleHeaderHTML += `<th data-sort="${faction}-bw">Prob</th>`;
+  singleHeaderHTML += `<th data-sort="${faction}-cmb">Combined</th>`;
   singleHeaderHTML += `<th data-sort="${faction}-weight">Availability</th></tr>`;
   thead.innerHTML = singleHeaderHTML;
   table.appendChild(thead);
@@ -1846,6 +1905,16 @@ function renderSingleFaction(rows, faction, eraYear) {
         probCell = `<td class="faction-cell no-data">—</td>`;
       }
       
+      // Separate Combined cell (hidden by default)
+      const cmbSep = row.combined?.[faction] || 0;
+      let cmbCell;
+      if (cmbSep > 0) {
+        const cmbCls = cmbHeatClass(cmbSep);
+        cmbCell = `<td class="faction-cell ${cmbCls}" data-chassis="${escAttr(row.name)}" data-faction="${faction}"><span class="pref-value">${cmbSep.toFixed(2)}</span></td>`;
+      } else {
+        cmbCell = `<td class="faction-cell no-data">—</td>`;
+      }
+      
       const tr = document.createElement('tr');
       tr.className = 'faction-roster-row';
       tr.innerHTML = `
@@ -1857,6 +1926,7 @@ function renderSingleFaction(rows, faction, eraYear) {
         ${splitCell}
         ${drCell}
         ${probCell}
+        ${cmbCell}
         <td><div class="weight-bar-container"><div class="weight-bar" style="width:${pct}%"></div><span class="weight-bar-label">${w.toFixed(1)}</span></div></td>
       `;
       tbody.appendChild(tr);
@@ -2383,21 +2453,24 @@ function resolveHeaderSort(th) {
     const fCode = field.replace(/-(sig|dr|signature|distinctiveness)$/, '');
     const fLabel = getFactionLabel(fCode);
     const probField = fCode + '-prob';
+    const cmbField = fCode + '-cmb';
     
-    // 2-state cycle: 0=DR desc, 1=Prob desc
+    // 3-state cycle: 0=DR desc, 1=Prob desc, 2=Cmb desc
     const state = parseInt(th.dataset.splitState || '-1');
-    const nextState = (state + 1) % 2;
+    const nextState = (state + 1) % 3;
     th.dataset.splitState = nextState;
     
     const headers = [
       `${fLabel} DR\u25BC | Prob`,
       `${fLabel} DR | Prob\u25BC`,
+      `${fLabel} Cmb\u25BC`,
     ];
     th.textContent = headers[nextState];
     
     const specs = [
       [{ field, dir: 'desc' }, { field: probField, dir: 'desc' }],
       [{ field: probField, dir: 'desc' }, { field, dir: 'desc' }],
+      [{ field: cmbField, dir: 'desc' }],
     ];
     return { sort: specs[nextState], dir: 'desc' };
   } else {
@@ -2445,7 +2518,7 @@ function handleHeaderSort(th, rows, scopedFactions, eraYear, query) {
 
 // ── Auto-Suggest ──
 
-const FIELD_NAMES = ['faction', 'chassis', 'class', 'type', 'tech', 'role', 'spread', 'sig', 'signature', 'dr', 'distinctiveness', 'weight', 'tons', 'tonnage', 'bv', 'prob', 'bw', 'year', 'era', 'rating', 'family', 'industrial', 'mode', 'sort'];
+const FIELD_NAMES = ['faction', 'chassis', 'class', 'type', 'tech', 'role', 'spread', 'sig', 'signature', 'dr', 'distinctiveness', 'weight', 'tons', 'tonnage', 'bv', 'prob', 'bw', 'cmb', 'combined', 'year', 'era', 'rating', 'family', 'industrial', 'mode', 'sort'];
 
 function getSuggestions(text, cursorPos) {
   if (!DATA) return [];
@@ -2473,13 +2546,14 @@ function getSuggestions(text, cursorPos) {
   const sortByMatch = beforeCursor.match(/\bsort\s+by\s+(\S*)$/i);
   if (sortByMatch) {
     const partial = sortByMatch[1].toLowerCase();
-    const sortableFields = ['spread', 'sig', 'dr', 'weight', 'tons', 'bv', 'name', 'role', 'class', 'type', 'tech', 'prob'];
+    const sortableFields = ['spread', 'sig', 'dr', 'weight', 'tons', 'bv', 'name', 'role', 'class', 'type', 'tech', 'prob', 'cmb'];
     // Add faction-prefixed sort fields
     if (DATA) {
       for (const code of Object.keys(DATA.factions)) {
         sortableFields.push(code + '-sig');
         sortableFields.push(code + '-weight');
         sortableFields.push(code + '-prob');
+        sortableFields.push(code + '-cmb');
       }
     }
     return sortableFields
@@ -2490,7 +2564,7 @@ function getSuggestions(text, cursorPos) {
 
   // Field name completion
   const VALUE_FIELD_SET = new Set(['faction', 'chassis', 'class', 'type', 'tech', 'role', 'year', 'era', 'rating', 'family', 'industrial', 'mode']);
-  const OPERATOR_FIELD_SET = new Set(['spread', 'sig', 'signature', 'dr', 'distinctiveness', 'weight', 'tons', 'tonnage', 'bv', 'battlevalue', 'prob', 'bw']);
+  const OPERATOR_FIELD_SET = new Set(['spread', 'sig', 'signature', 'dr', 'distinctiveness', 'weight', 'tons', 'tonnage', 'bv', 'battlevalue', 'prob', 'bw', 'cmb', 'combined']);
 
   if (!lastToken.includes('=') && !lastToken.includes('>') && !lastToken.includes('<')) {
     const lower = lastToken.toLowerCase();
@@ -2658,6 +2732,10 @@ function renderChips(parsed) {
   if (parsed.prob) chips.push({ label: `prob${parsed.prob.op}${parsed.prob.val}`, field: 'prob' });
   for (const fp of parsed.factionProb) {
     chips.push({ label: `${fp.faction}-prob${fp.op}${fp.val}`, field: `${fp.faction}-prob` });
+  }
+  if (parsed.combined) chips.push({ label: `cmb${parsed.combined.op}${parsed.combined.val}`, field: 'cmb' });
+  for (const fc of parsed.factionCmb) {
+    chips.push({ label: `${fc.faction}-cmb${fc.op}${fc.val}`, field: `${fc.faction}-cmb` });
   }
   if (parsed.year) chips.push({ label: 'year=' + parsed.year, field: 'year' });
   if (parsed.era) chips.push({ label: 'era=' + parsed.era, field: 'era' });
@@ -3162,6 +3240,23 @@ function runQuery() {
     }
   }
   
+  // Compute combined scores (DR_norm + Prob_norm)
+  // Combined = DR_norm + Prob_norm where both normalized to [0, 1]
+  // DR_norm = min(1, max(0, DR / 4.0))     -- 4.0 is theoretical z-score ceiling
+  // Prob_norm = min(1, max(0, log2(biasedWeight) / 5.0))  -- 5.0 is log2(32) max prob weight
+  for (const row of rows) {
+    row.combined = {};
+    for (const f of Object.keys(row.weights)) {
+      const dr = row.sig?.[f] || 0;
+      const bw = row.biasedWeights?.[f] || 0;
+      
+      const drNorm = Math.min(1, Math.max(0, dr / 4.0));
+      const probNorm = bw > 0 ? Math.min(1, Math.max(0, Math.log2(bw) / 5.0)) : 0;
+      
+      row.combined[f] = drNorm + probNorm;
+    }
+  }
+  
   // Apply post-computation filters (sig)
   if (parsed.sig || parsed.factionSig.length > 0) {
     for (let i = rows.length - 1; i >= 0; i--) {
@@ -3196,6 +3291,26 @@ function runQuery() {
       if (parsed.factionProb.length > 0) {
         const bw = row.biasedWeights || {};
         if (!parsed.factionProb.every(fp => compareOp(bw[fp.faction] || 0, fp.op, fp.val))) {
+          rows.splice(i, 1); continue;
+        }
+      }
+    }
+  }
+  
+  // Apply post-computation filters (combined score)
+  if (parsed.combined || parsed.factionCmb.length > 0) {
+    for (let i = rows.length - 1; i >= 0; i--) {
+      const row = rows[i];
+      if (parsed.combined) {
+        const cmb = row.combined || {};
+        const sf = scopedFactions.length > 0 ? scopedFactions : Object.keys(cmb);
+        if (!sf.some(f => compareOp(cmb[f] || 0, parsed.combined.op, parsed.combined.val))) {
+          rows.splice(i, 1); continue;
+        }
+      }
+      if (parsed.factionCmb.length > 0) {
+        const cmb = row.combined || {};
+        if (!parsed.factionCmb.every(fc => compareOp(cmb[fc.faction] || 0, fc.op, fc.val))) {
           rows.splice(i, 1); continue;
         }
       }
@@ -3354,6 +3469,13 @@ function sortRowsInPlace(rows, sortSpec) {
       } else if (field === 'sig' || field === 'signature' || field === 'dr' || field === 'distinctiveness') {
         va = a.sig ? Math.max(0, ...Object.values(a.sig)) : 0;
         vb = b.sig ? Math.max(0, ...Object.values(b.sig)) : 0;
+      } else if (field.endsWith('-cmb') || field.endsWith('-combined')) {
+        const fCode = field.replace(/-(cmb|combined)$/, '').toUpperCase();
+        va = a.combined?.[fCode] || 0;
+        vb = b.combined?.[fCode] || 0;
+      } else if (field === 'cmb' || field === 'combined') {
+        va = a.combined ? Math.max(0, ...Object.values(a.combined)) : 0;
+        vb = b.combined ? Math.max(0, ...Object.values(b.combined)) : 0;
       } else {
         continue;
       }
