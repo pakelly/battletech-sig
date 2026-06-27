@@ -4,13 +4,14 @@
 
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
-| prod | 1.35.1 | 2026-06-19 15:27 UTC | pending |
+| prod | 1.35.1 | 2026-06-27 03:12 UTC | pending |
 | test | 1.35.1 | 2026-06-26 19:58 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.35.1 | prod | 2026-06-27 03:12 | pending | VERSION.md: auto-stamp 1.35.1 test deploy |
 | 1.35.1 | test | 2026-06-26 19:58 | pending | Add rating=A to Clan example queries and document rating tip for Clan analysis |
 | 1.35.1 | test | 2026-06-21 01:48 | pending | Add Combined Score documentation to legend, help panel, and query reference |
 | 1.35.1 | test | 2026-06-21 01:34 | pending | Add Cmb breadcrumb to split column headers and sort states |
