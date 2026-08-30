@@ -149,7 +149,7 @@ Combined  = DR_norm + Prob_norm  (range 0–2)</pre>
                   <tr><td><code>year=</code></td><td><code>year=3039</code></td><td>Set the target year.</td></tr>
                   <tr><td><code>era=</code></td><td><code>era=ClanInvasion</code></td><td>Select an era by name.</td></tr>
                   <tr><td><code>rating=</code></td><td><code>rating=A</code>, <code>rating=F</code></td><td>Unit quality tier. A = elite (Keshik for Clans), F = garrison. Default = cross-tier average. <strong>Tip:</strong> For Clan queries, use <code>rating=A</code> or <code>rating=(A or B)</code> to see OmniMech-heavy formations — the default average dilutes OmniMechs that only appear at elite tiers.</td></tr>
-                  <tr><td><code>mode=</code></td><td><code>mode=A</code></td><td>Data mode. A = MegaMek only, B = MegaMek × MUL.</td></tr>
+                  <tr><td><code>mode=</code></td><td><code>mode=A</code>, <code>mode=X</code></td><td>Data mode. A = MegaMek only, B = MegaMek × MUL (default), X = Xotl RAT.</td></tr>
                   <tr><td><code>family=</code></td><td><code>family=off</code></td><td>Toggle chassis family merging.</td></tr>
                   <tr><td><code>industrial=</code></td><td><code>industrial=show</code></td><td>Show IndustrialMechs (hidden by default).</td></tr>
                 </tbody>
@@ -192,7 +192,7 @@ Combined  = DR_norm + Prob_norm  (range 0–2)</pre>
                 <tbody>
                   <tr><td><strong>Chassis families</strong></td><td>Related chassis (e.g. Dragon + Grand Dragon) scored as one entry. Per-family toggles available.</td></tr>
                   <tr><td><strong>Show incomplete</strong></td><td>62 chassis with unknown tonnage (mostly IndustrialMechs) hidden by default.</td></tr>
-                  <tr><td><strong>Data Mode A/B</strong></td><td>A = raw MegaMek. B (default) = filtered by MUL canon availability.</td></tr>
+                  <tr><td><strong>Data Mode A/B/X</strong></td><td>A = raw MegaMek. B (default) = filtered by MUL canon availability. X = Xotl community RAT tables (IS only, 2750–3057).</td></tr>
                   <tr><td><strong>Column visibility (☰)</strong></td><td>Show/hide individual columns. BW and Spread hidden by default.</td></tr>
                 </tbody>
               </table></div>
@@ -237,6 +237,10 @@ Combined  = DR_norm + Prob_norm  (range 0–2)</pre>
             <label class="toggle-row">
               <input type="radio" name="data-mode" value="A">
               <span><strong>Mode A</strong> — MegaMek only (broader)</span>
+            </label>
+            <label class="toggle-row">
+              <input type="radio" name="data-mode" value="X">
+              <span><strong>Mode X</strong> — Xotl RAT (community tables)</span>
             </label>
           </div>
           <div class="settings-section">

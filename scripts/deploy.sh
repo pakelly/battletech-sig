@@ -31,7 +31,7 @@ git checkout gh-pages
 
 echo ""
 echo "=== Step 3: Pull app files from main ==="
-git checkout main -- app/app.js app/app-data.json app/index.html app/style.css
+git checkout main -- app/app.js app/app-data.json app/index.html app/style.css app/xotl-rarity.json
 
 echo ""
 echo "=== Step 4: Copy to root and stamp version ==="
@@ -39,6 +39,7 @@ cp app/app.js .
 cp app/app-data.json .
 cp app/index.html .
 cp app/style.css .
+cp app/xotl-rarity.json .
 
 # Extract APP_VERSION from app.js for cache-busting
 APP_VER=$(grep -oP "const APP_VERSION = '\\K[^']+" app.js || echo "0")
@@ -60,7 +61,7 @@ git rm -rf --cached app/ 2>/dev/null || true
 
 echo ""
 echo "=== Step 6: Verify gh-pages contents ==="
-EXPECTED="app-data.json app.js index.html style.css"
+EXPECTED="app-data.json app.js index.html style.css xotl-rarity.json"
 ACTUAL=$(git ls-files --cached | sort | tr '\n' ' ' | sed 's/ $//')
 if [ "$ACTUAL" != "$EXPECTED" ]; then
   echo "⚠️  WARNING: Unexpected files on gh-pages!"
@@ -74,7 +75,7 @@ echo "✓ Clean — only expected files present"
 
 echo ""
 echo "=== Step 7: Commit and push gh-pages to $LABEL ==="
-git add app.js app-data.json index.html style.css
+git add app.js app-data.json index.html style.css xotl-rarity.json
 if git diff --cached --quiet; then
   echo "No new changes to commit (gh-pages already up to date locally)."
 else

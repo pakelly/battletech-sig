@@ -50,8 +50,39 @@ The MUL API returns faction-specific unit lists, but common designs (e.g., Griff
 |------|-------|-------------|
 | **A** | MegaMek Only | Raw MegaMek force generator weights. Community-curated, richer granularity. May include extrapolations beyond official canon. |
 | **B** | MegaMek × MUL | MegaMek weights filtered by MUL binary availability. If the MUL says a faction doesn't have access to a chassis in that era, the weight is zeroed out. Canon-filtered. |
+| **X** | Xotl RAT | Community rarity tables by Xotl (published ~2012). Independent availability ratings (1–10) per chassis per faction per era, aggregated from per-variant data. Inner Sphere only, eras 2750–3057. Not filtered by MUL. |
 
 Mode B is the default.
+
+#### Mode X — Xotl RAT Details
+
+**Source:** `app/xotl-rarity.json` — 582 mech variants across 18 faction sections, covering 242 unique chassis.
+
+**Era coverage:** 2750 (Star League), 3028, 3039, 3050, 3057. App era years map as follows:
+
+| App Era Year | Xotl Era |
+|-------------|----------|
+| 2765 | 2750 |
+| 3028 | 3028 |
+| 3039 | 3039 |
+| 3049, 3055 | 3050 |
+| 3058 | 3057 |
+
+App era years outside this mapping have no Xotl data — all cells show N/A.
+
+**Faction coverage:** 12 Inner Sphere / Periphery factions: SL, CC, DC, FS, FWL, LC, FRR, SIC, MERC, MOC, OA, TC. Clan factions are not in Xotl's tables.
+
+**Column resolution:** Xotl uses era-specific columns within each faction section. For 3050, Lyran uses "A/B (3050)" and "C/D/F (3050)" instead of just "3050". For 3057, all Great Houses use "A/B (3057)" and "C/D/F (3057)". For 2750, Star League uses "Regular" and "Royal".
+- When multiple columns exist (A/B vs C/D/F), take the A/B value as primary (front-line availability). If A/B is missing, fall back to C/D/F.
+- For Star League 2750: take "Regular" (ignore Royal for now).
+
+**Chassis aggregation:** Xotl data is per-variant (e.g., "ARC-2R", "ARC-2K"). The app works at chassis level. Aggregation: for each chassis+faction+era, take the **max** availability across all variants. Variant-to-chassis mapping uses the app's `modelPrefixes` lookup and direct name matching.
+
+**Limitations:**
+- Inner Sphere only — no Clan data
+- Era coverage ends at 3057 (app eras beyond 3058 show N/A)
+- Not filtered by MUL canon availability
+- Chassis aggregation may lose variant-level nuance (a rare variant and a common variant of the same chassis both contribute to the same chassis-level score via max)
 
 ---
 

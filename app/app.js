@@ -1,9 +1,151 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.35.1';
+const APP_VERSION = '1.36.0';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
+let xotlData = null; // xotl-rarity.json (lazy-loaded for Mode X)
+
+// ── Xotl RAT Data ──
+const XOTL_FACTION_MAP = {
+  'Star League 2750': 'SL',
+  'Capellan Confederation (House Liao)': 'CC',
+  'Draconis Combine (House Kurita)': 'DC',
+  'Federated Suns (House Davion)': 'FS',
+  'Free Worlds League (House Marik)': 'FWL',
+  'Lyran Commonwealth (House Steiner)': 'LC',
+  'Free Rasalhague Republic': 'FRR',
+  'St. Ives Compact': 'SIC',
+  'Mercenary / Periphery General': 'MERC',
+  'Magistracy Of Canopus': 'MOC',
+  'Outworlds Alliance': 'OA',
+  'Taurian Concordat': 'TC'
+};
+
+const XOTL_ERA_MAP = {
+  2765: '2750',
+  3028: '3028',
+  3039: '3039',
+  3049: '3050',
+  3055: '3050',
+  3058: '3057'
+};
+
+async function loadXotlData() {
+  if (xotlData) return xotlData;
+  const resp = await fetch('xotl-rarity.json?v=' + APP_VERSION);
+  xotlData = await resp.json();
+  return xotlData;
+}
+
+/**
+ * Build a weights object from Xotl rarity data for a given chassis+era.
+ * Returns { factionCode: weight } or null if no Xotl data for this era.
+ */
+function buildXotlWeights(chassisName, eraYear, xotl) {
+  const xotlEra = XOTL_ERA_MAP[eraYear];
+  if (!xotlEra) return null; // no Xotl coverage for this era
+
+  // Find all mech entries matching this chassis
+  // The 'variant' field in xotl data is the chassis name (e.g., 'Archer')
+  // but sometimes it's a variant code (e.g., 'ARC-2R') or first word of multi-word name
+  const matching = xotl.mechs.filter(m => resolveXotlChassis(m) === chassisName);
+  if (matching.length === 0) return {};
+
+  const weights = {};
+  for (const mech of matching) {
+    for (const [sectionName, eraData] of Object.entries(mech.sections || {})) {
+      // Extract base faction name (before colon if present)
+      const baseName = sectionName.includes(':')
+        ? sectionName.split(':')[0].trim()
+        : sectionName;
+      const factionCode = XOTL_FACTION_MAP[baseName];
+      if (!factionCode) continue;
+
+      // Find the right column for this era
+      const value = getXotlColumnValue(eraData, xotlEra);
+      if (value == null) continue;
+
+      // Take max across variants
+      if (weights[factionCode] == null || value > weights[factionCode]) {
+        weights[factionCode] = value;
+      }
+    }
+  }
+  return weights;
+}
+
+/**
+ * Resolve a Xotl mech entry to an app chassis name.
+ * Uses modelPrefixes for variant-code entries, and direct name matching.
+ */
+function resolveXotlChassis(mech) {
+  const variant = mech.variant;
+  // If variant is already a known chassis name, use it
+  if (DATA.chassis && DATA.chassis[variant]) return variant;
+
+  // If name is a known chassis name (reversed entries: variant=code, name=chassis)
+  const name = mech.name || '';
+  if (DATA.chassis && DATA.chassis[name]) return name;
+
+  // Try modelPrefixes lookup from both variant and name fields
+  if (DATA.modelPrefixes) {
+    // Try prefix from variant first (e.g., variant='ARC-2R' → prefix='ARC')
+    const varPrefix = (variant.match(/^[A-Z]+/) || [])[0];
+    if (varPrefix && DATA.modelPrefixes[varPrefix]) {
+      return DATA.modelPrefixes[varPrefix];
+    }
+    // Try prefix from name (e.g., name='WFT-1' → prefix='WFT')
+    const namePrefix = (name.match(/^[A-Z]+/) || [])[0];
+    if (namePrefix && DATA.modelPrefixes[namePrefix]) {
+      return DATA.modelPrefixes[namePrefix];
+    }
+  }
+
+  // If variant looks like a word (not a code), try combining with first word of name
+  // Handles split multi-word names: variant='Black', name='Knight BL-6-KNT' → 'Black Knight'
+  if (variant.length > 0 && variant[0] >= 'A' && variant[0] <= 'Z'
+      && !variant.match(/^[A-Z]+-/) && !variant.match(/^[A-Z]+\d/)) {
+    const nameFirst = name.split(' ')[0];
+    if (nameFirst) {
+      const combined = variant + ' ' + nameFirst;
+      if (DATA.chassis && DATA.chassis[combined]) return combined;
+      // Try partial match (e.g., 'Wolf Trap' matches 'Wolf Trap (Tora)')
+      if (DATA.chassis) {
+        const match = Object.keys(DATA.chassis).find(k => k.startsWith(combined));
+        if (match) return match;
+      }
+    }
+  }
+
+  return variant; // fallback
+}
+
+/**
+ * Get the availability value from a Xotl section's era data for the target era.
+ * Handles A/B vs C/D/F column variants.
+ */
+function getXotlColumnValue(eraData, xotlEra) {
+  if (!eraData) return null;
+
+  // Direct era column (e.g., '3028', '3039', '3050')
+  if (eraData[xotlEra] != null) return eraData[xotlEra];
+
+  // Star League: 'Regular' or 'Royal'
+  if (xotlEra === '2750') {
+    if (eraData['Regular'] != null) return eraData['Regular'];
+    if (eraData['Royal'] != null) return eraData['Royal'];
+    return null;
+  }
+
+  // A/B vs C/D/F columns (3050, 3057)
+  const abKey = 'A/B (' + xotlEra + ')';
+  const cdfKey = 'C/D/F (' + xotlEra + ')';
+  if (eraData[abKey] != null) return eraData[abKey];
+  if (eraData[cdfKey] != null) return eraData[cdfKey];
+
+  return null;
+}
 
 // ── Faction Index Decoding ──
 // app-data.json stores faction keys in eraData as numeric indices (string keys "0","1",...)
@@ -2682,7 +2824,7 @@ function getValueSuggestions(field, lower) {
         { text: 'F', hint: 'Garrison / PGC' }
       ].filter(i => i.text.toLowerCase().startsWith(lower));
     case 'mode':
-      return [{ text: 'A', hint: 'MegaMek Only' }, { text: 'B', hint: 'MegaMek × MUL' }];
+      return [{ text: 'A', hint: 'MegaMek Only' }, { text: 'B', hint: 'MegaMek × MUL' }, { text: 'X', hint: 'Xotl RAT' }];
     case 'family':
       return [{ text: 'on', hint: 'Merge families' }, { text: 'off', hint: 'Individual chassis' }];
     case 'type':
@@ -2902,7 +3044,7 @@ function renderPagination(container, totalRows, currentPg, totalPages, onPageCha
   });
 }
 
-function runQuery() {
+async function runQuery() {
   currentPage = 0; // Reset pagination on new query
   const bar = document.getElementById('query-bar');
   const queryStr = bar.value.trim();
@@ -2924,14 +3066,27 @@ function runQuery() {
     return;
   }
   
+  const parsed = parseQuery(queryStr);
+  
+  // Lazy-load Xotl data if Mode X is active
+  if (parsed.mode === 'X' && !xotlData) {
+    statusText.textContent = 'Loading Xotl RAT data…';
+    try {
+      await loadXotlData();
+    } catch (e) {
+      statusText.textContent = 'Error loading Xotl data: ' + e.message;
+      return;
+    }
+    statusText.textContent = '';
+  }
+  
   landing.style.display = 'none';
   if (columnLegend) columnLegend.classList.remove('hidden');
   
-  const parsed = parseQuery(queryStr);
   renderChips(parsed);
   
   // Update mode indicator
-  modeIndicator.textContent = parsed.mode === 'A' ? 'Mode A (MegaMek Only)' : 'Mode B (MegaMek × MUL)';
+  modeIndicator.textContent = parsed.mode === 'A' ? 'Mode A (MegaMek Only)' : parsed.mode === 'X' ? 'Mode X (Xotl RAT)' : 'Mode B (MegaMek × MUL)';
   
   // Determine era
   let eraYear = null;
@@ -2965,7 +3120,7 @@ function runQuery() {
   currentEraYear = eraYear;
   
   const familyMode = parsed.family || 'off';
-  const modeB = parsed.mode !== 'A';
+  const modeB = parsed.mode !== 'A' && parsed.mode !== 'X';
   const hideIndustrial = parsed.industrial !== 'show'; // hidden by default
   
   const chassisData = getChassisForEra(String(eraYear), familyMode);
@@ -3113,6 +3268,16 @@ function runQuery() {
       }
     } else {
       weights = computeResolvedWeights(data.w, ratingIdx);
+    }
+    // Mode X: replace MegaMek weights with Xotl RAT availability values
+    if (parsed.mode === 'X') {
+      const xotlW = buildXotlWeights(chassisName, eraYear, xotlData);
+      if (xotlW === null) {
+        // No Xotl coverage for this era — empty weights (all N/A)
+        weights = {};
+      } else {
+        weights = xotlW;
+      }
     }
     if (modeB) {
       for (const f of Object.keys(weights)) {
@@ -3786,13 +3951,20 @@ function initSettings() {
   document.querySelectorAll('input[name="data-mode"]').forEach(radio => {
     radio.addEventListener('change', () => {
       const bar = document.getElementById('query-bar');
-      const current = bar.value.replace(/\bmode=[AB]\b/g, '').replace(/\s+/g, ' ').trim();
+      const current = bar.value.replace(/\bmode=[ABX]\b/g, '').replace(/\s+/g, ' ').trim();
       if (radio.value === 'A') {
         const sortMatch = current.match(/^(.*?)(\s+sort\s+by\s+.+)$/i);
         if (sortMatch) {
           bar.value = (sortMatch[1].trim() + ' mode=A' + sortMatch[2]).trim();
         } else {
           bar.value = (current + ' mode=A').trim();
+        }
+      } else if (radio.value === 'X') {
+        const sortMatch = current.match(/^(.*?)(\s+sort\s+by\s+.+)$/i);
+        if (sortMatch) {
+          bar.value = (sortMatch[1].trim() + ' mode=X' + sortMatch[2]).trim();
+        } else {
+          bar.value = (current + ' mode=X').trim();
         }
       } else {
         bar.value = current;

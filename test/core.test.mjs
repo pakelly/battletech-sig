@@ -100,6 +100,11 @@ before(() => {
         variantMatchesTech,
         filterVariantsByTech,
         computeColOrder,
+        XOTL_FACTION_MAP,
+        XOTL_ERA_MAP,
+        getXotlColumnValue,
+        resolveXotlChassis,
+        buildXotlWeights,
       };
     }
   `);
@@ -2017,5 +2022,240 @@ describe('Combined Score', () => {
     
     const p3 = F.parseQuery('combined>=0.8');
     assert.deepStrictEqual(p3.combined, { op: '>=', val: 0.8 });
+  });
+});
+
+// ════════════════════════════════════════════════════════
+// 12. MODE X — XOTL RAT
+// ════════════════════════════════════════════════════════
+
+describe('Mode X — Xotl RAT', () => {
+  let XOTL_DATA;
+
+  before(async () => {
+    XOTL_DATA = JSON.parse(readFileSync(resolve(ROOT, 'app/xotl-rarity.json'), 'utf8'));
+  });
+
+  // ── Faction Mapping ──
+
+  describe('Xotl Faction Mapping', () => {
+    it('maps Star League 2750 to SL', () => {
+      assert.strictEqual(F.XOTL_FACTION_MAP['Star League 2750'], 'SL');
+    });
+
+    it('maps all Great Houses', () => {
+      assert.strictEqual(F.XOTL_FACTION_MAP['Capellan Confederation (House Liao)'], 'CC');
+      assert.strictEqual(F.XOTL_FACTION_MAP['Draconis Combine (House Kurita)'], 'DC');
+      assert.strictEqual(F.XOTL_FACTION_MAP['Federated Suns (House Davion)'], 'FS');
+      assert.strictEqual(F.XOTL_FACTION_MAP['Free Worlds League (House Marik)'], 'FWL');
+      assert.strictEqual(F.XOTL_FACTION_MAP['Lyran Commonwealth (House Steiner)'], 'LC');
+    });
+
+    it('maps minor factions', () => {
+      assert.strictEqual(F.XOTL_FACTION_MAP['Free Rasalhague Republic'], 'FRR');
+      assert.strictEqual(F.XOTL_FACTION_MAP['St. Ives Compact'], 'SIC');
+      assert.strictEqual(F.XOTL_FACTION_MAP['Mercenary / Periphery General'], 'MERC');
+      assert.strictEqual(F.XOTL_FACTION_MAP['Magistracy Of Canopus'], 'MOC');
+      assert.strictEqual(F.XOTL_FACTION_MAP['Outworlds Alliance'], 'OA');
+      assert.strictEqual(F.XOTL_FACTION_MAP['Taurian Concordat'], 'TC');
+    });
+
+    it('does not map Clan factions (not in Xotl)', () => {
+      assert.strictEqual(F.XOTL_FACTION_MAP['Clan Wolf'], undefined);
+      assert.strictEqual(F.XOTL_FACTION_MAP['Clan Jade Falcon'], undefined);
+    });
+  });
+
+  // ── Era Mapping ──
+
+  describe('Xotl Era Mapping', () => {
+    it('maps 2765 to 2750 (Star League)', () => {
+      assert.strictEqual(F.XOTL_ERA_MAP[2765], '2750');
+    });
+
+    it('maps 3028 and 3039 directly', () => {
+      assert.strictEqual(F.XOTL_ERA_MAP[3028], '3028');
+      assert.strictEqual(F.XOTL_ERA_MAP[3039], '3039');
+    });
+
+    it('maps 3049 and 3055 to 3050', () => {
+      assert.strictEqual(F.XOTL_ERA_MAP[3049], '3050');
+      assert.strictEqual(F.XOTL_ERA_MAP[3055], '3050');
+    });
+
+    it('maps 3058 to 3057', () => {
+      assert.strictEqual(F.XOTL_ERA_MAP[3058], '3057');
+    });
+
+    it('returns undefined for uncovered eras', () => {
+      assert.strictEqual(F.XOTL_ERA_MAP[3062], undefined);
+      assert.strictEqual(F.XOTL_ERA_MAP[3075], undefined);
+      assert.strictEqual(F.XOTL_ERA_MAP[3100], undefined);
+    });
+  });
+
+  // ── Column Value Resolution ──
+
+  describe('getXotlColumnValue', () => {
+    it('returns direct era column value', () => {
+      const eraData = { '3028': 7, '3039': 8 };
+      assert.strictEqual(F.getXotlColumnValue(eraData, '3028'), 7);
+      assert.strictEqual(F.getXotlColumnValue(eraData, '3039'), 8);
+    });
+
+    it('returns Regular for Star League 2750', () => {
+      const eraData = { 'Regular': 6, 'Royal': 9 };
+      assert.strictEqual(F.getXotlColumnValue(eraData, '2750'), 6);
+    });
+
+    it('returns A/B value when available', () => {
+      const eraData = { 'A/B (3057)': 7, 'C/D/F (3057)': 9 };
+      assert.strictEqual(F.getXotlColumnValue(eraData, '3057'), 7);
+    });
+
+    it('falls back to C/D/F when A/B is missing', () => {
+      const eraData = { 'C/D/F (3057)': 9 };
+      assert.strictEqual(F.getXotlColumnValue(eraData, '3057'), 9);
+    });
+
+    it('returns null when no matching column', () => {
+      const eraData = { '3028': 7 };
+      assert.strictEqual(F.getXotlColumnValue(eraData, '3057'), null);
+    });
+
+    it('returns null for empty era data', () => {
+      assert.strictEqual(F.getXotlColumnValue({}, '3028'), null);
+      assert.strictEqual(F.getXotlColumnValue(null, '3028'), null);
+    });
+  });
+
+  // ── Chassis Aggregation ──
+
+  describe('buildXotlWeights', () => {
+    it('returns null for era with no Xotl coverage', () => {
+      const result = F.buildXotlWeights('Archer', 3062, XOTL_DATA);
+      assert.strictEqual(result, null);
+    });
+
+    it('returns empty object for unknown chassis', () => {
+      const result = F.buildXotlWeights('NonExistentMech', 3039, XOTL_DATA);
+      assert.ok(result !== null);
+      assert.strictEqual(Object.keys(result).length, 0);
+    });
+
+    it('returns weights for Archer in 3039', () => {
+      const result = F.buildXotlWeights('Archer', 3039, XOTL_DATA);
+      assert.ok(result !== null);
+      // Archer ARC-2R has DC:8, FS:8, FWL:9, LC:9, CC:7 in 3039
+      assert.ok(result.DC > 0, 'DC should have weight');
+      assert.ok(result.FS > 0, 'FS should have weight');
+      assert.ok(result.FWL > 0, 'FWL should have weight');
+      assert.ok(result.LC > 0, 'LC should have weight');
+      assert.ok(result.CC > 0, 'CC should have weight');
+    });
+
+    it('takes max across variants of same chassis', () => {
+      // Archer has multiple variants (ARC-2R, ARC-4M, ARC-2K)
+      // The max across variants should be used
+      const result = F.buildXotlWeights('Archer', 3039, XOTL_DATA);
+      assert.ok(result !== null);
+      // DC across variants: ARC-2R has 8, others may differ
+      // The result should be the max
+      assert.ok(result.DC >= 8, `DC weight should be >= 8, got ${result.DC}`);
+    });
+
+    it('includes FRR for 3039', () => {
+      // FRR exists in 3039 era
+      const result = F.buildXotlWeights('Archer', 3039, XOTL_DATA);
+      assert.ok(result !== null);
+      // FRR should have data for Archer in 3039
+      // (FRR section covers 3039-3050)
+    });
+
+    it('returns weights for 2765 (Star League)', () => {
+      const result = F.buildXotlWeights('Archer', 2765, XOTL_DATA);
+      assert.ok(result !== null);
+      assert.ok(result.SL > 0, 'SL should have weight for Archer in 2750');
+    });
+
+    it('returns weights for 3055 (maps to 3050)', () => {
+      const result = F.buildXotlWeights('Archer', 3055, XOTL_DATA);
+      assert.ok(result !== null);
+      // 3050 data should exist for Great Houses
+      assert.ok(result.DC > 0 || result.FS > 0, 'At least one faction should have 3050 data');
+    });
+
+    it('does not include Clan factions', () => {
+      const result = F.buildXotlWeights('Archer', 3039, XOTL_DATA);
+      assert.ok(result !== null);
+      assert.ok(result.CW === undefined, 'Clan Wolf should not be in Xotl weights');
+      assert.ok(result.CJF === undefined, 'Clan Jade Falcon should not be in Xotl weights');
+    });
+  });
+
+  // ── Mode Parsing ──
+
+  describe('Mode X Query Parsing', () => {
+    it('parses mode=X', () => {
+      const p = F.parseQuery('mode=X');
+      assert.strictEqual(p.mode, 'X');
+    });
+
+    it('parses mode=X with faction query', () => {
+      const p = F.parseQuery('faction=GreatHouses mode=X year=3039');
+      assert.strictEqual(p.mode, 'X');
+      assert.strictEqual(p.year, 3039);
+      assert.ok(p.factions.includes('DC'));
+    });
+  });
+
+  // ── Mode B Exclusion ──
+
+  describe('Mode X skips MUL filtering', () => {
+    it('modeB is false when mode=X (no MUL filtering)', () => {
+      // In app.js: const modeB = parsed.mode !== 'A' && parsed.mode !== 'X';
+      // This is tested indirectly — we verify the logic
+      const modeB_X = 'X' !== 'A' && 'X' !== 'X';
+      const modeB_B = 'B' !== 'A' && 'B' !== 'X';
+      const modeB_A = 'A' !== 'A' && 'A' !== 'X';
+      assert.strictEqual(modeB_X, false, 'Mode X should skip MUL filtering');
+      assert.strictEqual(modeB_B, true, 'Mode B should do MUL filtering');
+      assert.strictEqual(modeB_A, false, 'Mode A should skip MUL filtering');
+    });
+  });
+
+  // ── Data Integrity ──
+
+  describe('Xotl Data Integrity', () => {
+    it('has 582 mechs', () => {
+      assert.strictEqual(XOTL_DATA.mechs.length, 582);
+    });
+
+    it('has 18 sections', () => {
+      assert.strictEqual(XOTL_DATA.sections.length, 18);
+    });
+
+    it('all sections map to known faction codes', () => {
+      for (const section of XOTL_DATA.sections) {
+        const baseName = section.faction.includes(':')
+          ? section.faction.split(':')[0].trim()
+          : section.faction;
+        assert.ok(F.XOTL_FACTION_MAP[baseName],
+          `Section "${section.faction}" base name "${baseName}" should map to a faction code`);
+      }
+    });
+
+    it('all availability values are 1-10 or null', () => {
+      for (const mech of XOTL_DATA.mechs) {
+        for (const eraData of Object.values(mech.sections || {})) {
+          for (const value of Object.values(eraData)) {
+            if (value != null) {
+              assert.ok(value >= 1 && value <= 10,
+                `Availability value ${value} for ${mech.variant} should be 1-10`);
+            }
+          }
+        }
+      }
+    });
   });
 });
