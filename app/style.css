@@ -1910,3 +1910,64 @@ details[open] > .help-section-title::before {
   .data-table { font-size: 0.75rem; }
   .example-query { font-size: 0.75rem; padding: 0.4rem 0.7rem; }
 }
+
+/* ── Xotl Availability Color Coding ── */
+
+.xotl-avail-cell {
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.xotl-avail-cell.rare {
+  background-color: rgba(220, 53, 69, 0.25);
+  color: #e88;
+}
+
+.xotl-avail-cell.uncommon {
+  background-color: rgba(255, 193, 7, 0.2);
+  color: #cc9;
+}
+
+.xotl-avail-cell.common {
+  background-color: rgba(40, 167, 69, 0.2);
+  color: #8c8;
+}
+
+.xotl-avail-cell.na {
+  color: var(--text-dim);
+  opacity: 0.3;
+}
+
+.faction-cell.rare {
+  background-color: rgba(220, 53, 69, 0.25);
+}
+
+.faction-cell.uncommon {
+  background-color: rgba(255, 193, 7, 0.2);
+}
+
+.faction-cell.common {
+  background-color: rgba(40, 167, 69, 0.2);
+}
+
+.faction-cell.na {
+  color: var(--text-dim);
+  opacity: 0.3;
+}
+
+/* Xotl cross-faction comparison table */
+.xotl-comparison-table {
+  font-size: 0.8rem;
+}
+
+.xotl-comparison-table th,
+.xotl-comparison-table td {
+  padding: 0.3rem 0.5rem;
+  text-align: center;
+}
+
+.xotl-comparison-table td:first-child,
+.xotl-comparison-table th:first-child {
+  text-align: left;
+}

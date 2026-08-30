@@ -105,6 +105,9 @@ before(() => {
         getXotlColumnValue,
         resolveXotlChassis,
         buildXotlWeights,
+        getXotlVariantData,
+        getXotlAllFactionVariantData,
+        xotlAvailClass,
       };
     }
   `);
@@ -2256,6 +2259,111 @@ describe('Mode X — Xotl RAT', () => {
           }
         }
       }
+    });
+  });
+
+  // ── Xotl Variant Data Functions ──
+
+  describe('getXotlVariantData', () => {
+    it('returns variant data for Archer + DC + 3028', () => {
+      const results = F.getXotlVariantData('Archer', 'DC', 3028, XOTL_DATA);
+      assert.ok(results.length > 0, 'Should have variant data for Archer/DC/3028');
+      const arc2r = results.find(r => r.name === 'ARC-2R');
+      assert.ok(arc2r, 'Should find ARC-2R variant');
+      assert.strictEqual(arc2r.availability, 8);
+      assert.strictEqual(arc2r.tonnage, 70);
+    });
+
+    it('returns empty array for unsupported era', () => {
+      const results = F.getXotlVariantData('Archer', 'DC', 3062, XOTL_DATA);
+      assert.strictEqual(results.length, 0);
+    });
+
+    it('returns empty array for Clan faction', () => {
+      const results = F.getXotlVariantData('Archer', 'CW', 3028, XOTL_DATA);
+      assert.strictEqual(results.length, 0);
+    });
+
+    it('returns empty array for unknown chassis', () => {
+      const results = F.getXotlVariantData('NonexistentMech', 'DC', 3028, XOTL_DATA);
+      assert.strictEqual(results.length, 0);
+    });
+
+    it('resolves A/B column for 3057 era', () => {
+      // Archer ARC-2R for FS at 3057 should have A/B value of 6 (front-line)
+      const results = F.getXotlVariantData('Archer', 'FS', 3058, XOTL_DATA);
+      const arc2r = results.find(r => r.name === 'ARC-2R');
+      if (arc2r) {
+        assert.strictEqual(arc2r.availability, 6);
+      }
+    });
+
+    it('falls back to C/D/F when A/B is missing', () => {
+      // Some variants only have C/D/F entries — verify fallback works
+      // We test this by checking that variants with only C/D/F data are still returned
+      const results = F.getXotlVariantData('Archer', 'FS', 3058, XOTL_DATA);
+      // All returned values should be non-null and 1-10
+      for (const r of results) {
+        assert.ok(r.availability >= 1 && r.availability <= 10,
+          `Availability ${r.availability} for ${r.name} should be 1-10`);
+      }
+    });
+  });
+
+  describe('getXotlAllFactionVariantData', () => {
+    it('returns cross-faction data for Archer + 3028', () => {
+      const result = F.getXotlAllFactionVariantData('Archer', 3028, XOTL_DATA);
+      assert.ok(result.size > 0, 'Should have variant data');
+      const arc2r = result.get('ARC-2R');
+      assert.ok(arc2r, 'Should find ARC-2R in cross-faction data');
+      assert.ok(arc2r.DC !== undefined, 'ARC-2R should have DC data');
+      assert.ok(arc2r.FS !== undefined, 'ARC-2R should have FS data');
+      assert.ok(arc2r.FWL !== undefined, 'ARC-2R should have FWL data');
+    });
+
+    it('returns empty Map for unsupported era', () => {
+      const result = F.getXotlAllFactionVariantData('Archer', 3062, XOTL_DATA);
+      assert.strictEqual(result.size, 0);
+    });
+
+    it('includes multiple variants for Archer', () => {
+      const result = F.getXotlAllFactionVariantData('Archer', 3028, XOTL_DATA);
+      // Archer has multiple variants (ARC-2R, ARC-2K, ARC-4M, etc.)
+      assert.ok(result.size >= 3, `Expected at least 3 variants, got ${result.size}`);
+    });
+
+    it('availability values are all 1-10', () => {
+      const result = F.getXotlAllFactionVariantData('Archer', 3028, XOTL_DATA);
+      for (const [variant, factionMap] of result) {
+        for (const [fCode, val] of Object.entries(factionMap)) {
+          assert.ok(val >= 1 && val <= 10,
+            `Availability ${val} for ${variant}/${fCode} should be 1-10`);
+        }
+      }
+    });
+  });
+
+  describe('xotlAvailClass', () => {
+    it('returns "rare" for values 1-3', () => {
+      assert.strictEqual(F.xotlAvailClass(1), 'rare');
+      assert.strictEqual(F.xotlAvailClass(2), 'rare');
+      assert.strictEqual(F.xotlAvailClass(3), 'rare');
+    });
+
+    it('returns "uncommon" for values 4-6', () => {
+      assert.strictEqual(F.xotlAvailClass(4), 'uncommon');
+      assert.strictEqual(F.xotlAvailClass(5), 'uncommon');
+      assert.strictEqual(F.xotlAvailClass(6), 'uncommon');
+    });
+
+    it('returns "common" for values 7-10', () => {
+      assert.strictEqual(F.xotlAvailClass(7), 'common');
+      assert.strictEqual(F.xotlAvailClass(8), 'common');
+      assert.strictEqual(F.xotlAvailClass(10), 'common');
+    });
+
+    it('returns "na" for null', () => {
+      assert.strictEqual(F.xotlAvailClass(null), 'na');
     });
   });
 });

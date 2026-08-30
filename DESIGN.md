@@ -84,6 +84,20 @@ App era years outside this mapping have no Xotl data — all cells show N/A.
 - Not filtered by MUL canon availability
 - Chassis aggregation may lose variant-level nuance (a rare variant and a common variant of the same chassis both contribute to the same chassis-level score via max)
 
+#### Mode X Detail View (1.36.1+)
+
+When Mode X is active, the chassis detail view (`renderMechView`) and variant drill-down (`showVariants`) display Xotl-specific data instead of MegaMek structures.
+
+**Chassis detail view** shows: Faction | Availability (1–10) | Variants (e.g., "3/5" meaning 3 of 5 variants available for this faction). Availability is color-coded: 1–3 red (rare), 4–6 yellow (uncommon), 7–10 green (common).
+
+**Variant drill-down** shows two sections:
+1. **Variant Availability** — Per-variant table for the selected faction: variant name, availability value (1–10), tonnage. Sorted by availability descending.
+2. **Cross-Faction Comparison** — Grid table showing all variants × all factions with availability values. The selected faction column is highlighted. This is the key feature for seeing faction-specific vs shared variants.
+
+When no faction is selected (chassis-level click), only the cross-faction comparison is shown.
+
+MegaMek-specific sections (Rating Tiers, Weight Class Distribution, Sub-Command Availability, variant probability distribution) are skipped entirely in Mode X.
+
 ---
 
 ## Core Concepts

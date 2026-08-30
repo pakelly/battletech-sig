@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.36.0';
+const APP_VERSION = '1.36.1';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -145,6 +145,87 @@ function getXotlColumnValue(eraData, xotlEra) {
   if (eraData[cdfKey] != null) return eraData[cdfKey];
 
   return null;
+}
+
+/**
+ * Get per-variant Xotl availability data for a specific chassis+faction+era.
+ * Returns array of { variant, name, availability, tonnage } for all variants
+ * of this chassis that have data for the given faction+era.
+ */
+function getXotlVariantData(chassisName, factionCode, eraYear, xotl) {
+  xotl = xotl || xotlData;
+  if (!xotl) return [];
+  const xotlEra = XOTL_ERA_MAP[eraYear];
+  if (!xotlEra) return [];
+
+  // Reverse map: faction code → Xotl faction name(s)
+  const xotlFactionNames = Object.entries(XOTL_FACTION_MAP)
+    .filter(([_, code]) => code === factionCode)
+    .map(([name, _]) => name);
+  if (xotlFactionNames.length === 0) return [];
+
+  const matching = xotl.mechs.filter(m => resolveXotlChassis(m) === chassisName);
+  if (matching.length === 0) return [];
+
+  const results = [];
+  for (const mech of matching) {
+    for (const [sectionName, eraData] of Object.entries(mech.sections || {})) {
+      const baseName = sectionName.includes(':')
+        ? sectionName.split(':')[0].trim()
+        : sectionName;
+      if (!xotlFactionNames.includes(baseName)) continue;
+
+      const value = getXotlColumnValue(eraData, xotlEra);
+      if (value == null) continue;
+
+      results.push({
+        variant: mech.variant,
+        name: mech.name,
+        availability: value,
+        tonnage: mech.tonnage
+      });
+    }
+  }
+  return results;
+}
+
+/**
+ * Get cross-faction variant availability data for a chassis+era.
+ * Returns a Map of { variantName: { factionCode: availability } }.
+ * Only includes factions/variants that have data.
+ */
+function getXotlAllFactionVariantData(chassisName, eraYear, xotl) {
+  xotl = xotl || xotlData;
+  if (!xotl) return new Map();
+  const xotlEra = XOTL_ERA_MAP[eraYear];
+  if (!xotlEra) return new Map();
+
+  const matching = xotl.mechs.filter(m => resolveXotlChassis(m) === chassisName);
+  if (matching.length === 0) return new Map();
+
+  const result = new Map(); // key: variant display name (mech.name), value: { factionCode: availability }
+  for (const mech of matching) {
+    const variantKey = mech.name || mech.variant;
+    if (!result.has(variantKey)) result.set(variantKey, {});
+    const factionMap = result.get(variantKey);
+
+    for (const [sectionName, eraData] of Object.entries(mech.sections || {})) {
+      const baseName = sectionName.includes(':')
+        ? sectionName.split(':')[0].trim()
+        : sectionName;
+      const factionCode = XOTL_FACTION_MAP[baseName];
+      if (!factionCode) continue;
+
+      const value = getXotlColumnValue(eraData, xotlEra);
+      if (value == null) continue;
+
+      // Take max if multiple entries for same faction (shouldn't happen, but guard)
+      if (factionMap[factionCode] == null || value > factionMap[factionCode]) {
+        factionMap[factionCode] = value;
+      }
+    }
+  }
+  return result;
 }
 
 // ── Faction Index Decoding ──
@@ -2112,6 +2193,13 @@ function renderSingleFaction(rows, faction, eraYear) {
   applyColOrder();
 }
 
+function xotlAvailClass(val) {
+  if (val == null) return 'na';
+  if (val <= 3) return 'rare';
+  if (val <= 6) return 'uncommon';
+  return 'common';
+}
+
 function renderMechView(rows, eraYear, chassisName) {
   const container = document.getElementById('view-container');
   container.innerHTML = '';
@@ -2121,6 +2209,10 @@ function renderMechView(rows, eraYear, chassisName) {
     container.innerHTML = '<p style="color:var(--text-dim)">No chassis found matching your query.</p>';
     return;
   }
+
+  // Check Mode X
+  const parsed = parseQuery(document.getElementById('query-bar')?.value || '');
+  const isModeX = parsed.mode === 'X';
 
   for (const row of rows) {
     const meta = row.meta;
@@ -2133,60 +2225,101 @@ function renderMechView(rows, eraYear, chassisName) {
       <div class="mech-view-meta">${formatTonnage(meta)} ${formatClass(meta)} — Intro: ${meta.intro || 'Unknown'} — ${meta.tech || ''}</div>
     `;
     
-    // Get all factions sorted by sig (most distinctive first), fallback to weight
-    const hasSig = row.sig && Object.values(row.sig).some(v => typeof v === 'number' && v > 0);
-    const factionWeights = Object.entries(row.weights)
-      .filter(([f, w]) => w > 0)
-      .sort((a, b) => {
-        if (hasSig) return (row.sig?.[b[0]] || 0) - (row.sig?.[a[0]] || 0);
-        return b[1] - a[1];
-      });
-    
-    const table = document.createElement('table');
-    table.className = 'data-table';
-    table.innerHTML = `<thead><tr><th>Faction</th>${hasSig ? '<th>DR</th>' : ''}<th>Prob</th><th>Weight</th></tr></thead>`;
-    
-    const tbody = document.createElement('tbody');
-    for (const [f, w] of factionWeights) {
-      const fName = getFactionFullName(f);
+    if (isModeX) {
+      // Mode X: Faction | Availability | Variants
+      const factionWeights = Object.entries(row.weights)
+        .filter(([f, w]) => w > 0)
+        .sort((a, b) => b[1] - a[1]);
       
-      // DR cell
-      let drCell = '';
-      if (hasSig) {
-        const sigVal = row.sig?.[f] || 0;
-        const sigTier = row.sig?.[f + '_tier'] || 0;
-        if (sigVal > 0) {
-          const sigHeat = sigTierToHeat(sigTier);
-          drCell = `<td class="faction-cell ${sigHeat}" data-chassis="${escAttr(row.name)}" data-faction="${f}"><span class="pref-value">DR${sigTier}</span><span class="sig-raw">${sigVal.toFixed(1)}</span></td>`;
-        } else {
-          drCell = `<td class="faction-cell heat-1" data-chassis="${escAttr(row.name)}" data-faction="${f}"><span class="pref-value">DR5</span></td>`;
+      // Count total Xotl variants for this chassis (across all factions)
+      const allVariantData = getXotlAllFactionVariantData(row.name, eraYear);
+      const totalVariantCount = allVariantData.size;
+      
+      const table = document.createElement('table');
+      table.className = 'data-table';
+      table.innerHTML = `<thead><tr><th>Faction</th><th>Availability</th><th>Variants</th></tr></thead>`;
+      
+      const tbody = document.createElement('tbody');
+      for (const [f, w] of factionWeights) {
+        const fName = getFactionFullName(f);
+        const avail = Math.round(w);
+        const availCls = xotlAvailClass(w);
+        
+        // Count variants available for this faction
+        const factionVariants = getXotlVariantData(row.name, f, eraYear);
+        const variantStr = totalVariantCount > 0
+          ? `${factionVariants.length}/${totalVariantCount}`
+          : '—';
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="cursor:pointer" data-chassis="${escAttr(row.name)}" data-faction="${f}"><strong>${escHtml(f)}</strong> <span style="color:var(--text-dim)">${escHtml(fName)}</span></td>
+          <td class="faction-cell ${availCls}" data-chassis="${escAttr(row.name)}" data-faction="${f}"><span class="pref-value">${avail}</span></td>
+          <td class="stat-col">${variantStr}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+      table.appendChild(tbody);
+      section.appendChild(table);
+      container.appendChild(section);
+      
+      table.addEventListener('click', handleCellClick);
+    } else {
+      // Mode A/B: original MegaMek view
+      const hasSig = row.sig && Object.values(row.sig).some(v => typeof v === 'number' && v > 0);
+      const factionWeights = Object.entries(row.weights)
+        .filter(([f, w]) => w > 0)
+        .sort((a, b) => {
+          if (hasSig) return (row.sig?.[b[0]] || 0) - (row.sig?.[a[0]] || 0);
+          return b[1] - a[1];
+        });
+      
+      const table = document.createElement('table');
+      table.className = 'data-table';
+      table.innerHTML = `<thead><tr><th>Faction</th>${hasSig ? '<th>DR</th>' : ''}<th>Prob</th><th>Weight</th></tr></thead>`;
+      
+      const tbody = document.createElement('tbody');
+      for (const [f, w] of factionWeights) {
+        const fName = getFactionFullName(f);
+        
+        // DR cell
+        let drCell = '';
+        if (hasSig) {
+          const sigVal = row.sig?.[f] || 0;
+          const sigTier = row.sig?.[f + '_tier'] || 0;
+          if (sigVal > 0) {
+            const sigHeat = sigTierToHeat(sigTier);
+            drCell = `<td class="faction-cell ${sigHeat}" data-chassis="${escAttr(row.name)}" data-faction="${f}"><span class="pref-value">DR${sigTier}</span><span class="sig-raw">${sigVal.toFixed(1)}</span></td>`;
+          } else {
+            drCell = `<td class="faction-cell heat-1" data-chassis="${escAttr(row.name)}" data-faction="${f}"><span class="pref-value">DR5</span></td>`;
+          }
         }
-      }
 
-      // Prob cell
-      const bw = row.biasedWeights?.[f] || 0;
-      let probCell;
-      if (bw > 0) {
-        const bwCls = bwHeatClass(bw);
-        probCell = `<td class="faction-cell ${bwCls}" data-chassis="${escAttr(row.name)}" data-faction="${f}"><span class="pref-value">${bw.toFixed(2)}</span></td>`;
-      } else {
-        probCell = `<td class="faction-cell no-data">—</td>`;
-      }
+        // Prob cell
+        const bw = row.biasedWeights?.[f] || 0;
+        let probCell;
+        if (bw > 0) {
+          const bwCls = bwHeatClass(bw);
+          probCell = `<td class="faction-cell ${bwCls}" data-chassis="${escAttr(row.name)}" data-faction="${f}"><span class="pref-value">${bw.toFixed(2)}</span></td>`;
+        } else {
+          probCell = `<td class="faction-cell no-data">—</td>`;
+        }
 
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td style="cursor:pointer" data-chassis="${escAttr(row.name)}" data-faction="${f}"><strong>${escHtml(f)}</strong> <span style="color:var(--text-dim)">${escHtml(fName)}</span></td>
-        ${drCell}
-        ${probCell}
-        <td class="stat-col">${w.toFixed(1)}</td>
-      `;
-      tbody.appendChild(tr);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="cursor:pointer" data-chassis="${escAttr(row.name)}" data-faction="${f}"><strong>${escHtml(f)}</strong> <span style="color:var(--text-dim)">${escHtml(fName)}</span></td>
+          ${drCell}
+          ${probCell}
+          <td class="stat-col">${w.toFixed(1)}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+      table.appendChild(tbody);
+      section.appendChild(table);
+      container.appendChild(section);
+      
+      table.addEventListener('click', handleCellClick);
     }
-    table.appendChild(tbody);
-    section.appendChild(table);
-    container.appendChild(section);
-    
-    table.addEventListener('click', handleCellClick);
   }
 
   updateColVisibility();
@@ -2258,6 +2391,139 @@ function getSubFactionData(chassisNames, faction, eraYear) {
   return Object.keys(allSubFactionData).length > 0 ? allSubFactionData : null;
 }
 
+/**
+ * Mode X variant drill-down: shows Xotl variant availability and cross-faction comparison.
+ */
+function showVariantsXotl(chassisName, faction, eraYear, overlay, title, content) {
+  const xotlEra = XOTL_ERA_MAP[eraYear];
+  
+  if (!xotlEra) {
+    title.textContent = `${chassisName} — No Xotl Data`;
+    content.innerHTML = '<div class="drilldown-section"><p class="drilldown-empty">No Xotl RAT data available for this era.</p></div>';
+    overlay.classList.remove('hidden');
+    return;
+  }
+  
+  // Get all variant data across factions
+  const allVariantData = getXotlAllFactionVariantData(chassisName, eraYear);
+  
+  if (allVariantData.size === 0) {
+    title.textContent = `${chassisName} — No Xotl Data`;
+    content.innerHTML = '<div class="drilldown-section"><p class="drilldown-empty">No Xotl RAT data available for this chassis.</p></div>';
+    overlay.classList.remove('hidden');
+    return;
+  }
+  
+  if (!faction) {
+    // No faction selected — show cross-faction comparison only
+    title.textContent = `${chassisName} — Xotl Variant Availability (${eraYear})`;
+    let html = '';
+    
+    // Cross-faction comparison table
+    html += '<div class="drilldown-section"><h4 class="drilldown-section-title">Cross-Faction Variant Availability</h4>';
+    
+    // Collect all factions that have data for any variant
+    const allFactions = new Set();
+    for (const factionMap of allVariantData.values()) {
+      for (const fCode of Object.keys(factionMap)) allFactions.add(fCode);
+    }
+    const sortedFactions = [...allFactions].sort();
+    
+    // Table header
+    html += '<table class="data-table xotl-comparison-table"><thead><tr><th>Variant</th>';
+    for (const fCode of sortedFactions) {
+      html += `<th>${escHtml(fCode)}</th>`;
+    }
+    html += '</tr></thead><tbody>';
+    
+    // Sort variants by name
+    const sortedVariants = [...allVariantData.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    
+    for (const [variantName, factionMap] of sortedVariants) {
+      html += `<tr><td><strong>${escHtml(variantName)}</strong></td>`;
+      for (const fCode of sortedFactions) {
+        const val = factionMap[fCode];
+        if (val != null) {
+          const cls = xotlAvailClass(val);
+          html += `<td class="xotl-avail-cell ${cls}">${val}</td>`;
+        } else {
+          html += '<td class="xotl-avail-cell na">—</td>';
+        }
+      }
+      html += '</tr>';
+    }
+    html += '</tbody></table></div>';
+    
+    content.innerHTML = html;
+    overlay.classList.remove('hidden');
+    return;
+  }
+  
+  // Faction-specific view
+  title.textContent = `${chassisName} — ${getFactionFullName(faction)} (Xotl)`;
+  let html = '';
+  
+  // Section 1: Variant Availability for this faction
+  const factionVariants = getXotlVariantData(chassisName, faction, eraYear);
+  
+  if (factionVariants.length === 0) {
+    html += `<div class="drilldown-section"><p class="drilldown-empty">${escHtml(getFactionFullName(faction))} does not field the ${escHtml(chassisName)} in Xotl's ${xotlEra} tables.</p></div>`;
+  } else {
+    html += '<div class="drilldown-section"><h4 class="drilldown-section-title">Variant Availability</h4>';
+    html += '<table class="data-table"><thead><tr><th>Variant</th><th>Availability</th><th>Tonnage</th></tr></thead><tbody>';
+    
+    // Sort by availability desc, then name
+    const sorted = [...factionVariants].sort((a, b) => {
+      if (b.availability !== a.availability) return b.availability - a.availability;
+      return a.name.localeCompare(b.name);
+    });
+    
+    for (const v of sorted) {
+      const cls = xotlAvailClass(v.availability);
+      html += `<tr><td><strong>${escHtml(v.name)}</strong></td>`;
+      html += `<td class="xotl-avail-cell ${cls}">${v.availability}</td>`;
+      html += `<td class="stat-col">${v.tonnage || '—'}</td></tr>`;
+    }
+    html += '</tbody></table></div>';
+  }
+  
+  // Section 2: Cross-Faction Comparison
+  const allFactions = new Set();
+  for (const factionMap of allVariantData.values()) {
+    for (const fCode of Object.keys(factionMap)) allFactions.add(fCode);
+  }
+  const sortedFactions = [...allFactions].sort();
+  
+  // Highlight the selected faction column
+  html += '<div class="drilldown-section"><h4 class="drilldown-section-title">Cross-Faction Comparison</h4>';
+  html += '<table class="data-table xotl-comparison-table"><thead><tr><th>Variant</th>';
+  for (const fCode of sortedFactions) {
+    const highlight = fCode === faction ? ' style="background:var(--heat-3)"' : '';
+    html += `<th${highlight}>${escHtml(fCode)}</th>`;
+  }
+  html += '</tr></thead><tbody>';
+  
+  const sortedVariants = [...allVariantData.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  for (const [variantName, factionMap] of sortedVariants) {
+    html += `<tr><td><strong>${escHtml(variantName)}</strong></td>`;
+    for (const fCode of sortedFactions) {
+      const val = factionMap[fCode];
+      if (val != null) {
+        const cls = xotlAvailClass(val);
+        const highlight = fCode === faction ? ` ${cls}` : cls;
+        html += `<td class="xotl-avail-cell ${cls}">${val}</td>`;
+      } else {
+        html += '<td class="xotl-avail-cell na">—</td>';
+      }
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table></div>';
+  
+  content.innerHTML = html;
+  overlay.classList.remove('hidden');
+}
+
 function showVariants(chassisName, faction, eraYear) {
   const overlay = document.getElementById('variant-overlay');
   const title = document.getElementById('variant-title');
@@ -2308,6 +2574,14 @@ function showVariants(chassisName, faction, eraYear) {
   
   // Use exact year if specified, otherwise fall back to the era bucket year
   const targetYear = currentQuery.year || eraYear;
+  
+  // Mode X: Xotl RAT variant view
+  const isModeX = currentQuery.mode === 'X';
+  
+  if (isModeX) {
+    showVariantsXotl(chassisName, faction, eraYear, overlay, title, content);
+    return;
+  }
   
   // If no faction specified, show all variants with metadata only (no weight distribution)
   if (!faction) {
