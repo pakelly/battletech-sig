@@ -76,6 +76,31 @@ function buildXotlWeights(chassisName, eraYear, xotl) {
 }
 
 /**
+ * Build per-faction probability weights for Mode X by summing xotlToProb
+ * across all variants. Unlike buildXotlWeights (which takes max Av for display),
+ * this sums variant probabilities — a faction fielding 3 variants of a chassis
+ * gets more share-of-force than one fielding 1.
+ */
+function buildXotlProbWeights(chassisName, eraYear, xotl) {
+  const xotlEra = XOTL_ERA_MAP[eraYear];
+  if (!xotlEra) return null;
+  const matching = xotl.mechs.filter(m => resolveXotlChassis(m) === chassisName);
+  if (matching.length === 0) return {};
+  const weights = {};
+  for (const mech of matching) {
+    for (const [sectionName, eraData] of Object.entries(mech.sections || {})) {
+      const baseName = sectionName.includes(':') ? sectionName.split(':')[0].trim() : sectionName;
+      const factionCode = XOTL_FACTION_MAP[baseName];
+      if (!factionCode) continue;
+      const value = getXotlColumnValue(eraData, xotlEra);
+      if (value == null) continue;
+      weights[factionCode] = (weights[factionCode] || 0) + xotlToProb(value);
+    }
+  }
+  return weights;
+}
+
+/**
  * Resolve a Xotl mech entry to an app chassis name.
  * Uses modelPrefixes for variant-code entries, and direct name matching.
  */
@@ -3567,6 +3592,7 @@ async function runQuery() {
       weights = computeResolvedWeights(data.w, ratingIdx);
     }
     // Mode X: replace MegaMek weights with Xotl RAT availability values
+    let xotlProbWeights = null;
     if (parsed.mode === 'X') {
       const xotlW = buildXotlWeights(chassisName, eraYear, xotlData);
       if (xotlW === null) {
@@ -3574,6 +3600,8 @@ async function runQuery() {
         weights = {};
       } else {
         weights = xotlW;
+        // Also compute sum-of-variant probs for share-of-force
+        xotlProbWeights = buildXotlProbWeights(chassisName, eraYear, xotlData);
       }
     }
     if (modeB) {
@@ -3633,6 +3661,7 @@ async function runQuery() {
       meta,
       weights,
       rawW: data.w,  // raw entries with modifiers, for prob-space computation
+      xotlProbWeights,  // Mode X: sum-of-variant probs for share-of-force
       spread,
       span,
       avgWeight,
@@ -3694,16 +3723,26 @@ async function runQuery() {
   }
   
   // Compute biased weights (probability-space weight × WCD mixing factor)
-  // Mode X: uses xotlToProb instead of MegaMek's entryToProb/toProb
+  // Mode X: uses sum-of-variant xotlToProb (not max-Av) for share-of-force
   const isModeX = parsed.mode === 'X';
   for (const row of rows) {
     row.biasedWeights = {};
-    for (const f of Object.keys(row.weights)) {
-      const w = row.weights[f];
-      if (w <= 0) { row.biasedWeights[f] = 0; continue; }
-      const prob = isModeX ? xotlToProb(w) : (row.rawW?.[f] ? entryToProb(row.rawW[f], probRatingIdx) : toProb(w));
-      const mixFactor = getWcdMixingFactor(f, row.meta?.class, eraYear);
-      row.biasedWeights[f] = prob * mixFactor;
+    if (isModeX && row.xotlProbWeights) {
+      // Mode X: use pre-computed sum of variant probabilities × WCD
+      for (const f of Object.keys(row.xotlProbWeights)) {
+        const prob = row.xotlProbWeights[f];
+        if (prob <= 0) { row.biasedWeights[f] = 0; continue; }
+        const mixFactor = getWcdMixingFactor(f, row.meta?.class, eraYear);
+        row.biasedWeights[f] = prob * mixFactor;
+      }
+    } else {
+      for (const f of Object.keys(row.weights)) {
+        const w = row.weights[f];
+        if (w <= 0) { row.biasedWeights[f] = 0; continue; }
+        const prob = row.rawW?.[f] ? entryToProb(row.rawW[f], probRatingIdx) : toProb(w);
+        const mixFactor = getWcdMixingFactor(f, row.meta?.class, eraYear);
+        row.biasedWeights[f] = prob * mixFactor;
+      }
     }
   }
   
