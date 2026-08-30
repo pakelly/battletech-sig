@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.36.1';
+const APP_VERSION = '1.36.2';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -462,6 +462,18 @@ function toProb(rating) {
   // small probability so they don't distort signature calculations.
   if (rating < 0.1) return 0.001;
   return Math.pow(2, rating / 2);
+}
+
+// ── Xotl Availability Conversion ──
+// Xotl's 1-10 availability scale maps to actual D1000 table frequencies.
+// Fitted from Xotl's published values (R²=0.9957):
+//   Av 1 → 0.5%, Av 5 → 3.6%, Av 10 → 25%
+// Clean formula: each +1 Av = 1.5x more likely, scaled to match the data.
+//   freq = 0.00432 × 1.5^Av
+// This replaces MegaMek's 2^(w/2) which overestimates by 100-300x.
+function xotlToProb(av) {
+  if (av <= 0) return 0;
+  return 0.00432 * Math.pow(1.5, av);
 }
 
 /**
@@ -1259,7 +1271,7 @@ function filterVariantsByTech(variants, filterTech, fallbackTech, negate = false
  * @param {string[]} allFactionCodes - all faction codes for z-score baseline
  * @param {Object|null} wcdParams - { chassisClass, eraYear } or null to skip WCD mixing
  */
-function computeSignature(weights, mulData, factions, allFactionCodes, wcdParams, chassisTech, rawW, ratingIdx) {
+function computeSignature(weights, mulData, factions, allFactionCodes, wcdParams, chassisTech, rawW, ratingIdx, isModeX) {
   const result = {};
   
   // Filter comparison pool by faction family MUL availability.
@@ -1311,8 +1323,7 @@ function computeSignature(weights, mulData, factions, allFactionCodes, wcdParams
   const allWeights = compareFactions.map(f => {
     const rating = (mulData[f] && weights[f]) ? weights[f] : 0;
     if (rating <= 0) return 0;
-    const rawEntry = rawW?.[f];
-    const prob = rawEntry ? entryToProb(rawEntry, ratingIdx) : toProb(rating);
+    const prob = isModeX ? xotlToProb(rating) : (rawW?.[f] ? entryToProb(rawW[f], ratingIdx) : toProb(rating));
     if (wcdParams) {
       const mixFactor = getWcdMixingFactor(f, wcdParams.chassisClass, wcdParams.eraYear);
       return prob * mixFactor;
@@ -1330,8 +1341,7 @@ function computeSignature(weights, mulData, factions, allFactionCodes, wcdParams
   for (const f of factions) {
     const rating = (mulData[f] && weights[f]) ? weights[f] : 0;
     if (rating <= 0 || stddev === 0) { result[f] = 0; continue; }
-    const rawEntry = rawW?.[f];
-    const prob = rawEntry ? entryToProb(rawEntry, ratingIdx) : toProb(rating);
+    const prob = isModeX ? xotlToProb(rating) : (rawW?.[f] ? entryToProb(rawW[f], ratingIdx) : toProb(rating));
     let w;
     if (wcdParams) {
       const mixFactor = getWcdMixingFactor(f, wcdParams.chassisClass, wcdParams.eraYear);
@@ -3634,7 +3644,7 @@ async function runQuery() {
       const wcdParams = { chassisClass: row.meta?.class, eraYear };
       const factions = sigFactions || Object.keys(row.weights).filter(f => (row.weights[f] || 0) > 0);
       if (factions.length === 0) continue;
-      row.sig = computeSignature(row.weights, row.mul || {}, factions, allFactionCodes, wcdParams, row.meta?.tech, row.rawW, probRatingIdx);
+      row.sig = computeSignature(row.weights, row.mul || {}, factions, allFactionCodes, wcdParams, row.meta?.tech, row.rawW, probRatingIdx, parsed.mode === 'X');
     }
     
     // Compute tiers using GLOBAL Jenks Natural Breaks across all displayed factions.
@@ -3671,14 +3681,14 @@ async function runQuery() {
   }
   
   // Compute biased weights (probability-space weight × WCD mixing factor)
-  // Uses entryToProb for correct cross-tier averaging in probability space
+  // Mode X: uses xotlToProb instead of MegaMek's entryToProb/toProb
+  const isModeX = parsed.mode === 'X';
   for (const row of rows) {
     row.biasedWeights = {};
     for (const f of Object.keys(row.weights)) {
       const w = row.weights[f];
       if (w <= 0) { row.biasedWeights[f] = 0; continue; }
-      const rawEntry = row.rawW?.[f];
-      const prob = rawEntry ? entryToProb(rawEntry, probRatingIdx) : toProb(w);
+      const prob = isModeX ? xotlToProb(w) : (row.rawW?.[f] ? entryToProb(row.rawW[f], probRatingIdx) : toProb(w));
       const mixFactor = getWcdMixingFactor(f, row.meta?.class, eraYear);
       row.biasedWeights[f] = prob * mixFactor;
     }

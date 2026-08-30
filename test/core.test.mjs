@@ -95,6 +95,7 @@ before(() => {
         computeResolvedWeights,
         getWcdMixingFactor,
         toProb,
+        xotlToProb,
         RATING_INDEX,
         computeVariantDistribution,
         variantMatchesTech,
@@ -2339,6 +2340,40 @@ describe('Mode X — Xotl RAT', () => {
           assert.ok(val >= 1 && val <= 10,
             `Availability ${val} for ${variant}/${fCode} should be 1-10`);
         }
+      }
+    });
+  });
+
+  describe('xotlToProb', () => {
+    it('returns 0 for Av 0 or negative', () => {
+      assert.strictEqual(F.xotlToProb(0), 0);
+      assert.strictEqual(F.xotlToProb(-1), 0);
+    });
+
+    it('returns ~0.25% for Av 1', () => {
+      // 0.00432 * 1.5^1 = 0.00648 (~0.65%)
+      assert.ok(F.xotlToProb(1) > 0.005 && F.xotlToProb(1) < 0.008,
+        `Av 1 prob ${F.xotlToProb(1)} should be ~0.0065`);
+    });
+
+    it('returns ~25% for Av 10', () => {
+      // 0.00432 * 1.5^10 = 0.24913
+      assert.ok(F.xotlToProb(10) > 0.24 && F.xotlToProb(10) < 0.26,
+        `Av 10 prob ${F.xotlToProb(10)} should be ~0.249`);
+    });
+
+    it('each +1 Av is 1.5x more likely', () => {
+      for (let av = 1; av < 10; av++) {
+        const ratio = F.xotlToProb(av + 1) / F.xotlToProb(av);
+        assert.ok(Math.abs(ratio - 1.5) < 0.001,
+          `Av ${av}→${av+1} ratio ${ratio.toFixed(4)} should be 1.5`);
+      }
+    });
+
+    it('is monotonic increasing', () => {
+      for (let av = 1; av < 10; av++) {
+        assert.ok(F.xotlToProb(av + 1) > F.xotlToProb(av),
+          `Av ${av+1} should be more likely than Av ${av}`);
       }
     });
   });

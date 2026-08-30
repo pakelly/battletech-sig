@@ -84,6 +84,31 @@ App era years outside this mapping have no Xotl data — all cells show N/A.
 - Not filtered by MUL canon availability
 - Chassis aggregation may lose variant-level nuance (a rare variant and a common variant of the same chassis both contribute to the same chassis-level score via max)
 
+**Probability conversion (v1.36.2):**
+
+Xotl's 1–10 availability values are **not** MegaMek log-scale weights. MegaMek uses `2^(rating/2)` (each +2 = 2× more likely), which overestimates Xotl frequencies by 100–300×. Mode X uses a dedicated conversion:
+
+```
+xotlToProb(av) = 0.00432 × 1.5^av
+```
+
+Each +1 Av = 1.5× more frequent. Fitted from Xotl's published D1000 frequency data (R²=0.9957):
+
+| Av | Xotl Frequency | xotlToProb | 1-in- |
+|----|---------------|-----------|-------|
+| 1  | 0.50%         | 0.65%     | 154   |
+| 2  | 0.69%         | 0.97%     | 103   |
+| 3  | 1.32%         | 1.46%     | 69    |
+| 4  | 2.63%         | 2.19%     | 46    |
+| 5  | 3.57%         | 3.28%     | 30    |
+| 6  | 5.00%         | 4.92%     | 20    |
+| 7  | 8.33%         | 7.38%     | 14    |
+| 8  | 10.00%        | 11.07%    | 9     |
+| 9  | 16.67%        | 16.61%    | 6     |
+| 10 | 25.00%        | 24.91%    | 4     |
+
+The signature (DR) z-score and biased weight (Prob) computations use `xotlToProb(av) × WCD` in Mode X, skipping MegaMek's `toProb()`, `entryToProb()`, and `rawW` entirely. The WCD mixing factor is still applied — it correctly adjusts for faction weight class preferences (e.g., Lyran heavy bias boosts their heavy signatures).
+
 #### Mode X Detail View (1.36.1+)
 
 When Mode X is active, the chassis detail view (`renderMechView`) and variant drill-down (`showVariants`) display Xotl-specific data instead of MegaMek structures.
