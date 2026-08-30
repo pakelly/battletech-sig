@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.36.2';
+const APP_VERSION = '1.36.3';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -1729,9 +1729,22 @@ function heatClass(pref) {
   return 'heat-' + Math.round(Math.min(10, Math.max(1, pref)));
 }
 
+function bwFormat(bw) {
+  if (!bw || bw <= 0) return '—';
+  if (bw <= 1) return (bw * 100).toFixed(0) + '%';  // Mode X: normalized share
+  return bw.toFixed(2);  // MegaMek: probability-space weight
+}
+
 function bwHeatClass(bw) {
   if (!bw || bw <= 0) return 'no-data';
-  // Log-scale: map log2(bw) from [-3.5, 3.5] to 1–10, using cool blue palette
+  // Mode X: biased weights are normalized [0,1], use linear mapping
+  // MegaMek: log-scale mapping from probability-space weights
+  if (bw <= 1) {
+    // Mode X normalized value — linear map [0, 1] → [1, 10]
+    const level = Math.round(1 + 9 * bw);
+    return 'cool-' + Math.max(1, Math.min(10, level));
+  }
+  // MegaMek: log-scale: map log2(bw) from [-3.5, 3.5] to 1–10, using cool blue palette
   const l = Math.log2(bw);
   const level = Math.round(1 + 9 * (l + 3.5) / 7);
   return 'cool-' + Math.max(1, Math.min(10, level));
@@ -1861,7 +1874,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
             // Mode 1: Prob only (full cell)
             if (bw > 0) {
               const bwCls = bwHeatClass(bw);
-              html += `<div class="full-cell ${bwCls}">${bw.toFixed(1)}</div>`;
+              html += `<div class="full-cell ${bwCls}">${bwFormat(bw)}</div>`;
             } else {
               html += '<div class="full-cell no-data">&mdash;</div>';
             }
@@ -1884,7 +1897,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
             // Right half: Prob (biased weight)
             if (bw > 0) {
               const bwCls = bwHeatClass(bw);
-              html += `<div class="split-half ${bwCls}">${bw.toFixed(1)}</div>`;
+              html += `<div class="split-half ${bwCls}">${bwFormat(bw)}</div>`;
             } else {
               html += '<div class="split-half no-data">&mdash;</div>';
             }
@@ -1939,7 +1952,7 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
         if (bw > 0) {
           const bwCls = bwHeatClass(bw);
           html += `<td class="faction-cell ${bwCls}" data-chassis="${escAttr(row.name)}" data-faction="${f}">`;
-          html += `<span class="pref-value">${bw.toFixed(2)}</span>`;
+          html += `<span class="pref-value">${bwFormat(bw)}</span>`;
           html += '</td>';
         } else {
           html += `<td class="faction-cell no-data" data-chassis="${escAttr(row.name)}" data-faction="${f}">—</td>`;
@@ -2113,7 +2126,7 @@ function renderSingleFaction(rows, faction, eraYear) {
         splitCell += '<div class="split-divider"></div>';
         if (bw > 0) {
           const bwCls = bwHeatClass(bw);
-          splitCell += `<div class="split-half ${bwCls}">${bw.toFixed(1)}</div>`;
+          splitCell += `<div class="split-half ${bwCls}">${bwFormat(bw)}</div>`;
         } else {
           splitCell += '<div class="split-half no-data">&mdash;</div>';
         }
@@ -2138,7 +2151,7 @@ function renderSingleFaction(rows, faction, eraYear) {
       let probCell;
       if (bwSep > 0) {
         const bwCls = bwHeatClass(bwSep);
-        probCell = `<td class="faction-cell ${bwCls}" data-chassis="${escAttr(row.name)}" data-faction="${faction}"><span class="pref-value">${bwSep.toFixed(2)}</span></td>`;
+        probCell = `<td class="faction-cell ${bwCls}" data-chassis="${escAttr(row.name)}" data-faction="${faction}"><span class="pref-value">${bwFormat(bwSep)}</span></td>`;
       } else {
         probCell = `<td class="faction-cell no-data">—</td>`;
       }
@@ -2310,7 +2323,7 @@ function renderMechView(rows, eraYear, chassisName) {
         let probCell;
         if (bw > 0) {
           const bwCls = bwHeatClass(bw);
-          probCell = `<td class="faction-cell ${bwCls}" data-chassis="${escAttr(row.name)}" data-faction="${f}"><span class="pref-value">${bw.toFixed(2)}</span></td>`;
+          probCell = `<td class="faction-cell ${bwCls}" data-chassis="${escAttr(row.name)}" data-faction="${f}"><span class="pref-value">${bwFormat(bw)}</span></td>`;
         } else {
           probCell = `<td class="faction-cell no-data">—</td>`;
         }
@@ -3694,6 +3707,27 @@ async function runQuery() {
     }
   }
   
+  // Mode X: normalize biased weights per faction to [0, 1] range.
+  // xotlToProb produces actual frequency fractions (0.005–0.25), while MegaMek's
+  // toProb produces probability-space weights (1.4–32). The display pipeline
+  // (heat classes, formatting, combined scores) expects MegaMek's range.
+  // Normalizing per faction makes prob = share-of-force, which is the correct
+  // interpretation regardless of data source.
+  if (isModeX) {
+    const factionMaxBw = {};
+    for (const row of rows) {
+      for (const [f, bw] of Object.entries(row.biasedWeights)) {
+        if (bw > (factionMaxBw[f] || 0)) factionMaxBw[f] = bw;
+      }
+    }
+    for (const row of rows) {
+      for (const f of Object.keys(row.biasedWeights)) {
+        const max = factionMaxBw[f] || 1;
+        row.biasedWeights[f] = max > 0 ? row.biasedWeights[f] / max : 0;
+      }
+    }
+  }
+  
   // Compute combined scores (DR_norm + Prob_norm)
   // Combined = DR_norm + Prob_norm where both normalized to [0, 1]
   // DR_norm = min(1, max(0, DR / 4.0))     -- 4.0 is theoretical z-score ceiling
@@ -3705,7 +3739,11 @@ async function runQuery() {
       const bw = row.biasedWeights?.[f] || 0;
       
       const drNorm = Math.min(1, Math.max(0, dr / 4.0));
-      const probNorm = bw > 0 ? Math.min(1, Math.max(0, Math.log2(bw) / 5.0)) : 0;
+      // Mode X: biased weights are already normalized [0,1], use directly
+      // MegaMek: log2(bw) / 5.0 maps [0.14, 32] → [0, 1]
+      const probNorm = isModeX
+        ? Math.min(1, Math.max(0, bw))
+        : (bw > 0 ? Math.min(1, Math.max(0, Math.log2(bw) / 5.0)) : 0);
       
       row.combined[f] = drNorm + probNorm;
     }
