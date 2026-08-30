@@ -3714,16 +3714,17 @@ async function runQuery() {
   // Normalizing per faction makes prob = share-of-force, which is the correct
   // interpretation regardless of data source.
   if (isModeX) {
-    const factionMaxBw = {};
+    // Sum biased weights per faction — prob = share of faction's force
+    const factionSumBw = {};
     for (const row of rows) {
       for (const [f, bw] of Object.entries(row.biasedWeights)) {
-        if (bw > (factionMaxBw[f] || 0)) factionMaxBw[f] = bw;
+        factionSumBw[f] = (factionSumBw[f] || 0) + bw;
       }
     }
     for (const row of rows) {
       for (const f of Object.keys(row.biasedWeights)) {
-        const max = factionMaxBw[f] || 1;
-        row.biasedWeights[f] = max > 0 ? row.biasedWeights[f] / max : 0;
+        const sum = factionSumBw[f] || 1;
+        row.biasedWeights[f] = sum > 0 ? row.biasedWeights[f] / sum : 0;
       }
     }
   }
