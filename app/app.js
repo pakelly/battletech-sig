@@ -1756,17 +1756,15 @@ function heatClass(pref) {
 
 function bwFormat(bw) {
   if (!bw || bw <= 0) return '—';
-  if (bw <= 1) return (bw * 100).toFixed(0) + '%';  // Mode X: normalized share
+  if (currentMode === 'X') return (bw * 100).toFixed(0) + '%';  // Mode X: normalized share
   return bw.toFixed(2);  // MegaMek: probability-space weight
 }
 
 function bwHeatClass(bw) {
   if (!bw || bw <= 0) return 'no-data';
-  // Mode X: biased weights are normalized shares [0, ~0.25], heavily skewed low.
-  // Use log2 mapping with range [-8, 0] → [1, 10] to spread the distribution.
-  // MegaMek: log-scale mapping from probability-space weights [-3.5, 3.5] → [1, 10]
-  if (bw <= 1) {
-    // Mode X normalized share — log map [-8, 0] → [1, 10]
+  if (currentMode === 'X') {
+    // Mode X: normalized shares [0, ~0.25], heavily skewed low.
+    // log2 mapping [-8, 0] → [1, 10] to spread the distribution.
     const l = Math.log2(bw);
     const level = Math.round(1 + 9 * (l + 8) / 8);
     return 'cool-' + Math.max(1, Math.min(10, level));
@@ -3288,6 +3286,7 @@ function escAttr(s) {
 // ── Main Execution ──
 
 let currentEraYear = 3049;
+let currentMode = 'B'; // 'A', 'B', or 'X' — set by runQuery, used by render helpers
 let currentPage = 0;
 let variantRoleChanged = false; // track if a role was reassigned in the drill-down overlay
 const PAGE_SIZES = [25, 50, 100, 0]; // 0 = all
@@ -3442,6 +3441,7 @@ async function runQuery() {
     }
   }
   currentEraYear = eraYear;
+  currentMode = parsed.mode || 'B';
   
   const familyMode = parsed.family || 'off';
   const modeB = parsed.mode !== 'A' && parsed.mode !== 'X';

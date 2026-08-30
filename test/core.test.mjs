@@ -70,7 +70,7 @@ before(() => {
   // We wrap it to avoid `let DATA` redeclaration issues
   const wrapper = new Function('globals', `
     with (globals) {
-      ${appSrc.replace(/^let DATA/m, 'var DATA').replace(/^let currentEraYear/m, 'var currentEraYear')}
+      ${appSrc.replace(/^let DATA/m, 'var DATA').replace(/^let currentEraYear/m, 'var currentEraYear').replace(/^let currentMode/m, 'var currentMode')}
       DATA = globals.__APP_DATA__;
       return {
         parseQuery,
