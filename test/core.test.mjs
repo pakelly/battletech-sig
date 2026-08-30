@@ -106,6 +106,7 @@ before(() => {
         getXotlColumnValue,
         resolveXotlChassis,
         buildXotlWeights,
+        buildXotlProbWeights,
         getXotlVariantData,
         getXotlAllFactionVariantData,
         xotlAvailClass,

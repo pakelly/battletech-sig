@@ -109,6 +109,12 @@ Each +1 Av = 1.5× more frequent. Fitted from Xotl's published D1000 frequency d
 
 The signature (DR) z-score and biased weight (Prob) computations use `xotlToProb(av) × WCD` in Mode X, skipping MegaMek's `toProb()`, `entryToProb()`, and `rawW` entirely. The WCD mixing factor is still applied — it correctly adjusts for faction weight class preferences (e.g., Lyran heavy bias boosts their heavy signatures).
 
+**Variant aggregation for probability (v1.36.3):**
+
+The display Av value (1–10) uses **max** across variants — it answers "how common is the most available variant?" But the probability computation uses **sum** of `xotlToProb` across variants — a faction fielding 3 variants of a chassis gets more share-of-force than one fielding 1. For example, FedSuns Centurion at 3039 has CN9-A (Av 9), CN9-AH (Av 3), CN9-AL (Av 3). Display shows Av 9; prob contributes `xotlToProb(9) + xotlToProb(3) + xotlToProb(3)`.
+
+Biased weights are normalized per faction to [0, 1] (share-of-force), then displayed as percentages.
+
 #### Mode X Detail View (1.36.1+)
 
 When Mode X is active, the chassis detail view (`renderMechView`) and variant drill-down (`showVariants`) display Xotl-specific data instead of MegaMek structures.
