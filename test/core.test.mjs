@@ -109,6 +109,7 @@ before(() => {
         getXotlVariantData,
         getXotlAllFactionVariantData,
         xotlAvailClass,
+        bwFormat,
       };
     }
   `);
