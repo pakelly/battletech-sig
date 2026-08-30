@@ -1762,11 +1762,13 @@ function bwFormat(bw) {
 
 function bwHeatClass(bw) {
   if (!bw || bw <= 0) return 'no-data';
-  // Mode X: biased weights are normalized [0,1], use linear mapping
-  // MegaMek: log-scale mapping from probability-space weights
+  // Mode X: biased weights are normalized shares [0, ~0.25], heavily skewed low.
+  // Use log2 mapping with range [-8, 0] → [1, 10] to spread the distribution.
+  // MegaMek: log-scale mapping from probability-space weights [-3.5, 3.5] → [1, 10]
   if (bw <= 1) {
-    // Mode X normalized value — linear map [0, 1] → [1, 10]
-    const level = Math.round(1 + 9 * bw);
+    // Mode X normalized share — log map [-8, 0] → [1, 10]
+    const l = Math.log2(bw);
+    const level = Math.round(1 + 9 * (l + 8) / 8);
     return 'cool-' + Math.max(1, Math.min(10, level));
   }
   // MegaMek: log-scale: map log2(bw) from [-3.5, 3.5] to 1–10, using cool blue palette
