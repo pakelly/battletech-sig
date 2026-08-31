@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.36.4';
+const APP_VERSION = '1.36.5';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -101,22 +101,54 @@ function buildXotlProbWeights(chassisName, eraYear, xotl) {
 }
 
 /**
- * Extract the variant code from a Xotl mech entry's name field
- * by stripping the chassis name prefix words.
- * e.g. chassis="Phoenix Hawk", name="Hawk PXH-1" → "PXH-1"
+ * Extract the variant code from a Xotl mech entry.
+ * Xotl data has two field orderings:
+ *   Normal:  variant="Archer" (chassis), name="ARC-2R" (code)
+ *   Swapped: variant="ARC-2R" (code),  name="Archer" (chassis)
+ * And split-name chassis where variant is the first word:
+ *   variant="Phoenix", name="Hawk PXH-1" → chassis="Phoenix Hawk", code="PXH-1"
  */
-function xotlVariantCode(chassisName, mechName) {
-  if (!mechName) return mechName;
-  // The chassis name words appear as a prefix in mechName (possibly reordered).
-  // Strip leading words from mechName that appear in the chassis name.
-  const chassisLower = (chassisName || '').toLowerCase().split(' ');
-  const nameWords = mechName.split(' ');
+function xotlVariantCode(chassisName, mech) {
+  const variant = mech.variant || '';
+  const name = mech.name || '';
+  
+  // Detect which field has the model code
+  const varIsCode = /[-0-9]/.test(variant);
+  const nameIsCode = /[-0-9]/.test(name);
+  
+  if (varIsCode && !nameIsCode) {
+    // Swapped: variant field has the code
+    return variant;
+  }
+  if (!varIsCode && !nameIsCode && name) {
+    // Both are words — could be split-name or Wraith (name='TR1')
+    // Try stripping chassis prefix words from name
+    const chassisWords = (chassisName || '').toLowerCase().split(' ');
+    const nameWords = name.split(' ');
+    let idx = 0;
+    while (idx < nameWords.length) {
+      const nw = nameWords[idx].toLowerCase();
+      const isChassisWord = chassisWords.some(cw => cw === nw || cw.includes(nw) || nw.includes(cw));
+      const looksLikeCode = /[0-9]/.test(nw);
+      if (isChassisWord && !looksLikeCode) {
+        idx++;
+      } else {
+        break;
+      }
+    }
+    let result = idx < nameWords.length ? nameWords.slice(idx).join(' ') : name;
+    if (result.startsWith('(') && result.includes(')')) {
+      result = result.split(')')[1].trim();
+    }
+    return result || name;
+  }
+  // Normal: name field has the code, strip chassis prefix
+  const chassisWords = (chassisName || '').toLowerCase().split(' ');
+  const nameWords = name.split(' ');
   let idx = 0;
   while (idx < nameWords.length) {
     const nw = nameWords[idx].toLowerCase();
-    // Check if this word is part of the chassis name (exact or substring match)
-    const isChassisWord = chassisLower.some(cw => cw === nw || cw.includes(nw) || nw.includes(cw));
-    // But don't strip words that look like variant codes (contain digits or dashes after first char)
+    const isChassisWord = chassisWords.some(cw => cw === nw || cw.includes(nw) || nw.includes(cw));
     const looksLikeCode = /[0-9]/.test(nw);
     if (isChassisWord && !looksLikeCode) {
       idx++;
@@ -124,12 +156,11 @@ function xotlVariantCode(chassisName, mechName) {
       break;
     }
   }
-  let result = idx < nameWords.length ? nameWords.slice(idx).join(' ') : mechName;
-  // Strip leading parenthetical like "(Grand)"
+  let result = idx < nameWords.length ? nameWords.slice(idx).join(' ') : name;
   if (result.startsWith('(') && result.includes(')')) {
     result = result.split(')')[1].trim();
   }
-  return result || mechName;
+  return result || name;
 }
 
 /**
@@ -236,7 +267,7 @@ function getXotlVariantData(chassisName, factionCode, eraYear, xotl) {
       if (value == null) continue;
 
       results.push({
-        variant: xotlVariantCode(chassisName, mech.name),
+        variant: xotlVariantCode(chassisName, mech),
         name: mech.name,
         availability: value,
         tonnage: mech.tonnage
@@ -262,7 +293,7 @@ function getXotlAllFactionVariantData(chassisName, eraYear, xotl) {
 
   const result = new Map(); // key: variant display name (mech.name), value: { factionCode: availability }
   for (const mech of matching) {
-    const variantKey = xotlVariantCode(chassisName, mech.name) || mech.variant;
+    const variantKey = xotlVariantCode(chassisName, mech) || mech.variant;
     if (!result.has(variantKey)) result.set(variantKey, {});
     const factionMap = result.get(variantKey);
 

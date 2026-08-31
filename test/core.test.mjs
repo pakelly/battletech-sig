@@ -2349,23 +2349,28 @@ describe('Mode X — Xotl RAT', () => {
 
   describe('xotlVariantCode', () => {
     it('strips chassis name prefix from variant name', () => {
-      assert.strictEqual(F.xotlVariantCode('Phoenix Hawk', 'Hawk PXH-1'), 'PXH-1');
-      assert.strictEqual(F.xotlVariantCode('Shadow Hawk', 'Hawk SHD-2H'), 'SHD-2H');
-      assert.strictEqual(F.xotlVariantCode('King Crab', 'Crab KGC-000'), 'KGC-000');
-      assert.strictEqual(F.xotlVariantCode('Black Knight', 'Knight BL-6-KNT'), 'BL-6-KNT');
+      assert.strictEqual(F.xotlVariantCode('Phoenix Hawk', {variant: 'Phoenix', name: 'Hawk PXH-1'}), 'PXH-1');
+      assert.strictEqual(F.xotlVariantCode('Shadow Hawk', {variant: 'Shadow', name: 'Hawk SHD-2H'}), 'SHD-2H');
+      assert.strictEqual(F.xotlVariantCode('King Crab', {variant: 'King', name: 'Crab KGC-000'}), 'KGC-000');
+      assert.strictEqual(F.xotlVariantCode('Black Knight', {variant: 'Black', name: 'Knight BL-6-KNT'}), 'BL-6-KNT');
     });
 
     it('returns code as-is for single-word chassis', () => {
-      assert.strictEqual(F.xotlVariantCode('Archer', 'ARC-2R'), 'ARC-2R');
-      assert.strictEqual(F.xotlVariantCode('Enforcer', 'ENF-4R'), 'ENF-4R');
+      assert.strictEqual(F.xotlVariantCode('Archer', {variant: 'Archer', name: 'ARC-2R'}), 'ARC-2R');
+      assert.strictEqual(F.xotlVariantCode('Enforcer', {variant: 'Enforcer', name: 'ENF-4R'}), 'ENF-4R');
+    });
+
+    it('handles swapped fields (variant=code, name=chassis)', () => {
+      assert.strictEqual(F.xotlVariantCode('Archer', {variant: 'ARC-2R', name: 'Archer'}), 'ARC-2R');
+      assert.strictEqual(F.xotlVariantCode('Awesome', {variant: 'AWS-8Q', name: 'Awesome'}), 'AWS-8Q');
     });
 
     it('handles parenthetical chassis names', () => {
-      assert.strictEqual(F.xotlVariantCode('Dragon (Grand)', '(Grand) DRG-1G'), 'DRG-1G');
+      assert.strictEqual(F.xotlVariantCode('Dragon (Grand)', {variant: 'Dragon', name: '(Grand) DRG-1G'}), 'DRG-1G');
     });
 
     it('handles hyphenated chassis names', () => {
-      assert.strictEqual(F.xotlVariantCode('Black Hawk-KU', 'Hawk-KU BHKU-O'), 'BHKU-O');
+      assert.strictEqual(F.xotlVariantCode('Black Hawk-KU', {variant: 'Black', name: 'Hawk-KU BHKU-O'}), 'BHKU-O');
     });
   });
 
