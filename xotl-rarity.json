@@ -2033,8 +2033,8 @@
       }
     },
     {
-      "variant": "Rifleman",
-      "name": "II RFL-3N-2",
+      "variant": "Rifleman II",
+      "name": "RFL-3N-2",
       "tonnage": 80,
       "sections": {
         "Star League 2750": {
@@ -6370,8 +6370,8 @@
       }
     },
     {
-      "variant": "Hermes",
-      "name": "II HER-5S",
+      "variant": "Hermes II",
+      "name": "HER-5S",
       "tonnage": 40,
       "sections": {
         "Capellan Confederation (House Liao): 3050-3057": {
@@ -7129,8 +7129,8 @@
       }
     },
     {
-      "variant": "Hermes",
-      "name": "II HER-4K",
+      "variant": "Hermes II",
+      "name": "HER-4K",
       "tonnage": 40,
       "sections": {
         "Draconis Combine (House Kurita): 3028-3039": {
@@ -10101,8 +10101,8 @@
       }
     },
     {
-      "variant": "Hermes",
-      "name": "II HER-2M",
+      "variant": "Hermes II",
+      "name": "HER-2M",
       "tonnage": 40,
       "sections": {
         "Free Worlds League (House Marik): 3028-3039": {
@@ -10116,8 +10116,8 @@
       }
     },
     {
-      "variant": "Hermes",
-      "name": "II HER-2S",
+      "variant": "Hermes II",
+      "name": "HER-2S",
       "tonnage": 40,
       "sections": {
         "Free Worlds League (House Marik): 3028-3039": {
