@@ -4,13 +4,14 @@
 
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
-| prod | 1.36.3 | 2026-08-31 03:29 UTC | pending |
+| prod | 1.36.4 | 2026-08-31 03:29 UTC | pending |
 | test | 1.35.1 | 2026-06-26 19:58 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.36.4 | prod | 2026-08-31 03:29 | pending | v1.36.4: Bump version string |
 | 1.36.3 | prod | 2026-08-31 03:29 | pending | v1.36.4: Fix split-name variant display (Phoenix Hawk, Shadow Hawk, etc) |
 | 1.35.1 | prod | 2026-06-27 03:12 | pending | VERSION.md: auto-stamp 1.35.1 test deploy |
 | 1.35.1 | test | 2026-06-26 19:58 | pending | Add rating=A to Clan example queries and document rating tip for Clan analysis |
