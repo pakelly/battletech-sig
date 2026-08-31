@@ -101,6 +101,38 @@ function buildXotlProbWeights(chassisName, eraYear, xotl) {
 }
 
 /**
+ * Extract the variant code from a Xotl mech entry's name field
+ * by stripping the chassis name prefix words.
+ * e.g. chassis="Phoenix Hawk", name="Hawk PXH-1" → "PXH-1"
+ */
+function xotlVariantCode(chassisName, mechName) {
+  if (!mechName) return mechName;
+  // The chassis name words appear as a prefix in mechName (possibly reordered).
+  // Strip leading words from mechName that appear in the chassis name.
+  const chassisLower = (chassisName || '').toLowerCase().split(' ');
+  const nameWords = mechName.split(' ');
+  let idx = 0;
+  while (idx < nameWords.length) {
+    const nw = nameWords[idx].toLowerCase();
+    // Check if this word is part of the chassis name (exact or substring match)
+    const isChassisWord = chassisLower.some(cw => cw === nw || cw.includes(nw) || nw.includes(cw));
+    // But don't strip words that look like variant codes (contain digits or dashes after first char)
+    const looksLikeCode = /[0-9]/.test(nw);
+    if (isChassisWord && !looksLikeCode) {
+      idx++;
+    } else {
+      break;
+    }
+  }
+  let result = idx < nameWords.length ? nameWords.slice(idx).join(' ') : mechName;
+  // Strip leading parenthetical like "(Grand)"
+  if (result.startsWith('(') && result.includes(')')) {
+    result = result.split(')')[1].trim();
+  }
+  return result || mechName;
+}
+
+/**
  * Resolve a Xotl mech entry to an app chassis name.
  * Uses modelPrefixes for variant-code entries, and direct name matching.
  */
@@ -204,7 +236,7 @@ function getXotlVariantData(chassisName, factionCode, eraYear, xotl) {
       if (value == null) continue;
 
       results.push({
-        variant: mech.variant,
+        variant: xotlVariantCode(chassisName, mech.name),
         name: mech.name,
         availability: value,
         tonnage: mech.tonnage
@@ -230,7 +262,7 @@ function getXotlAllFactionVariantData(chassisName, eraYear, xotl) {
 
   const result = new Map(); // key: variant display name (mech.name), value: { factionCode: availability }
   for (const mech of matching) {
-    const variantKey = mech.name || mech.variant;
+    const variantKey = xotlVariantCode(chassisName, mech.name) || mech.variant;
     if (!result.has(variantKey)) result.set(variantKey, {});
     const factionMap = result.get(variantKey);
 
