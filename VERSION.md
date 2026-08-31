@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.36.4 | 2026-08-31 03:29 UTC | pending |
-| test | 1.36.4 | 2026-08-31 03:29 UTC | pending |
+| test | 1.36.5 | 2026-08-31 03:45 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.36.5 | test | 2026-08-31 03:45 | pending | v1.36.5: Fix variant display for swapped Xotl field ordering |
 | 1.36.4 | test | 2026-08-31 03:29 | pending | VERSION.md: auto-stamp 1.36.4 prod deploy |
 | 1.36.4 | prod | 2026-08-31 03:29 | pending | v1.36.4: Bump version string |
 | 1.36.3 | prod | 2026-08-31 03:29 | pending | v1.36.4: Fix split-name variant display (Phoenix Hawk, Shadow Hawk, etc) |
