@@ -109,6 +109,7 @@ before(() => {
         buildXotlProbWeights,
         getXotlVariantData,
         getXotlAllFactionVariantData,
+        xotlVariantCode,
         xotlAvailClass,
         bwFormat,
       };
@@ -2343,6 +2344,28 @@ describe('Mode X — Xotl RAT', () => {
             `Availability ${val} for ${variant}/${fCode} should be 1-10`);
         }
       }
+    });
+  });
+
+  describe('xotlVariantCode', () => {
+    it('strips chassis name prefix from variant name', () => {
+      assert.strictEqual(F.xotlVariantCode('Phoenix Hawk', 'Hawk PXH-1'), 'PXH-1');
+      assert.strictEqual(F.xotlVariantCode('Shadow Hawk', 'Hawk SHD-2H'), 'SHD-2H');
+      assert.strictEqual(F.xotlVariantCode('King Crab', 'Crab KGC-000'), 'KGC-000');
+      assert.strictEqual(F.xotlVariantCode('Black Knight', 'Knight BL-6-KNT'), 'BL-6-KNT');
+    });
+
+    it('returns code as-is for single-word chassis', () => {
+      assert.strictEqual(F.xotlVariantCode('Archer', 'ARC-2R'), 'ARC-2R');
+      assert.strictEqual(F.xotlVariantCode('Enforcer', 'ENF-4R'), 'ENF-4R');
+    });
+
+    it('handles parenthetical chassis names', () => {
+      assert.strictEqual(F.xotlVariantCode('Dragon (Grand)', '(Grand) DRG-1G'), 'DRG-1G');
+    });
+
+    it('handles hyphenated chassis names', () => {
+      assert.strictEqual(F.xotlVariantCode('Black Hawk-KU', 'Hawk-KU BHKU-O'), 'BHKU-O');
     });
   });
 
