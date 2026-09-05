@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.36.6 | 2026-08-31 03:47 UTC | pending |
-| test | 1.36.6 | 2026-08-31 03:47 UTC | pending |
+| test | 1.36.6 | 2026-09-05 01:27 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.36.6 | test | 2026-09-05 01:27 | pending | Fix: Re-ingest Xotl RAT data — 91 mechs missing Great House availability |
 | 1.36.6 | prod | 2026-08-31 03:47 | pending | VERSION.md: auto-stamp 1.36.6 test deploy |
 | 1.36.6 | test | 2026-08-31 03:47 | pending | v1.36.6: Fix Hermes II and Rifleman II in Xotl data |
 | 1.36.5 | prod | 2026-08-31 03:45 | pending | VERSION.md: auto-stamp 1.36.5 test deploy |
