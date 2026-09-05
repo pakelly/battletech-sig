@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
 const APP_VERSION = '1.36.6';
-const DEPLOY_TIME = '20260905.0126';
+const DEPLOY_TIME = '20260905.1735';
 
 let DATA = null; // app-data.json
 let xotlData = null; // xotl-rarity.json (lazy-loaded for Mode X)
