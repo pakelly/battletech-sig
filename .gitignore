@@ -7,3 +7,4 @@ mul-*.json
 # MegaMek upstream data (cloned separately, not committed)
 mm-data/
 output/scores.json
+data/xotl-source/
