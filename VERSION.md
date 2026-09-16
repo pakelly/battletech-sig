@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.36.6 | 2026-09-16 17:17 UTC | pending |
-| test | 1.36.6 | 2026-09-05 01:27 UTC | pending |
+| test | 1.36.6 | 2026-09-16 17:23 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.36.6 | test | 2026-09-16 17:23 | pending | VERSION.md: auto-stamp 1.36.6 prod deploy |
 | 1.36.6 | prod | 2026-09-16 17:17 | pending | Fix split-name Xotl chassis resolution: Phoenix Hawk and Thunder Hawk were matching to shorter chassis names (Phoenix, Thunder) |
 | 1.36.6 | prod | 2026-09-05 17:35 | pending | VERSION.md: auto-stamp 1.36.6 test deploy |
 | 1.36.6 | test | 2026-09-05 01:27 | pending | Fix: Re-ingest Xotl RAT data — 91 mechs missing Great House availability |
