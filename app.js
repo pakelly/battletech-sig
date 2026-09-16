@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
 const APP_VERSION = '1.36.6';
-const DEPLOY_TIME = '20260905.1735';
+const DEPLOY_TIME = '20260916.1716';
 
 let DATA = null; // app-data.json
 let xotlData = null; // xotl-rarity.json (lazy-loaded for Mode X)
@@ -169,11 +169,30 @@ function xotlVariantCode(chassisName, mech) {
  */
 function resolveXotlChassis(mech) {
   const variant = mech.variant;
+  const name = mech.name || '';
+
+  // Check for split-name chassis first: variant='Phoenix', name='Hawk PXH-1' → 'Phoenix Hawk'
+  // This must happen BEFORE the single-word chassis check, because 'Phoenix' is also
+  // a real chassis — but the Xotl entry is actually for 'Phoenix Hawk'.
+  if (variant.length > 0 && variant[0] >= 'A' && variant[0] <= 'Z'
+      && !variant.match(/^[A-Z]+-/) && !variant.match(/^[A-Z]+\d/)
+      && name) {
+    const nameFirst = name.split(' ')[0];
+    if (nameFirst) {
+      const combined = variant + ' ' + nameFirst;
+      if (DATA.chassis && DATA.chassis[combined]) return combined;
+      // Try partial match (e.g., 'Wolf Trap' matches 'Wolf Trap (Tora)')
+      if (DATA.chassis) {
+        const match = Object.keys(DATA.chassis).find(k => k.startsWith(combined));
+        if (match) return match;
+      }
+    }
+  }
+
   // If variant is already a known chassis name, use it
   if (DATA.chassis && DATA.chassis[variant]) return variant;
 
   // If name is a known chassis name (reversed entries: variant=code, name=chassis)
-  const name = mech.name || '';
   if (DATA.chassis && DATA.chassis[name]) return name;
 
   // Try modelPrefixes lookup from both variant and name fields
@@ -187,22 +206,6 @@ function resolveXotlChassis(mech) {
     const namePrefix = (name.match(/^[A-Z]+/) || [])[0];
     if (namePrefix && DATA.modelPrefixes[namePrefix]) {
       return DATA.modelPrefixes[namePrefix];
-    }
-  }
-
-  // If variant looks like a word (not a code), try combining with first word of name
-  // Handles split multi-word names: variant='Black', name='Knight BL-6-KNT' → 'Black Knight'
-  if (variant.length > 0 && variant[0] >= 'A' && variant[0] <= 'Z'
-      && !variant.match(/^[A-Z]+-/) && !variant.match(/^[A-Z]+\d/)) {
-    const nameFirst = name.split(' ')[0];
-    if (nameFirst) {
-      const combined = variant + ' ' + nameFirst;
-      if (DATA.chassis && DATA.chassis[combined]) return combined;
-      // Try partial match (e.g., 'Wolf Trap' matches 'Wolf Trap (Tora)')
-      if (DATA.chassis) {
-        const match = Object.keys(DATA.chassis).find(k => k.startsWith(combined));
-        if (match) return match;
-      }
     }
   }
 
