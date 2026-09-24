@@ -4,13 +4,14 @@
 
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
-| prod | 1.36.6 | 2026-09-16 17:17 UTC | pending |
+| prod | 1.37.0 | 2026-09-24 17:48 UTC | pending |
 | test | 1.37.0 | 2026-09-24 17:46 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.37.0 | prod | 2026-09-24 17:48 | pending | VERSION.md: auto-stamp 1.37.0 test deploy |
 | 1.37.0 | test | 2026-09-24 17:46 | pending | v1.37.0: Three-way split cell (DR | Prob | Cmb) in faction columns |
 | 1.36.6 | test | 2026-09-16 17:23 | pending | VERSION.md: auto-stamp 1.36.6 prod deploy |
 | 1.36.6 | prod | 2026-09-16 17:17 | pending | Fix split-name Xotl chassis resolution: Phoenix Hawk and Thunder Hawk were matching to shorter chassis names (Phoenix, Thunder) |
