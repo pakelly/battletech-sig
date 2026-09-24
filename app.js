@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.36.6';
-const DEPLOY_TIME = '20260916.1723';
+const APP_VERSION = '1.37.0';
+const DEPLOY_TIME = '20260924.1746';
 
 let DATA = null; // app-data.json
 let xotlData = null; // xotl-rarity.json (lazy-loaded for Mode X)
@@ -1970,10 +1970,10 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
               html += '<div class="full-cell no-data">&mdash;</div>';
             }
           } else {
-            // Mode 0: DR | Prob split (default)
+            // Mode 0: DR | Prob | Cmb split (default)
             html += '<div class="split-cell-inner">';
             
-            // Left half: DR (sig score)
+            // Left: DR (sig score)
             if (sigVal > 0) {
               const sigHeat = sigTierToHeat(sigTier);
               html += `<div class="split-half ${sigHeat}">${sigVal.toFixed(1)}</div>`;
@@ -1985,10 +1985,20 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
             
             html += '<div class="split-divider"></div>';
             
-            // Right half: Prob (biased weight)
+            // Middle: Prob (biased weight)
             if (bw > 0) {
               const bwCls = bwHeatClass(bw);
               html += `<div class="split-half ${bwCls}">${bwFormat(bw)}</div>`;
+            } else {
+              html += '<div class="split-half no-data">&mdash;</div>';
+            }
+            
+            html += '<div class="split-divider"></div>';
+            
+            // Right: Cmb (combined score)
+            if (cmb > 0) {
+              const cmbHeat = cmbHeatClass(cmb);
+              html += `<div class="split-half ${cmbHeat}">${cmb.toFixed(2)}</div>`;
             } else {
               html += '<div class="split-half no-data">&mdash;</div>';
             }
@@ -2200,12 +2210,13 @@ function renderSingleFaction(rows, faction, eraYear) {
         }
       }
 
-      // Split cell: DR | Prob
+      // Split cell: DR | Prob | Cmb
       let splitCell = '';
       if (singleHasSig) {
         const sigVal = row.sig?.[faction] || 0;
         const sigTier = row.sig?.[faction + '_tier'] || 0;
         const bw = row.biasedWeights?.[faction] || 0;
+        const cmbSep = row.combined?.[faction] || 0;
         
         splitCell = `<td class="faction-cell split-cell" data-chassis="${escAttr(row.name)}" data-faction="${faction}"><div class="split-cell-inner">`;
         if (sigVal > 0) {
@@ -2218,6 +2229,13 @@ function renderSingleFaction(rows, faction, eraYear) {
         if (bw > 0) {
           const bwCls = bwHeatClass(bw);
           splitCell += `<div class="split-half ${bwCls}">${bwFormat(bw)}</div>`;
+        } else {
+          splitCell += '<div class="split-half no-data">&mdash;</div>';
+        }
+        splitCell += '<div class="split-divider"></div>';
+        if (cmbSep > 0) {
+          const cmbCls = cmbHeatClass(cmbSep);
+          splitCell += `<div class="split-half ${cmbCls}">${cmbSep.toFixed(2)}</div>`;
         } else {
           splitCell += '<div class="split-half no-data">&mdash;</div>';
         }
