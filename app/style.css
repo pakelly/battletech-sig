@@ -1186,7 +1186,7 @@ details[open] > .help-section-title::before {
 /* Split cell: two independently heat-colored halves */
 .split-cell {
   padding: 0 !important;
-  min-width: 120px;
+  min-width: 150px;
 }
 .split-cell-inner {
   display: flex;
@@ -1199,9 +1199,9 @@ details[open] > .help-section-title::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 6px;
+  padding: 4px 4px;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   transition: opacity 0.15s;
 }
 .split-half:hover {
