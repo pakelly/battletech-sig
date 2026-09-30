@@ -4,13 +4,14 @@
 
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
-| prod | 1.37.0 | 2026-09-24 17:48 UTC | pending |
+| prod | 1.37.2 | 2026-09-30 02:23 UTC | pending |
 | test | 1.37.2 | 2026-09-30 00:17 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.37.2 | prod | 2026-09-30 02:23 | pending | VERSION.md: auto-stamp 1.37.2 test deploy |
 | 1.37.2 | test | 2026-09-30 00:17 | pending | v1.37.2: Remove renderSingleFaction — route single-faction view through renderFactionComparison, eliminating 195 lines of duplicate rendering logic |
 | 1.37.1 | test | 2026-09-30 00:03 | pending | v1.37.1: Fix single-faction column visibility — add data-col-name to separate DR/Prob/Combined headers so isDefaultHidden matches them |
 | 1.37.0 | prod | 2026-09-24 17:48 | pending | VERSION.md: auto-stamp 1.37.0 test deploy |
