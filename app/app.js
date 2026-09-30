@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.37.1';
+const APP_VERSION = '1.37.2';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -2130,201 +2130,6 @@ function renderFactionComparison(rows, scopedFactions, eraYear, query) {
   applyColOrder();
 }
 
-function renderSingleFaction(rows, faction, eraYear) {
-  const container = document.getElementById('view-container');
-  container.innerHTML = '';
-  container.classList.remove('hidden');
-  
-  const eraLabel = DATA.eras.find(e => e.year === eraYear)?.label || `Era ${eraYear}`;
-  const factionName = getFactionFullName(faction);
-  
-  const title = document.createElement('div');
-  title.className = 'view-title';
-  title.textContent = `${factionName} Roster — ${eraLabel} (${rows.length} chassis)`;
-  container.appendChild(title);
-
-  if (rows.length === 0) {
-    container.innerHTML += '<p style="color:var(--text-dim)">No results match your query.</p>';
-    return;
-  }
-
-  const maxWeight = Math.max(...rows.map(r => r.weights[faction] || 0));
-
-  const wrapper = document.createElement('div');
-  wrapper.className = 'data-table-wrapper';
-  
-  const table = document.createElement('table');
-  table.className = 'data-table';
-  
-  const thead = document.createElement('thead');
-  const singleHasBV = rows.some(r => r.bvRange);
-  const singleHasSig = rows.some(r => r.sig?.[faction] > 0);
-  let singleHeaderHTML = `<tr><th data-sort="name">Chassis</th><th data-sort="tonnage">Tons</th><th data-sort="class">Class</th><th data-sort="role">Role</th>`;
-  if (singleHasBV) singleHeaderHTML += '<th data-sort="bv">BV</th>';
-  // Split cell
-  if (singleHasSig) singleHeaderHTML += `<th data-sort="${faction}-sig" data-split="1" data-col-name="${getFactionLabel(faction)} DR | Prob | Cmb" title="Distinctiveness | Probability | Combined">${getFactionLabel(faction)} DR | Prob | Cmb</th>`;
-  // Separate columns (hidden by default, superseded by split cell)
-  if (singleHasSig) singleHeaderHTML += `<th data-sort="${faction}-sig" data-col-name="${getFactionLabel(faction)} DR">DR</th>`;
-  singleHeaderHTML += `<th data-sort="${faction}-bw" data-col-name="${getFactionLabel(faction)} Prob">Prob</th>`;
-  singleHeaderHTML += `<th data-sort="${faction}-cmb" data-col-name="${getFactionLabel(faction)} Combined">Combined</th>`;
-  singleHeaderHTML += `<th data-sort="${faction}-weight">Availability</th></tr>`;
-  thead.innerHTML = singleHeaderHTML;
-  table.appendChild(thead);
-  
-  // Filter to rows with weight > 0
-  const activeRows = rows.filter(r => (r.weights[faction] || 0) > 0);
-
-  // Default sort: DR desc (most iconic first) if sig data exists
-  if (singleHasSig) {
-    activeRows.sort((a, b) => {
-      const sa = a.sig?.[faction] || 0;
-      const sb = b.sig?.[faction] || 0;
-      return sb - sa;
-    });
-  }
-
-  const tbody = document.createElement('tbody');
-  table.appendChild(tbody);
-  wrapper.appendChild(table);
-  container.appendChild(wrapper);
-  
-  function renderPage(page) {
-    const pageSize = getPageSize();
-    const { pageRows, totalPages, page: safePage } = paginateRows(activeRows, page, pageSize);
-    currentPage = safePage;
-    
-    tbody.innerHTML = '';
-    for (const row of pageRows) {
-      const w = row.weights[faction] || 0;
-      const pct = maxWeight > 0 ? (w / maxWeight * 100) : 0;
-      
-      let bvCell = '';
-      if (singleHasBV) {
-        if (row.bvRange) {
-          const bvStr = row.bvRange.bvMin === row.bvRange.bvMax
-            ? String(row.bvRange.bvMin)
-            : `${row.bvRange.bvMin}–${row.bvRange.bvMax}`;
-          bvCell = `<td class="stat-col bv-col">${bvStr}</td>`;
-        } else {
-          bvCell = '<td class="stat-col bv-col">—</td>';
-        }
-      }
-
-      // Split cell: DR | Prob | Cmb
-      let splitCell = '';
-      if (singleHasSig) {
-        const sigVal = row.sig?.[faction] || 0;
-        const sigTier = row.sig?.[faction + '_tier'] || 0;
-        const bw = row.biasedWeights?.[faction] || 0;
-        const cmbSep = row.combined?.[faction] || 0;
-        
-        splitCell = `<td class="faction-cell split-cell" data-chassis="${escAttr(row.name)}" data-faction="${faction}"><div class="split-cell-inner">`;
-        if (sigVal > 0) {
-          const sigHeat = sigTierToHeat(sigTier);
-          splitCell += `<div class="split-half ${sigHeat}">${sigVal.toFixed(1)}</div>`;
-        } else {
-          splitCell += '<div class="split-half heat-1">0</div>';
-        }
-        splitCell += '<div class="split-divider"></div>';
-        if (bw > 0) {
-          const bwCls = bwHeatClass(bw);
-          splitCell += `<div class="split-half ${bwCls}">${bwFormat(bw)}</div>`;
-        } else {
-          splitCell += '<div class="split-half no-data">&mdash;</div>';
-        }
-        splitCell += '<div class="split-divider"></div>';
-        if (cmbSep > 0) {
-          const cmbCls = cmbHeatClass(cmbSep);
-          splitCell += `<div class="split-half ${cmbCls}">${cmbSep.toFixed(2)}</div>`;
-        } else {
-          splitCell += '<div class="split-half no-data">&mdash;</div>';
-        }
-        splitCell += '</div></td>';
-      }
-
-      // Separate DR cell (hidden by default)
-      let drCell = '';
-      if (singleHasSig) {
-        const sigVal = row.sig?.[faction] || 0;
-        const sigTier = row.sig?.[faction + '_tier'] || 0;
-        if (sigVal > 0) {
-          const sigHeat = sigTierToHeat(sigTier);
-          drCell = `<td class="faction-cell ${sigHeat}" data-chassis="${escAttr(row.name)}" data-faction="${faction}"><span class="pref-value">DR${sigTier}</span><span class="sig-raw">${sigVal.toFixed(1)}</span></td>`;
-        } else {
-          drCell = `<td class="faction-cell heat-1" data-chassis="${escAttr(row.name)}" data-faction="${faction}"><span class="pref-value">DR5</span></td>`;
-        }
-      }
-
-      // Separate Prob cell (hidden by default)
-      const bwSep = row.biasedWeights?.[faction] || 0;
-      let probCell;
-      if (bwSep > 0) {
-        const bwCls = bwHeatClass(bwSep);
-        probCell = `<td class="faction-cell ${bwCls}" data-chassis="${escAttr(row.name)}" data-faction="${faction}"><span class="pref-value">${bwFormat(bwSep)}</span></td>`;
-      } else {
-        probCell = `<td class="faction-cell no-data">—</td>`;
-      }
-      
-      // Separate Combined cell (hidden by default)
-      const cmbSep = row.combined?.[faction] || 0;
-      let cmbCell;
-      if (cmbSep > 0) {
-        const cmbCls = cmbHeatClass(cmbSep);
-        cmbCell = `<td class="faction-cell ${cmbCls}" data-chassis="${escAttr(row.name)}" data-faction="${faction}"><span class="pref-value">${cmbSep.toFixed(2)}</span></td>`;
-      } else {
-        cmbCell = `<td class="faction-cell no-data">—</td>`;
-      }
-      
-      const tr = document.createElement('tr');
-      tr.className = 'faction-roster-row';
-      tr.innerHTML = `
-        <td class="chassis-name" style="cursor:pointer" data-chassis="${escAttr(row.name)}" data-faction="${faction}">${escHtml(row.name)}</td>
-        <td class="tonnage-col">${formatTonnage(row.meta)}</td>
-        <td><span class="class-badge class-${(row.meta.class || '').split('/')[0]}">${formatClass(row.meta)}</span></td>
-        <td class="role-col">${escHtml(resolveChassisRole(row.name, row.meta.role, row.variants, currentEraYear) || '')}</td>
-        ${bvCell}
-        ${splitCell}
-        ${drCell}
-        ${probCell}
-        ${cmbCell}
-        <td><div class="weight-bar-container"><div class="weight-bar" style="width:${pct}%"></div><span class="weight-bar-label">${w.toFixed(1)}</span></div></td>
-      `;
-      tbody.appendChild(tr);
-    }
-    
-    renderPagination(container, activeRows.length, safePage, totalPages, renderPage);
-  }
-  
-  renderPage(currentPage);
-  
-  table.addEventListener('click', handleCellClick);
-
-  // Sortable headers
-  thead.addEventListener('click', (e) => {
-    const th = e.target.closest('th');
-    if (!th || !th.dataset.sort) return;
-    // Clear sort indicators and split state on OTHER headers (not th — resolveHeaderSort reads it)
-    thead.querySelectorAll('th').forEach(h => {
-      if (h !== th) {
-        h.classList.remove('sorted-asc', 'sorted-desc');
-        delete h.dataset.splitState;
-        if (h.dataset.split) {
-          const fCode = h.dataset.sort.replace(/-(sig|dr|signature|distinctiveness)$/, '');
-          h.textContent = getFactionLabel(fCode) + ' DR | Prob | Cmb';
-        }
-      }
-    });
-    const { sort, dir } = resolveHeaderSort(th);
-    th.classList.remove('sorted-asc', 'sorted-desc');
-    th.classList.add(dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
-    sortRowsInPlace(activeRows, sort);
-    renderPage(0);
-  });
-
-  updateColVisibility();
-  applyColOrder();
-}
-
 function xotlAvailClass(val) {
   if (val == null) return 'na';
   if (val <= 3) return 'rare';
@@ -3997,13 +3802,6 @@ async function runQuery() {
   
   switch (view) {
     case 'single-faction':
-      // If explicit sort or sig filter is set, use comparison view (which handles sort + shows sig)
-      if (parsed.sort.length > 0 || parsed.sig || parsed.factionSig.length > 0) {
-        renderFactionComparison(rows, scopedFactions, eraYear, parsed);
-      } else {
-        renderSingleFaction(rows, scopedFactions[0], eraYear);
-      }
-      break;
     case 'faction-comparison':
     case 'mech-detail':
       renderFactionComparison(rows, scopedFactions, eraYear, parsed);
@@ -4969,7 +4767,7 @@ function isDefaultHidden(name) {
   // Separate Prob column ("DC Prob") — hidden, superseded by split cell
   if (name.endsWith(' Prob')) return true;
   // Separate Combined column ("FS Combined") — hidden, superseded by split cell
-  if (name.endsWith(' Combined')) return true;
+  if (name.endsWith(' Cmb')) return true;
   // Weight column (faction code like "DC") — hidden
   const isWeightCol = DATA?.factions?.[name];
   if (isWeightCol) return true;
