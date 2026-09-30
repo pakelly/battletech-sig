@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.37.0';
+const APP_VERSION = '1.37.1';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -2163,10 +2163,10 @@ function renderSingleFaction(rows, faction, eraYear) {
   if (singleHasBV) singleHeaderHTML += '<th data-sort="bv">BV</th>';
   // Split cell
   if (singleHasSig) singleHeaderHTML += `<th data-sort="${faction}-sig" data-split="1" data-col-name="${getFactionLabel(faction)} DR | Prob | Cmb" title="Distinctiveness | Probability | Combined">${getFactionLabel(faction)} DR | Prob | Cmb</th>`;
-  // Separate columns (hidden by default)
-  if (singleHasSig) singleHeaderHTML += `<th data-sort="${faction}-sig">DR</th>`;
-  singleHeaderHTML += `<th data-sort="${faction}-bw">Prob</th>`;
-  singleHeaderHTML += `<th data-sort="${faction}-cmb">Combined</th>`;
+  // Separate columns (hidden by default, superseded by split cell)
+  if (singleHasSig) singleHeaderHTML += `<th data-sort="${faction}-sig" data-col-name="${getFactionLabel(faction)} DR">DR</th>`;
+  singleHeaderHTML += `<th data-sort="${faction}-bw" data-col-name="${getFactionLabel(faction)} Prob">Prob</th>`;
+  singleHeaderHTML += `<th data-sort="${faction}-cmb" data-col-name="${getFactionLabel(faction)} Combined">Combined</th>`;
   singleHeaderHTML += `<th data-sort="${faction}-weight">Availability</th></tr>`;
   thead.innerHTML = singleHeaderHTML;
   table.appendChild(thead);
@@ -4968,6 +4968,8 @@ function isDefaultHidden(name) {
   if (name.endsWith(' DR')) return true;
   // Separate Prob column ("DC Prob") — hidden, superseded by split cell
   if (name.endsWith(' Prob')) return true;
+  // Separate Combined column ("FS Combined") — hidden, superseded by split cell
+  if (name.endsWith(' Combined')) return true;
   // Weight column (faction code like "DC") — hidden
   const isWeightCol = DATA?.factions?.[name];
   if (isWeightCol) return true;
