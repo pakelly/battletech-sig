@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.37.0 | 2026-09-24 17:48 UTC | pending |
-| test | 1.37.0 | 2026-09-24 17:46 UTC | pending |
+| test | 1.37.1 | 2026-09-30 00:03 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.37.1 | test | 2026-09-30 00:03 | pending | v1.37.1: Fix single-faction column visibility — add data-col-name to separate DR/Prob/Combined headers so isDefaultHidden matches them |
 | 1.37.0 | prod | 2026-09-24 17:48 | pending | VERSION.md: auto-stamp 1.37.0 test deploy |
 | 1.37.0 | test | 2026-09-24 17:46 | pending | v1.37.0: Three-way split cell (DR | Prob | Cmb) in faction columns |
 | 1.36.6 | test | 2026-09-16 17:23 | pending | VERSION.md: auto-stamp 1.36.6 prod deploy |
