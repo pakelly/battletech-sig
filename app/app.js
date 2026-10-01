@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.37.3';
+const APP_VERSION = '1.37.4';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -3082,18 +3082,18 @@ function renderChips(parsed) {
     chips.push({ label: `bv${bvCond.op}${bvCond.val}`, field: 'bv' });
   }
   for (const fw of parsed.factionWeight) {
-    chips.push({ label: `${fw.faction}-weight${fw.op}${fw.val}`, field: `${fw.faction}-weight` });
+    chips.push({ label: `${fw.faction}-weight${fw.op}${fw.val}`, field: `${fw.faction.toLowerCase()}-weight` });
   }
   for (const fs of parsed.factionSig) {
-    chips.push({ label: `${fs.faction}-sig${fs.op}${fs.val}`, field: `${fs.faction}-sig` });
+    chips.push({ label: `${fs.faction}-sig${fs.op}${fs.val}`, field: `${fs.faction.toLowerCase()}-sig` });
   }
   if (parsed.prob) chips.push({ label: `prob${parsed.prob.op}${parsed.prob.val}`, field: 'prob' });
   for (const fp of parsed.factionProb) {
-    chips.push({ label: `${fp.faction}-prob${fp.op}${fp.val}`, field: `${fp.faction}-prob` });
+    chips.push({ label: `${fp.faction}-prob${fp.op}${fp.val}`, field: `${fp.faction.toLowerCase()}-prob` });
   }
   if (parsed.combined) chips.push({ label: `cmb${parsed.combined.op}${parsed.combined.val}`, field: 'cmb' });
   for (const fc of parsed.factionCmb) {
-    chips.push({ label: `${fc.faction}-cmb${fc.op}${fc.val}`, field: `${fc.faction}-cmb` });
+    chips.push({ label: `${fc.faction}-cmb${fc.op}${fc.val}`, field: `${fc.faction.toLowerCase()}-cmb` });
   }
   if (parsed.year) chips.push({ label: 'year=' + parsed.year, field: 'year' });
   if (parsed.era) chips.push({ label: 'era=' + parsed.era, field: 'era' });
