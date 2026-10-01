@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.37.2 | 2026-09-30 02:23 UTC | pending |
-| test | 1.37.3 | 2026-10-01 18:56 UTC | pending |
+| test | 1.37.4 | 2026-10-01 19:46 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.37.4 | test | 2026-10-01 19:46 | pending | v1.37.4: Fix faction-prefixed chip removal — lowercase chip field to match rawMatches key casing |
 | 1.37.3 | test | 2026-10-01 18:56 | pending | v1.37.3: Fix chip removal event listener leak — attach delegated click listener once in init, remove per-renderChips accumulation |
 | 1.37.2 | prod | 2026-09-30 02:23 | pending | VERSION.md: auto-stamp 1.37.2 test deploy |
 | 1.37.2 | test | 2026-09-30 00:17 | pending | v1.37.2: Remove renderSingleFaction — route single-faction view through renderFactionComparison, eliminating 195 lines of duplicate rendering logic |
