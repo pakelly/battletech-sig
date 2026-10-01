@@ -1,7 +1,7 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.37.2';
-const DEPLOY_TIME = '20260930.0223';
+const APP_VERSION = '1.37.3';
+const DEPLOY_TIME = '20261001.1856';
 
 let DATA = null; // app-data.json
 let xotlData = null; // xotl-rarity.json (lazy-loaded for Mode X)
@@ -3112,14 +3112,6 @@ function renderChips(parsed) {
     el.innerHTML = `${escHtml(chip.label)} <span class="chip-remove" data-field="${chip.field}">×</span>`;
     container.appendChild(el);
   }
-  
-  // Chip removal — re-parse query to get raw match, then literal splice
-  container.addEventListener('click', (e) => {
-    const remove = e.target.closest('.chip-remove');
-    if (!remove) return;
-    const field = remove.dataset.field;
-    removeFieldFromQuery(field);
-  });
 }
 
 function removeFieldFromQuery(field) {
@@ -3128,8 +3120,7 @@ function removeFieldFromQuery(field) {
   const parsed = parseQuery(bar.value);
   const raw = parsed.rawMatches[field];
   if (!raw) {
-    // Fallback: if no raw match found, clear and re-run
-    runQuery();
+    // Field already removed or not found — nothing to do
     return;
   }
   // Remove the raw match from the normalized query (which the parser already cleaned up)
@@ -3950,6 +3941,14 @@ async function init() {
     runQuery(); // triggers landing page display
     history.replaceState(null, '', location.pathname);
     bar.focus();
+  });
+  
+  // Chip removal — delegated listener attached once, not re-attached per renderChips call
+  document.getElementById('filter-chips').addEventListener('click', (e) => {
+    const remove = e.target.closest('.chip-remove');
+    if (!remove) return;
+    const field = remove.dataset.field;
+    removeFieldFromQuery(field);
   });
   
   // Debounced query execution
