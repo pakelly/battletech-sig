@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.37.4';
+const APP_VERSION = '1.38.0';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -1822,22 +1822,15 @@ function heatClass(pref) {
 
 function bwFormat(bw) {
   if (!bw || bw <= 0) return '—';
-  if (currentMode === 'X') return (bw * 100).toFixed(0) + '%';  // Mode X: normalized share
-  return bw.toFixed(2);  // MegaMek: probability-space weight
+  return (bw * 100).toFixed(0) + '%';
 }
 
 function bwHeatClass(bw) {
   if (!bw || bw <= 0) return 'no-data';
-  if (currentMode === 'X') {
-    // Mode X: normalized shares [0, ~0.25], heavily skewed low.
-    // log2 mapping [-8, 0] → [1, 10] to spread the distribution.
-    const l = Math.log2(bw);
-    const level = Math.round(1 + 9 * (l + 8) / 8);
-    return 'cool-' + Math.max(1, Math.min(10, level));
-  }
-  // MegaMek: log-scale: map log2(bw) from [-3.5, 3.5] to 1–10, using cool blue palette
+  // Both modes: biased weights are normalized shares [0, ~0.25], heavily skewed low.
+  // log2 mapping [-8, 0] → [1, 10] to spread the distribution.
   const l = Math.log2(bw);
-  const level = Math.round(1 + 9 * (l + 3.5) / 7);
+  const level = Math.round(1 + 9 * (l + 8) / 8);
   return 'cool-' + Math.max(1, Math.min(10, level));
 }
 
@@ -3628,14 +3621,12 @@ async function runQuery() {
     }
   }
   
-  // Mode X: normalize biased weights per faction to [0, 1] range.
-  // xotlToProb produces actual frequency fractions (0.005–0.25), while MegaMek's
-  // toProb produces probability-space weights (1.4–32). The display pipeline
-  // (heat classes, formatting, combined scores) expects MegaMek's range.
-  // Normalizing per faction makes prob = share-of-force, which is the correct
-  // interpretation regardless of data source.
-  if (isModeX) {
-    // Sum biased weights per faction — prob = share of faction's force
+  // Normalize biased weights per faction to [0, 1] range (share-of-force).
+  // Both modes: xotlToProb produces actual frequency fractions (0.005–0.25),
+  // MegaMek's toProb produces probability-space weights (1.4–32).
+  // Normalizing per faction makes prob = share-of-force in both modes,
+  // which is the correct interpretation regardless of data source.
+  {
     const factionSumBw = {};
     for (const row of rows) {
       for (const [f, bw] of Object.entries(row.biasedWeights)) {
@@ -3650,24 +3641,40 @@ async function runQuery() {
     }
   }
   
-  // Compute combined scores (DR_norm + Prob_norm)
-  // Combined = DR_norm + Prob_norm where both normalized to [0, 1]
-  // DR_norm = min(1, max(0, DR / 4.0))     -- 4.0 is theoretical z-score ceiling
-  // Prob_norm = min(1, max(0, log2(biasedWeight) / 5.0))  -- 5.0 is log2(32) max prob weight
-  for (const row of rows) {
-    row.combined = {};
-    for (const f of Object.keys(row.weights)) {
-      const dr = row.sig?.[f] || 0;
-      const bw = row.biasedWeights?.[f] || 0;
-      
-      const drNorm = Math.min(1, Math.max(0, dr / 4.0));
-      // Mode X: biased weights are already normalized [0,1], use directly
-      // MegaMek: log2(bw) / 5.0 maps [0.14, 32] → [0, 1]
-      const probNorm = isModeX
-        ? Math.min(1, Math.max(0, bw))
-        : (bw > 0 ? Math.min(1, Math.max(0, Math.log2(bw) / 5.0)) : 0);
-      
-      row.combined[f] = drNorm + probNorm;
+  // Compute combined scores (min-max normalized DR + Prob within result set)
+  // Combo = norm_dr + norm_prob, range [0, 2.0]
+  // Both DR and prob are min-max normalized within the current filtered result set.
+  // This ensures the equivalence property: medium+medium = high+low = low+high.
+  // Edge case: if all values equal (no range), norm = 0.5 (neutral).
+  {
+    // Find min/max per faction across all rows
+    const factionDrRange = {};
+    const factionProbRange = {};
+    for (const row of rows) {
+      for (const f of Object.keys(row.weights)) {
+        const dr = row.sig?.[f] || 0;
+        const bw = row.biasedWeights?.[f] || 0;
+        if (!factionDrRange[f]) factionDrRange[f] = { min: Infinity, max: -Infinity };
+        if (!factionProbRange[f]) factionProbRange[f] = { min: Infinity, max: -Infinity };
+        if (dr < factionDrRange[f].min) factionDrRange[f].min = dr;
+        if (dr > factionDrRange[f].max) factionDrRange[f].max = dr;
+        if (bw < factionProbRange[f].min) factionProbRange[f].min = bw;
+        if (bw > factionProbRange[f].max) factionProbRange[f].max = bw;
+      }
+    }
+    for (const row of rows) {
+      row.combined = {};
+      for (const f of Object.keys(row.weights)) {
+        const dr = row.sig?.[f] || 0;
+        const bw = row.biasedWeights?.[f] || 0;
+        const drRange = factionDrRange[f];
+        const probRange = factionProbRange[f];
+        const drSpan = drRange.max - drRange.min;
+        const probSpan = probRange.max - probRange.min;
+        const normDr = drSpan > 0 ? (dr - drRange.min) / drSpan : 0.5;
+        const normProb = probSpan > 0 ? (bw - probRange.min) / probSpan : 0.5;
+        row.combined[f] = normDr + normProb;
+      }
     }
   }
   

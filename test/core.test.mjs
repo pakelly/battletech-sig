@@ -1973,24 +1973,95 @@ describe('Combined Score', () => {
   // Prob_norm = min(1, max(0, log2(biasedWeight) / 5.0))
   
   it('computes combined score correctly', () => {
-    // Test the combined score computation with known DR and biased weight values
-    const testCases = [
-      // { DR, biasedWeight, expectedCombined }
-      { dr: 4.0, bw: 32.0, expected: 2.0 },  // Max values: 1.0 + 1.0 = 2.0
-      { dr: 0.0, bw: 1.0, expected: 0.0 },   // Min values: 0.0 + 0.0 = 0.0
-      { dr: 2.0, bw: 4.0, expected: 0.9 },   // Mid values: 0.5 + 0.4 = 0.9
-      { dr: 8.0, bw: 64.0, expected: 2.0 },  // Over-max (should clamp): 1.0 + 1.0 = 2.0
-      { dr: -1.0, bw: 0.5, expected: 0.0 }   // Negative DR (should clamp): 0.0 + (-0.2→0.0) = 0.0
+    // Min-max normalization within result set: combo = norm_dr + norm_prob
+    // Test with a known result set
+    const rows = [
+      { name: 'A', sig: { DC: 4.0 }, biasedWeights: { DC: 0.20 }, combined: {} },
+      { name: 'B', sig: { DC: 0.0 }, biasedWeights: { DC: 0.02 }, combined: {} },
+      { name: 'C', sig: { DC: 2.0 }, biasedWeights: { DC: 0.10 }, combined: {} },
     ];
-    
-    for (const { dr, bw, expected } of testCases) {
-      const drNorm = Math.min(1, Math.max(0, dr / 4.0));
-      const probNorm = Math.min(1, Math.max(0, Math.log2(bw) / 5.0));
-      const combined = drNorm + probNorm;
-      
-      assert.ok(Math.abs(combined - expected) < 0.1, 
-        `DR=${dr}, BW=${bw}: expected ~${expected}, got ${combined.toFixed(2)}`);
+    // DR range: [0.0, 4.0] → A=1.0, B=0.0, C=0.5
+    // Prob range: [0.02, 0.20] → A=1.0, B=0.0, C=0.444
+    // Expected combo: A=2.0, B=0.0, C=0.944
+    const drVals = rows.map(r => r.sig.DC);
+    const probVals = rows.map(r => r.biasedWeights.DC);
+    const minDr = Math.min(...drVals), maxDr = Math.max(...drVals);
+    const minProb = Math.min(...probVals), maxProb = Math.max(...probVals);
+    for (const row of rows) {
+      const dr = row.sig.DC;
+      const prob = row.biasedWeights.DC;
+      const drRange = maxDr - minDr;
+      const probRange = maxProb - minProb;
+      const normDr = drRange > 0 ? (dr - minDr) / drRange : 0.5;
+      const normProb = probRange > 0 ? (prob - minProb) / probRange : 0.5;
+      row.combined.DC = normDr + normProb;
     }
+    assert.ok(Math.abs(rows[0].combined.DC - 2.0) < 0.01, 'A should be 2.0');
+    assert.ok(Math.abs(rows[1].combined.DC - 0.0) < 0.01, 'B should be 0.0');
+    assert.ok(Math.abs(rows[2].combined.DC - 0.944) < 0.05, 'C should be ~0.944');
+  });
+  
+  it('combined score equivalence: medium+medium = high+low = low+high', () => {
+    // The key property: same combo score regardless of which axis contributes
+    const drVals = [0.0, 3.0, 6.0];  // min, medium, max
+    const probVals = [0.0, 0.10, 0.20];  // min, medium, max
+    const minDr = 0.0, maxDr = 6.0;
+    const minProb = 0.0, maxProb = 0.20;
+    const normDr = drVals.map(d => (d - minDr) / (maxDr - minDr));
+    const normProb = probVals.map(p => (p - minProb) / (maxProb - minProb));
+    const mediumMedium = normDr[1] + normProb[1];  // 0.5 + 0.5 = 1.0
+    const highLow = normDr[2] + normProb[0];       // 1.0 + 0.0 = 1.0
+    const lowHigh = normDr[0] + normProb[2];       // 0.0 + 1.0 = 1.0
+    assert.ok(Math.abs(mediumMedium - highLow) < 0.001, 'medium+medium should equal high+low');
+    assert.ok(Math.abs(mediumMedium - lowHigh) < 0.001, 'medium+medium should equal low+high');
+  });
+  
+  it('combined score edge case: all equal values → norm = 0.5', () => {
+    // When all DR or all prob values are the same, norm should be 0.5 (neutral)
+    const drVals = [3.0, 3.0, 3.0];  // all same
+    const probVals = [0.1, 0.1, 0.1];  // all same
+    const minDr = 3.0, maxDr = 3.0;
+    const minProb = 0.1, maxProb = 0.1;
+    const drRange = maxDr - minDr;
+    const probRange = maxProb - minProb;
+    const normDr = drRange > 0 ? 0 : 0.5;
+    const normProb = probRange > 0 ? 0 : 0.5;
+    assert.strictEqual(normDr, 0.5, 'All-equal DR should normalize to 0.5');
+    assert.strictEqual(normProb, 0.5, 'All-equal prob should normalize to 0.5');
+    assert.strictEqual(normDr + normProb, 1.0, 'Combo should be 1.0 (neutral)');
+  });
+  
+  it('bwFormat displays percentage for both modes', () => {
+    // bwFormat should always return percentage string
+    assert.strictEqual(F.bwFormat(0.12), '12%');
+    assert.strictEqual(F.bwFormat(0.05), '5%');
+    assert.strictEqual(F.bwFormat(0), '—');
+    assert.strictEqual(F.bwFormat(null), '—');
+  });
+  
+  it('prob normalization: biased weights sum to 1.0 per faction', () => {
+    // After normalization, each faction's biased weights should sum to 1.0
+    const rows = [
+      { name: 'A', biasedWeights: { DC: 8.0, FS: 4.0 } },
+      { name: 'B', biasedWeights: { DC: 4.0, FS: 16.0 } },
+      { name: 'C', biasedWeights: { DC: 0.0, FS: 8.0 } },
+    ];
+    // Normalize per faction
+    const sums = {};
+    for (const row of rows) {
+      for (const [f, bw] of Object.entries(row.biasedWeights)) {
+        sums[f] = (sums[f] || 0) + bw;
+      }
+    }
+    for (const row of rows) {
+      for (const f of Object.keys(row.biasedWeights)) {
+        row.biasedWeights[f] = sums[f] > 0 ? row.biasedWeights[f] / sums[f] : 0;
+      }
+    }
+    const dcSum = rows.reduce((s, r) => s + r.biasedWeights.DC, 0);
+    const fsSum = rows.reduce((s, r) => s + r.biasedWeights.FS, 0);
+    assert.ok(Math.abs(dcSum - 1.0) < 0.001, 'DC weights should sum to 1.0');
+    assert.ok(Math.abs(fsSum - 1.0) < 0.001, 'FS weights should sum to 1.0');
   });
   
   it('sorts by combined score desc', () => {

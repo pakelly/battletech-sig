@@ -113,7 +113,7 @@ The signature (DR) z-score and biased weight (Prob) computations use `xotlToProb
 
 The display Av value (1–10) uses **max** across variants — it answers "how common is the most available variant?" But the probability computation uses **sum** of `xotlToProb` across variants — a faction fielding 3 variants of a chassis gets more share-of-force than one fielding 1. For example, FedSuns Centurion at 3039 has CN9-A (Av 9), CN9-AH (Av 3), CN9-AL (Av 3). Display shows Av 9; prob contributes `xotlToProb(9) + xotlToProb(3) + xotlToProb(3)`.
 
-Biased weights are normalized per faction to [0, 1] (share-of-force), then displayed as percentages.
+Biased weights are normalized per faction to sum to 1.0 (share-of-force), then displayed as percentages. This applies to both Mode B and Mode X.
 
 #### Mode X Detail View (1.36.1+)
 
@@ -238,7 +238,7 @@ All of these work as both filters (`field>value`) and sort targets (`sort by fie
 | **sig** (alias: **dr**, **distinctiveness**) | Global signature raw score (weight × share). Max across scoped factions. | `sig>3`, `dr>3` |
 | **DC-pref** | Faction-specific scoped preference. | `DC-pref>8` |
 | **DC-sig** | Faction-specific global signature raw score. | `DC-sig>3` |
-| **prob** (alias: **bw**) | Biased weight (probability × WCD mixing). Max across scoped factions. | `prob>5` |
+| **prob** (alias: **bw**) | Share-of-force percentage (normalized per faction). Max across scoped factions. | `prob>5` (means >5% share) |
 | **DC-prob** | Faction-specific biased weight. | `DC-prob>5` |
 | **bv** | Battle Value range filter (variant-level). | `bv>1000`, `bv<1500` |
 
@@ -679,8 +679,8 @@ All text fields support the `=` and `!=` operators. Multi-value OR is supported 
 | `DC-sig` | numeric | Faction-specific sig filter/sort | `DC-sig>7` |
 | `DC-prob` | numeric | Faction-specific biased weight filter/sort | `DC-prob>5` |
 | `DC-cmb` | numeric | Faction-specific combined score filter/sort | `DC-cmb>1.5` |
-| `prob` (alias: `bw`) | numeric | Biased weight (probability × WCD). Max across scoped factions. | `prob>5` |
-| `cmb` (alias: `combined`) | numeric | Combined score (DR_norm + Prob_norm). Max across scoped factions. | `cmb>1.2` |
+| `prob` (alias: `bw`) | numeric | Share-of-force percentage (normalized per faction). Max across scoped factions. | `prob>5` |
+| `cmb` (alias: `combined`) | numeric | Combined score (min-max normalized DR + Prob, range 0-2). Max across scoped factions. | `cmb>1.2` |
 | `type` | enum | Mech type filter. Supports `!=` for exclusion. | `type=omni`, `type!=omni` |
 | `tech` | enum | Technology base filter (variant-level). Supports `!=` for exclusion. | `tech=clan`, `tech!=clan` |
 | `sort` | keyword | Sort specification | `sort by DC sig desc` |
@@ -761,22 +761,36 @@ The primary view for multi-faction queries. Table with:
 
 Each faction gets one **split cell** with three display modes (cycling via header click):
 
-#### Mode 1: DR | Prob (default)
-- **Left half:** Raw signature score (z-score), heat-colored by DR tier using the **warm amber palette** (`--heat-1` through `--heat-10`). DR1=hottest → DR5=coolest. This measures how statistically distinctive the chassis is for this faction.
-- **Right half:** Probability value (biased weight = probability × WCD mixing), heat-colored by a fixed log-scale using the **cool blue palette** (`--cool-1` through `--cool-10`). This measures how likely the chassis is to appear on the battlefield for this faction.
+#### Mode 1: DR | Prob | Cmb (default, three-way split)
+- **Left third:** Raw signature score (z-score), heat-colored by DR tier using the **warm amber palette** (`--heat-1` through `--heat-10`). DR1=hottest → DR5=coolest. This measures how statistically distinctive the chassis is for this faction.
+- **Middle third:** Share-of-force percentage, heat-colored using the **cool blue palette** (`--cool-1` through `--cool-10`). This measures what fraction of the faction's force is composed of this chassis.
+- **Right third:** Combined score, heat-colored using the **green emerald palette** (`--emerald-1` through `--emerald-10`). This combines both distinctiveness and usage into a single "faction strength" metric.
 
 #### Mode 2: Prob (Probability focus)
-- **Full cell:** Shows probability value with cool blue heat coloring. Header displays sort arrow for probability.
+- **Full cell:** Shows share-of-force percentage with cool blue heat coloring. Header displays sort arrow for probability.
 
 #### Mode 3: Combined Score
-- **Full cell:** Shows normalized DR + normalized Prob sum (range 0-2.0), heat-colored using the **green emerald palette** (`--emerald-1` through `--emerald-10`). This combines both distinctiveness and usage into a single "faction strength" metric.
+- **Full cell:** Shows min-max normalized DR + Prob sum (range 0-2.0), heat-colored using the **green emerald palette** (`--emerald-1` through `--emerald-10`). This combines both distinctiveness and usage into a single "faction strength" metric.
 
 **Formula:**
 ```
-Combined = DR_norm + Prob_norm
-DR_norm = min(1, max(0, DR / 4.0))     // Clamp to [0, 1]
-Prob_norm = min(1, max(0, log2(biasedWeight) / 5.0))  // Clamp to [0, 1]
+Combined = norm_dr + norm_prob
+
+// Min-max normalization within the current result set, per faction:
+norm_dr = (dr - min_dr) / (max_dr - min_dr)     // DR already clamped >= 0
+norm_prob = (prob - min_prob) / (max_prob - min_prob)
+
+// Edge case: if all values equal (no range), norm = 0.5 (neutral)
+// Both norms in [0, 1], so Combined in [0, 2.0]
 ```
+
+**Why min-max within the result set:**
+- "Medium DR + medium prob" = "high DR + low prob" = "low DR + high prob" → all produce the same combo score. This equivalence lets the combo serve as a KPI: high-combo mechs are the ones that make a force look like "that faction's force."
+- Relative to the current roster, not absolute — a mech's combo reflects its standing among the mechs being compared right now.
+- Min-max preserves magnitude information ("this mech is at the top of the DR range") which is more grokkable than percentile ranking.
+
+**Prob normalization (both modes):**
+Biased weights are normalized per faction to sum to 1.0 (share-of-force), then displayed as percentages. This applies to both Mode B and Mode X — the probability column always shows "what percentage of this faction's force is this chassis."
 
 **Display cycling:** Header click cycles through: `[Faction] DR▼ | Prob` → `[Faction] DR | Prob▼` → `[Faction] Cmb▼` → back to start.
 
@@ -804,10 +818,7 @@ When a chassis is not fielded by a faction, the split cell shows "—" with no-d
 
 ### Single Faction Roster View
 
-For single-faction queries without explicit sort/sig. Uses the same split cell layout as the comparison view for consistency. Key columns:
-- Chassis, Tons, Class, Role, BV (if available), split DR|Prob cell, Availability (weight bar)
-- Default sort: DR desc (most iconic mechs first)
-- Separate DR, Prob, and Weight columns hidden by default (available in ☰ menu)
+*Removed in v1.37.2.* Single-faction queries now route through `renderFactionComparison()` — the same code path as multi-faction views. This eliminated duplicate rendering logic and bugs. When a single faction is scoped, the comparison view shows one faction column with the same split cell, sorting, and column visibility as multi-faction views.
 - Weight bar shows raw weight with percentage fill relative to the faction's max weight
 
 ### Chassis Detail Drill-Down
@@ -919,7 +930,9 @@ This saves ~0.5MB from the JSON output by replacing multi-character faction code
 2. **Convert to probability space** — `2^(rating/2)` for all weights
 3. **Apply WCD mixing** (mixed-class views only) — multiply by `faction_wcd[class] / sum(faction_wcd)`. Skipped when a single weight class is filtered.
 4. **Compute signature** — z-scores and `weight × z` on the mixed weights
-5. **Convert back for display** — `2 × log2(prob_weight)` → 1-10 scale
+5. **Normalize prob to share-of-force** — per faction, sum all biased weights and divide each by the sum. Both modes now produce [0, 1] fractions displayed as percentages.
+6. **Compute combined score** — min-max normalize DR and prob within the result set, then sum: `combo = norm_dr + norm_prob` (range 0–2)
+7. **Convert back for display** — `2 × log2(prob_weight)` → 1-10 scale (raw weight display only)
 6. Spread, span, avg-weight — derived from adjusted weights
 
 ### UI Technology
@@ -951,6 +964,8 @@ Vanilla HTML/CSS/JS. No framework. Single-page app loading `app-data.json` at st
 15. **Salvage is excluded.** MegaMek encodes salvage allocation (e.g., DC capturing FedSuns mechs). We deliberately omit this — salvage muddies faction identity rather than defining it. A captured mech isn't "theirs."
 16. **Multi-parent faction averaging.** Factions with multiple parent factions (e.g., FC = FS + LA, FWL breakup states = IS + FWL) have their inherited weights averaged in probability space, matching MegaMek's `mergeFactionAvailability()`. Each parent's rating is converted to `2^(rating/2)`, the weights are averaged, and the result is converted back to a rating. This replaces the previous first-match BFS inheritance which gave composite factions only one parent's data.
 17. **Signature z-score scoped by faction family availability.** The z-score for global signature is computed against factions whose faction family (IS, Clan, Periphery) has MUL access to the chassis — not against all factions in the era. Factions outside the availability pool are excluded entirely (their absence is a technological boundary, not a meaningful zero). Factions inside the pool that don't field the chassis count as zero (choosing not to use something available is real signal). This prevents cross-technology-base inflation (e.g., Clan factions who can't field IS mechs inflating Wasp distinctiveness for IS factions). Family membership is determined at runtime from faction metadata: `clan === true` → Clan pool, `periphery === true` → Periphery pool, else → IS pool. A family is included in a chassis's pool if the chassis has MUL availability in that family's general pool for the era. Additionally, factions that are not active in the target era (per `yearsActive` ranges) are excluded from the z-score pool — a faction that doesn't exist yet can't make a choice about fielding a chassis.
+18. **Probability as share-of-force (v1.38).** Both Mode B and Mode X normalize biased weights per faction to sum to 1.0 (share-of-force), displayed as percentages. Previously Mode B displayed raw probability-space weights (1.4–32) while Mode X displayed percentages — inconsistent units for the same column. Share-of-force is more grokkable ("12% of this faction's force" vs "4.52 probability weight") and correctly answers "how commonly is this unit seen."
+19. **Combined score uses min-max normalization within result set (v1.38).** Combo = `norm_dr + norm_prob` where both are min-max normalized to [0, 1] within the current filtered result set. This ensures the equivalence property: medium+medium = high+low = low+high (all produce the same combo). Previously combo used fixed scaling (`DR/4.0`, `log2(bw)/5.0`) which didn't adapt to the actual value distribution and produced inconsistent results between modes. Edge case: if all values are equal (no range), norm = 0.5 (neutral).
 
 ---
 
@@ -1111,7 +1126,7 @@ The detailed lookup for specific filters, columns, and settings. Organized by wh
 | **BV** | When BV data exists | Battle Value range across in-scope variants (min–max). |
 | **[Faction] DR** | Multi-faction queries | Distinctiveness Rating (DR1–DR5) and raw score. DR1 = faction-defining. Higher raw score = stronger association. See "How signature is computed" below. |
 | **[Faction]** | Multi-faction queries | Raw MegaMek weight (1–10 logarithmic scale). Heat-colored: warm = high usage, cool = low. This is the faction's availability rating for the chassis — how likely they are to field it relative to other chassis in the same weight class. Each +2 on this scale doubles the probability of appearing in a force. |
-| **[Faction] BW** | Multi-faction queries | Biased Weight — the chassis's effective probability of appearing in a faction's full roster. Formula: `2^(rating/2) × classShare`, where `classShare` is the faction's weight class distribution proportion for this chassis's weight class (e.g., Lyran Heavy share = 0.35, DC Assault share = 0.10). When filtering to a single weight class, BW is just `2^(rating/2)` (no class mixing). Hidden by default (☰ menu). |
+| **[Faction] BW** | Multi-faction queries | Share-of-force percentage — what fraction of the faction's force is this chassis. Computed as `(prob_weight × WCD_mixFactor) / sum(all_chassis_prob_weights_for_faction)`. Displayed as percentage (e.g., 12%). Hidden by default (☰ menu). |
 | **Spread** | Multi-faction queries | Difference between highest and lowest raw weight across scoped factions. High spread = factions disagree about this mech = interesting. Hidden by default. |
 | **Weight** | Single-faction view | Raw availability weight with usage bar. |
 
