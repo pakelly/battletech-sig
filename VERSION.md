@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.37.4 | 2026-10-01 19:59 UTC | pending |
-| test | 1.37.4 | 2026-10-01 19:46 UTC | pending |
+| test | 1.38.0 | 2026-10-03 20:33 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.38.0 | test | 2026-10-03 20:33 | pending | v1.38.0: Unify prob as share-of-force percentage in both modes; combo now uses min-max normalization within result set |
 | 1.37.4 | prod | 2026-10-01 19:59 | pending | VERSION.md: auto-stamp 1.37.4 test deploy |
 | 1.37.4 | test | 2026-10-01 19:46 | pending | v1.37.4: Fix faction-prefixed chip removal — lowercase chip field to match rawMatches key casing |
 | 1.37.3 | test | 2026-10-01 18:56 | pending | v1.37.3: Fix chip removal event listener leak — attach delegated click listener once in init, remove per-renderChips accumulation |
