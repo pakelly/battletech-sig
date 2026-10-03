@@ -2396,6 +2396,41 @@ describe('Mode X — Xotl RAT', () => {
       assert.ok(arc2r.FWL !== undefined, 'ARC-2R should have FWL data');
     });
 
+    it('deduplicates split-name variant entries (Phoenix Hawk)', () => {
+      // Phoenix Hawk has split-name duplicates in Xotl data:
+      // variant="Phoenix", name="Hawk PXH-1" AND variant="Phoenix Hawk", name="PXH-1"
+      // Both resolve to variant code "PXH-1" — should only appear once
+      const result = F.getXotlAllFactionVariantData('Phoenix Hawk', 3039, XOTL_DATA);
+      assert.ok(result.has('PXH-1'), 'Should have PXH-1 variant');
+      assert.ok(!result.has('Hawk PXH-1'), 'Should not have split-name duplicate');
+      // Each variant code should appear exactly once
+      const codes = [...result.keys()];
+      const uniqueCodes = new Set(codes);
+      assert.strictEqual(codes.length, uniqueCodes.size, 'No duplicate variant codes');
+    });
+
+    it('getXotlVariantData deduplicates split-name entries', () => {
+      // Single-faction variant list should also deduplicate
+      const results = F.getXotlVariantData('Phoenix Hawk', 'CC', 3039, XOTL_DATA);
+      const codes = results.map(r => r.variant);
+      const uniqueCodes = new Set(codes);
+      assert.strictEqual(codes.length, uniqueCodes.size, 'No duplicate variants in list');
+      // PXH-1 should appear once, not twice
+      const pxh1Count = codes.filter(c => c === 'PXH-1').length;
+      assert.strictEqual(pxh1Count, 1, 'PXH-1 should appear exactly once');
+    });
+
+    it('buildXotlProbWeights deduplicates split-name entries', () => {
+      // Prob weights should not double-count duplicate entries
+      const weights = F.buildXotlProbWeights('Phoenix Hawk', 3039, XOTL_DATA);
+      assert.ok(weights.CC > 0, 'CC should have weights');
+      // Compare with a non-duplicate chassis to sanity-check magnitude
+      const archerWeights = F.buildXotlProbWeights('Archer', 3039, XOTL_DATA);
+      // Phoenix Hawk CC has Av 9 for PXH-1 — xotlToProb(9) = 0.0078
+      // If double-counted, it would be 2x that. Sanity check: weight should be reasonable.
+      assert.ok(weights.CC < archerWeights.DC * 5, 'Weight should not be inflated by duplicates');
+    });
+
     it('returns empty Map for unsupported era', () => {
       const result = F.getXotlAllFactionVariantData('Archer', 3062, XOTL_DATA);
       assert.strictEqual(result.size, 0);

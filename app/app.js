@@ -1,6 +1,6 @@
 /* ── BattleTech Faction Signatures — Client App ── */
 
-const APP_VERSION = '1.38.0';
+const APP_VERSION = '1.38.1';
 const DEPLOY_TIME = 'dev';
 
 let DATA = null; // app-data.json
@@ -86,8 +86,12 @@ function buildXotlProbWeights(chassisName, eraYear, xotl) {
   if (!xotlEra) return null;
   const matching = xotl.mechs.filter(m => resolveXotlChassis(m) === chassisName);
   if (matching.length === 0) return {};
+  const seen = new Set(); // deduplicate by variant code (split-name entries)
   const weights = {};
   for (const mech of matching) {
+    const variantCode = xotlVariantCode(chassisName, mech);
+    if (seen.has(variantCode)) continue; // skip duplicate — don't double-count
+    seen.add(variantCode);
     for (const [sectionName, eraData] of Object.entries(mech.sections || {})) {
       const baseName = sectionName.includes(':') ? sectionName.split(':')[0].trim() : sectionName;
       const factionCode = XOTL_FACTION_MAP[baseName];
@@ -258,8 +262,12 @@ function getXotlVariantData(chassisName, factionCode, eraYear, xotl) {
   const matching = xotl.mechs.filter(m => resolveXotlChassis(m) === chassisName);
   if (matching.length === 0) return [];
 
+  const seen = new Set(); // deduplicate by variant code (split-name entries)
   const results = [];
   for (const mech of matching) {
+    const variantCode = xotlVariantCode(chassisName, mech);
+    if (seen.has(variantCode)) continue; // skip duplicate
+    seen.add(variantCode);
     for (const [sectionName, eraData] of Object.entries(mech.sections || {})) {
       const baseName = sectionName.includes(':')
         ? sectionName.split(':')[0].trim()
@@ -270,7 +278,7 @@ function getXotlVariantData(chassisName, factionCode, eraYear, xotl) {
       if (value == null) continue;
 
       results.push({
-        variant: xotlVariantCode(chassisName, mech),
+        variant: variantCode,
         name: mech.name,
         availability: value,
         tonnage: mech.tonnage
