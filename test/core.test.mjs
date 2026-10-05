@@ -2431,6 +2431,29 @@ describe('Mode X — Xotl RAT', () => {
       assert.ok(weights.CC < archerWeights.DC * 5, 'Weight should not be inflated by duplicates');
     });
 
+    it('buildXotlProbWeights uses max variant, not sum', () => {
+      // Cataphract for FS in 3039 has two variants at Av 10 (CTF-1X and CTF-2X)
+      // Under the old sum formula, this would be 2 × xotlToProb(10)
+      // Under the new max formula, it should be 1 × xotlToProb(10)
+      // A chassis with a single Av 10 variant should get the same weight
+      const cataphractWeights = F.buildXotlProbWeights('Cataphract', 3039, XOTL_DATA);
+      // Find a chassis with a single high-Av variant for FS
+      // Crusader FS should have at least one variant — compare magnitudes
+      const crusaderWeights = F.buildXotlProbWeights('Crusader', 3039, XOTL_DATA);
+      
+      // The key property: a chassis with 2 variants at Av X should NOT get 2x
+      // the weight of a chassis with 1 variant at Av X.
+      // We can't easily isolate a single-variant Av 10 chassis, but we can verify
+      // Cataphract FS weight equals xotlToProb(10) exactly (not 2x).
+      // xotlToProb(10) = 0.0078 (from the formula 0.00432 × 1.5^10)
+      const expectedMax = 0.00432 * Math.pow(1.5, 10); // xotlToProb(10)
+      const cataphractFS = cataphractWeights.FS || 0;
+      assert.ok(Math.abs(cataphractFS - expectedMax) < 0.0001,
+        `Cataphract FS should be ~${expectedMax.toFixed(5)} (max variant), got ${cataphractFS.toFixed(5)}`);
+      assert.ok(cataphractFS < expectedMax * 1.5,
+        'Cataphract FS should not be inflated by summing variants');
+    });
+
     it('returns empty Map for unsupported era', () => {
       const result = F.getXotlAllFactionVariantData('Archer', 3062, XOTL_DATA);
       assert.strictEqual(result.size, 0);

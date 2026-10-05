@@ -76,7 +76,7 @@ App era years outside this mapping have no Xotl data — all cells show N/A.
 - When multiple columns exist (A/B vs C/D/F), take the A/B value as primary (front-line availability). If A/B is missing, fall back to C/D/F.
 - For Star League 2750: take "Regular" (ignore Royal for now).
 
-**Chassis aggregation:** Xotl data is per-variant (e.g., "ARC-2R", "ARC-2K"). The app works at chassis level. Aggregation: for each chassis+faction+era, take the **max** availability across all variants. Variant-to-chassis mapping uses the app's `modelPrefixes` lookup and direct name matching.
+**Chassis aggregation:** Xotl data is per-variant (e.g., "ARC-2R", "ARC-2K"). The app works at chassis level. Aggregation: for each chassis+faction+era, take the **max** availability across all variants for display. Variant-to-chassis mapping uses the app's `modelPrefixes` lookup and direct name matching.
 
 **Limitations:**
 - Inner Sphere only — no Clan data
@@ -111,7 +111,7 @@ The signature (DR) z-score and biased weight (Prob) computations use `xotlToProb
 
 **Variant aggregation for probability (v1.36.3):**
 
-The display Av value (1–10) uses **max** across variants — it answers "how common is the most available variant?" But the probability computation uses **sum** of `xotlToProb` across variants — a faction fielding 3 variants of a chassis gets more share-of-force than one fielding 1. For example, FedSuns Centurion at 3039 has CN9-A (Av 9), CN9-AH (Av 3), CN9-AL (Av 3). Display shows Av 9; prob contributes `xotlToProb(9) + xotlToProb(3) + xotlToProb(3)`.
+The display Av value (1–10) uses **max** across variants — it answers "how common is the most available variant?" The probability computation also uses **max** variant's `xotlToProb` — not the sum. This prevents chassis with many common variants from dominating share-of-force. A faction fielding 3 variants of a chassis at Av 8/6/4 gets the same chassis weight as one fielding a single Av 8 variant. The variant breakdown is displayed as a distribution visualizer (same as Mode B) showing each variant's relative proportion within the chassis.
 
 Biased weights are normalized per faction to sum to 1.0 (share-of-force), then displayed as percentages. This applies to both Mode B and Mode X.
 
@@ -966,6 +966,7 @@ Vanilla HTML/CSS/JS. No framework. Single-page app loading `app-data.json` at st
 17. **Signature z-score scoped by faction family availability.** The z-score for global signature is computed against factions whose faction family (IS, Clan, Periphery) has MUL access to the chassis — not against all factions in the era. Factions outside the availability pool are excluded entirely (their absence is a technological boundary, not a meaningful zero). Factions inside the pool that don't field the chassis count as zero (choosing not to use something available is real signal). This prevents cross-technology-base inflation (e.g., Clan factions who can't field IS mechs inflating Wasp distinctiveness for IS factions). Family membership is determined at runtime from faction metadata: `clan === true` → Clan pool, `periphery === true` → Periphery pool, else → IS pool. A family is included in a chassis's pool if the chassis has MUL availability in that family's general pool for the era. Additionally, factions that are not active in the target era (per `yearsActive` ranges) are excluded from the z-score pool — a faction that doesn't exist yet can't make a choice about fielding a chassis.
 18. **Probability as share-of-force (v1.38).** Both Mode B and Mode X normalize biased weights per faction to sum to 1.0 (share-of-force), displayed as percentages. Previously Mode B displayed raw probability-space weights (1.4–32) while Mode X displayed percentages — inconsistent units for the same column. Share-of-force is more grokkable ("12% of this faction's force" vs "4.52 probability weight") and correctly answers "how commonly is this unit seen."
 19. **Combined score uses min-max normalization within result set (v1.38).** Combo = `norm_dr + norm_prob` where both are min-max normalized to [0, 1] within the current filtered result set. This ensures the equivalence property: medium+medium = high+low = low+high (all produce the same combo). Previously combo used fixed scaling (`DR/4.0`, `log2(bw)/5.0`) which didn't adapt to the actual value distribution and produced inconsistent results between modes. Edge case: if all values are equal (no range), norm = 0.5 (neutral).
+20. **Mode X probability uses max variant, not sum (v1.39).** Chassis probability weight = `xotlToProb(maxVariantAv)` — the highest single variant's probability, not the sum across all variants. Previously, summing caused chassis with many common variants (e.g., Cataphract with 2× Av 10) to dominate share-of-force, sometimes exceeding 30% of a faction's total. Using max ensures a chassis's frequency reflects its most common variant, matching the display Av semantics. Variant distribution within a chassis is computed as relative proportions of `xotlToProb(variantAv)` and displayed in a variant visualizer identical to Mode B.
 
 ---
 
