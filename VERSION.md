@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.38.1 | 2026-10-03 21:24 UTC | pending |
-| test | 1.39.2 | 2026-10-05 15:31 UTC | pending |
+| test | 1.39.3 | 2026-10-05 18:53 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.39.3 | test | 2026-10-05 18:53 | pending | v1.39.3: Fix cross-faction table in Mode A/B (faction key decode bug) |
 | 1.39.2 | test | 2026-10-05 15:31 | pending | Update MegaMek source data (June→Oct 2026): +11 chassis (668→679) |
 | 1.39.2 | test | 2026-10-05 15:03 | pending | v1.39.2: Equalize Mode X and Mode A/B detail views |
 | 1.39.1 | test | 2026-10-05 14:57 | pending | v1.39.1: Add cross-faction variant comparison table to Mode A/B detail view |
