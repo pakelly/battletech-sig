@@ -5,12 +5,13 @@
 | Environment | Version | Deployed | Accepted |
 |-------------|---------|----------|----------|
 | prod | 1.38.1 | 2026-10-03 21:24 UTC | pending |
-| test | 1.39.6 | 2026-10-05 22:32 UTC | pending |
+| test | 1.40.0 | 2026-10-06 01:14 UTC | pending |
 
 ## History
 
 | Version | Target | Timestamp (UTC) | Accepted | Notes |
 |---------|--------|-----------------|----------|-------|
+| 1.40.0 | test | 2026-10-06 01:14 | pending | v1.40.0: Prob uses absolute share-of-force, invariant to filters |
 | 1.39.6 | test | 2026-10-05 22:32 | pending | v1.39.6: Remove 0-10 clamp on cross-faction variant weights |
 | 1.39.5 | test | 2026-10-05 22:28 | pending | v1.39.5: Clamp cross-faction variant weights to 0-10 |
 | 1.39.4 | test | 2026-10-05 19:03 | pending | v1.39.4: Fix cross-faction table showing negative variant offsets |
