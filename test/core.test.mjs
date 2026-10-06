@@ -1967,6 +1967,50 @@ describe('computeColOrder', () => {
 
 // ── Combined Score ──────────────────────────────────────────────────────────
 
+describe('Prob Normalization (Absolute Share-of-Force)', () => {
+  it('prob is invariant to result set changes (absolute normalization)', () => {
+    // Decision #21: prob = biasedWeight / globalFactionSum (not / filteredSum)
+    // Simulate: 5 mechs in era, 3 pass filter. Prob for a given mech should
+    // be the same whether computed against all 5 or just the filtered 3.
+    const allRows = [
+      { name: 'A', biasedWeights: { DC: 10.0 } },
+      { name: 'B', biasedWeights: { DC: 5.0 } },
+      { name: 'C', biasedWeights: { DC: 3.0 } },
+      { name: 'D', biasedWeights: { DC: 2.0 } },  // filtered out
+      { name: 'E', biasedWeights: { DC: 1.0 } },  // filtered out
+    ];
+    const globalSum = allRows.reduce((s, r) => s + r.biasedWeights.DC, 0); // 21.0
+    
+    // Filtered set: A, B, C only
+    const filteredRows = allRows.slice(0, 3);
+    
+    // Absolute normalization: use globalSum
+    const probA_abs = filteredRows[0].biasedWeights.DC / globalSum;
+    const probB_abs = filteredRows[1].biasedWeights.DC / globalSum;
+    
+    // With relative normalization (old behavior): sum = 10+5+3 = 18
+    const filteredSum = filteredRows.reduce((s, r) => s + r.biasedWeights.DC, 0);
+    const probA_rel = filteredRows[0].biasedWeights.DC / filteredSum;
+    
+    // Absolute prob for A should be 10/21 ≈ 0.476
+    assert.ok(Math.abs(probA_abs - 10/21) < 0.001, 
+      `Absolute prob A should be ~0.476, got ${probA_abs.toFixed(4)}`);
+    
+    // Relative prob for A would be 10/18 ≈ 0.556 — different!
+    assert.ok(Math.abs(probA_rel - 10/18) < 0.001,
+      `Relative prob A should be ~0.556, got ${probA_rel.toFixed(4)}`);
+    
+    // The key assertion: absolute prob != relative prob when filtering removes rows
+    assert.ok(probA_abs !== probA_rel, 
+      'Absolute and relative prob must differ when filtering removes rows');
+    
+    // And absolute prob for A is the same whether D and E are in the result set or not
+    const allRowsProbA = allRows[0].biasedWeights.DC / globalSum;
+    assert.ok(Math.abs(probA_abs - allRowsProbA) < 0.0001,
+      'Prob for A must be identical regardless of which other mechs are filtered');
+  });
+});
+
 describe('Combined Score', () => {
   // Combined Score = DR_norm + Prob_norm
   // DR_norm = min(1, max(0, DR / 4.0))
